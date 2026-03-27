@@ -40,9 +40,20 @@ mkdir -p .claude/skills
 cp /path/to/psoares-skills/skills/skill-name/claude-code/skill.md .claude/skills/skill-name.md
 ```
 
+## Standards
+
+Skills in this repo follow these rules:
+
+- **Secrets in env or rc** — API keys go in `.env` or shell rc (e.g. `~/.zshrc`), never hardcoded
+- **Self-contained** — Skills don't depend on external state beyond documented requirements
+- **"When to Use" required** — Every skill must explain when to apply it
+- **Imperative style** — Write instructions as commands, not "you should"
+- **Relative paths** — Reference files relative to skill directory using `{baseDir}`
+- **Concise over verbose** — Say what's needed, nothing more
+
 ## Skills
 
-*No skills yet. Check back soon.*
+*No skills yet. See [TODO.md](TODO.md) for planned skills.*
 
 ## License
 
