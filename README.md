@@ -40,16 +40,21 @@ mkdir -p .claude/skills
 cp /path/to/psoares-skills/skills/skill-name/claude-code/skill.md .claude/skills/skill-name.md
 ```
 
+## Workflow
+
+1. Create `skills/<name>/spec.md` — plan the skill first
+2. Review and refine the spec
+3. Build the skill using Claude Code
+
 ## Standards
 
-Skills in this repo follow these rules:
-
-- **Secrets in env or rc** — API keys go in `.env` or shell rc (e.g. `~/.zshrc`), never hardcoded
-- **Self-contained** — Skills don't depend on external state beyond documented requirements
+- **Spec first** — Every skill starts with a `spec.md` in its folder
+- **Secrets in env or rc** — API keys go in `.env` or shell rc, never hardcoded
+- **Self-contained** — No external state beyond documented requirements
 - **"When to Use" required** — Every skill must explain when to apply it
-- **Imperative style** — Write instructions as commands, not "you should"
-- **Relative paths** — Reference files relative to skill directory using `{baseDir}`
-- **Concise over verbose** — Say what's needed, nothing more
+- **Imperative style** — Commands, not "you should"
+- **Relative paths** — Use `{baseDir}` to reference skill directory
+- **Concise** — Say what's needed, nothing more
 
 ## Skills
 
