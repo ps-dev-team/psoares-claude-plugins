@@ -18,8 +18,8 @@ skills/
 
 | Platform | Entry Point | Notes |
 |----------|-------------|-------|
-| **OpenClaw** | `SKILL.md` | Supports references/, scripts/, examples/ subfolders |
-| **Claude Code** | `skill.md` | Goes in `.claude/skills/` in the target project |
+| **OpenClaw** | `SKILL.md` | Supports references/, scripts/, examples/ subfolders. [Docs](https://docs.openclaw.ai/tools/skills) |
+| **Claude Code** | `skill.md` | Goes in `.claude/skills/` in the target project. [Docs](https://docs.anthropic.com/en/docs/claude-code/skills) |
 
 ## How to Use
 
