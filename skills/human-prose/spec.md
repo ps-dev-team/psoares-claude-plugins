@@ -21,6 +21,14 @@ Infer from user communication. Default to English if unclear.
 - No "Remember:" followed by recap
 - No numbered lists for everything
 - No perfect parallel structure in every list
+- **No "Não é X. É Y." structure** — lazy false dichotomy
+- **No telegraphic fragments** — "Mesma tarefa. Um plano de retenção." is garbage; let it flow naturally
+- **No artificial sentence breaks** — sentences should connect, not be chopped robotically
+
+### Punctuation
+- **NEVER em-dashes (—)** — hard rule, use commas or restructure
+- No semicolons in casual content
+- Commas over parentheses when possible
 
 ### Word Choice
 - No "crucial" / "essential" / "vital" / "key" overuse
@@ -29,18 +37,23 @@ Infer from user communication. Default to English if unclear.
 - No "harness the power of"
 - No "at the end of the day"
 - No "it's worth noting that"
+- No "transformar" as magic verb for everything
+- Use "feature" not "função" (PT-PT tech context)
+- "A prompt" is feminine in PT-PT
 
 ### Tone
 - No excessive hedging ("It's important to note that...")
-- No sycophantic openers ("Great question!")
+- No sycophantic openers ("Great question!" / "Tens razão" / "Boa" / "Exacto")
 - No over-explanation of obvious things
 - No fake enthusiasm with exclamation marks
+- No condescending tone ("Como já sabes...")
 
 ### Flow
 - Vary sentence length (short punchy + longer flowing)
 - Use contractions naturally
 - Allow imperfect transitions
 - Let ideas breathe without constant signposting
+- One idea per sentence, but sentences can be compound
 
 ## What Good Prose Looks Like
 
