@@ -1,60 +1,60 @@
 # psoares-skills
 
-Reusable AI coding skills by Paulo Soares. Each skill is platform-agnostic at its core, with implementations for OpenClaw and Claude Code.
+Reusable AI coding skills by Paulo Soares, following the [Agent Skills](https://agentskills.io/specification) open format. Compatible with Claude Code, VS Code, and any agent that supports the spec.
 
 ## Structure
 
 ```
 skills/
 ├── skill-name/
-│   ├── README.md              # What this skill does (platform-agnostic)
-│   ├── openclaw/
-│   │   └── SKILL.md           # OpenClaw format
-│   └── claude-code/
-│       └── skill.md           # Claude Code format
+│   ├── SKILL.md              # Required: metadata + instructions
+│   ├── spec.md               # Skill spec (planning artifact)
+│   ├── scripts/              # Optional: executable code
+│   ├── references/           # Optional: documentation
+│   └── assets/               # Optional: templates, resources
 ```
 
-## Supported Conventions
+Each `SKILL.md` uses YAML frontmatter per the [Agent Skills spec](https://agentskills.io/specification):
 
-| Platform | Entry Point | Notes |
-|----------|-------------|-------|
-| **OpenClaw** | `SKILL.md` | Supports references/, scripts/, examples/ subfolders. [Docs](https://docs.openclaw.ai/tools/skills) |
-| **Claude Code** | `skill.md` | Goes in `.claude/skills/` in the target project. [Docs](https://docs.anthropic.com/en/docs/claude-code/skills) |
+```yaml
+---
+name: skill-name
+description: What this skill does and when to use it.
+license: MIT
+metadata:
+  author: psoares
+---
+```
 
 ## How to Use
 
-### OpenClaw
-
-Symlink or copy the skill folder into your workspace `skills/` directory:
+Symlink or copy the skill folder into your project's skills directory:
 
 ```bash
-ln -s /path/to/psoares-skills/skills/skill-name/openclaw /path/to/workspace/skills/skill-name
+ln -s /path/to/psoares-skills/skills/skill-name /path/to/project/skills/skill-name
 ```
 
-### Claude Code
-
-Copy the skill file into your project:
+For Claude Code specifically, skills go in `.claude/skills/`:
 
 ```bash
-mkdir -p .claude/skills
-cp /path/to/psoares-skills/skills/skill-name/claude-code/skill.md .claude/skills/skill-name.md
+ln -s /path/to/psoares-skills/skills/skill-name .claude/skills/skill-name
 ```
 
 ## Workflow
 
 1. Create `skills/<name>/spec.md` — plan the skill first
 2. Review and refine the spec
-3. Build the skill using Claude Code
+3. Build `SKILL.md` with frontmatter and instructions
 
 ## Standards
 
 - **Spec first** — Every skill starts with a `spec.md` in its folder
 - **Secrets in env or rc** — API keys go in `.env` or shell rc, never hardcoded
 - **Self-contained** — No external state beyond documented requirements
-- **"When to Use" required** — Every skill must explain when to apply it
+- **Description triggers** — The `description` field must include keywords that help agents identify when to activate the skill
 - **Imperative style** — Commands, not "you should"
-- **Relative paths** — Use `{baseDir}` to reference skill directory
-- **Concise** — Say what's needed, nothing more
+- **Relative paths** — Reference files relative to skill root
+- **Concise** — Keep `SKILL.md` under 500 lines; move detail to `references/`
 
 ## Skills
 

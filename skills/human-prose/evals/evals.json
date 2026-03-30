@@ -1,0 +1,23 @@
+{
+  "skill_name": "human-prose",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Escreve um email em português (PT-PT) para enviar à equipa de produto a explicar que vamos atrasar o lançamento da feature de notificações push em 2 semanas porque descobrimos um bug na integração com o Firebase. O tom deve ser profissional mas directo, sem dramatizar. 3-4 parágrafos.",
+      "expected_output": "Email em PT-PT, profissional e directo. Sem 'transformar', sem falsa dicotomia 'Não é X. É Y.', sem travessões longos, sem hedging ('importa referir que'). Usa 'feature' em vez de 'funcionalidade'. Tom natural, como se um colega sénior o tivesse escrito.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Write the opening 3 paragraphs of a blog post about why most companies fail at onboarding new engineers. The audience is engineering managers. Keep it practical, not preachy.",
+      "expected_output": "EN blog intro that avoids AI clichés: no 'In today's fast-paced...', no 'Let's dive in', no 'crucial/essential/vital' stacking, no em-dashes, no perfect parallel lists. Should sound like a real engineering manager wrote it on a Sunday afternoon. Has rhythm variation and gets to the point.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Escreve um guião curto (1-2 minutos de leitura) em português (PT-PT) para um vídeo do YouTube sobre como usar o Claude Code para automatizar tarefas repetitivas no terminal. O público são developers portugueses. Tom casual mas informativo, como se estivesses a falar com um colega.",
+      "expected_output": "Script PT-PT para vídeo. Deve soar natural quando lido em voz alta. Sem 'vamos explorar', sem 'neste sentido', sem fragmentos telegráficos. Usa termos tech em inglês (deploy, script, framework). 'A prompt' como feminino. Ritmo conversacional com frases de comprimentos variados.",
+      "files": []
+    }
+  ]
+}
