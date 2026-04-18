@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # Claude Code statusline — Gruvbox Material Dark.
+#
+# Optional account label: set these in the wrapper that invokes this script.
+#   CLAUDE_LABEL        — text shown at the left (e.g. "UPHOLD", "PERSONAL")
+#   CLAUDE_LABEL_COLOR  — either a hex like "#84fb7f" or a raw ANSI escape
+#                         like '\033[38;2;132;251;127m'. Empty = no label.
 
 input=$(cat)
 
@@ -21,6 +26,23 @@ C_TEAL='\033[38;2;68;207;178m'       # #44cfb2  thinking effort
 
 SEP="${FG_DIM}│${RST}"
 
+# ── Label color resolution (hex → ANSI, or pass ANSI through) ────────────────
+label_text="${CLAUDE_LABEL:-}"
+label_color_raw="${CLAUDE_LABEL_COLOR:-}"
+label_color=""
+if [ -n "$label_text" ]; then
+  if [[ "$label_color_raw" == "#"* ]] && [ "${#label_color_raw}" -eq 7 ]; then
+    r=$((16#${label_color_raw:1:2}))
+    g=$((16#${label_color_raw:3:2}))
+    b=$((16#${label_color_raw:5:2}))
+    label_color="\033[38;2;${r};${g};${b}m"
+  elif [ -n "$label_color_raw" ]; then
+    label_color="$label_color_raw"
+  else
+    label_color="$C_GREEN"
+  fi
+fi
+
 # ── Extract fields ──────────────────────────────────────────────────────────
 model_name=$(echo "$input" | jq -r '.model.display_name // "unknown"')
 model_id=$(echo "$input" | jq -r '.model.id // ""')
@@ -37,10 +59,15 @@ output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 
 parts=()
 
-# ── 1. Directory ────────────────────────────────────────────────────────────
+# ── 1. Account label (optional) ─────────────────────────────────────────────
+if [ -n "$label_text" ]; then
+  parts+=("${BOLD}${label_color} ${label_text}${RST}")
+fi
+
+# ── 2. Directory ────────────────────────────────────────────────────────────
 parts+=("${C_BLUE}${cwd_display}${RST}")
 
-# ── 2. Git branch (worktree-aware, falls back to current repo) ──────────────
+# ── 3. Git branch (worktree-aware, falls back to current repo) ──────────────
 branch="$worktree_branch"
 if [ -z "$branch" ] && [ -d "$cwd" ]; then
   branch=$(git -C "$cwd" symbolic-ref --short HEAD 2>/dev/null \
@@ -50,7 +77,7 @@ if [ -n "$branch" ]; then
   parts+=("${C_PURPLE2} ${branch}${RST}")
 fi
 
-# ── 3. Model + thinking effort ──────────────────────────────────────────────
+# ── 4. Model + thinking effort ──────────────────────────────────────────────
 model_label="${C_GREEN}${model_name}${RST}"
 if echo "$model_id" | grep -qi "thinking\|opus"; then
   model_label="${C_GREEN}${model_name}${RST} ${C_TEAL}(thinking)${RST}"
@@ -60,7 +87,7 @@ if [ -n "$output_style" ] && [ "$output_style" != "default" ] && [ "$output_styl
 fi
 parts+=("$model_label")
 
-# ── 4. Context window ───────────────────────────────────────────────────────
+# ── 5. Context window ───────────────────────────────────────────────────────
 if [ -n "$used_pct" ]; then
   used_int=$(printf "%.0f" "$used_pct")
   remaining_int=$(printf "%.0f" "$remaining_pct")
@@ -79,7 +106,7 @@ if [ -n "$used_pct" ]; then
   parts+=("${bar_color}ctx ${bar} ${remaining_int}% left${RST}")
 fi
 
-# ── 5. Token cost estimate (model-aware, blended rate) ─────────────────────
+# ── 6. Token cost estimate (model-aware, blended rate) ─────────────────────
 # Pricing per million tokens (USD). Real cost is lower with cache hits and
 # slightly higher on cache writes — this is a rough upper bound.
 if [ "$total_in" -gt 0 ] || [ "$total_out" -gt 0 ]; then
@@ -92,12 +119,12 @@ if [ "$total_in" -gt 0 ] || [ "$total_out" -gt 0 ]; then
   parts+=("${C_CYAN}~\$${cost}${RST}")
 fi
 
-# ── 6. Active agent ─────────────────────────────────────────────────────────
+# ── 7. Active agent ─────────────────────────────────────────────────────────
 if [ -n "$agent_name" ]; then
   parts+=("${C_PURPLE}agent:${C_PURPLE2}${agent_name}${RST}")
 fi
 
-# ── 7. Vim mode ─────────────────────────────────────────────────────────────
+# ── 8. Vim mode ─────────────────────────────────────────────────────────────
 if [ -n "$vim_mode" ]; then
   if [ "$vim_mode" = "NORMAL" ]; then
     parts+=("${C_ORANGE}[N]${RST}")
