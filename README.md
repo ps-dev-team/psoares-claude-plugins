@@ -16,6 +16,7 @@ Replace the GitHub slug with wherever this repo lives.
 | Plugin | What it does |
 | --- | --- |
 | [`psoares-writing`](plugins/psoares-writing) | Writing tooling. Ships the `psoares-writing:human-prose` skill for humanizing AI output across languages. |
+| [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
 
 See [TODO.md](TODO.md) for what's planned.
 

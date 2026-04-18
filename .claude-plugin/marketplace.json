@@ -10,6 +10,13 @@
       "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
       "category": "writing",
       "keywords": ["writing", "prose", "humanize", "style", "editing"]
+    },
+    {
+      "name": "psoares-statusline",
+      "source": "./plugins/psoares-statusline",
+      "description": "Gruvbox Material Dark statusline with directory, git branch, model, context bar, cost estimate, agent, and vim mode.",
+      "category": "ui",
+      "keywords": ["statusline", "gruvbox", "theme", "ui"]
     }
   ]
 }

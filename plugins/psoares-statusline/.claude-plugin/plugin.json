@@ -1,0 +1,10 @@
+{
+  "name": "psoares-statusline",
+  "version": "0.1.0",
+  "description": "Gruvbox Material Dark statusline for Claude Code with account label, git branch, model, context bar, cost estimate, and agent indicator.",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["statusline", "gruvbox", "theme", "ui"]
+}
