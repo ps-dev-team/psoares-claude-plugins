@@ -1,0 +1,15 @@
+{
+  "name": "psoares-claude-plugins",
+  "owner": {
+    "name": "Paulo Soares"
+  },
+  "plugins": [
+    {
+      "name": "psoares-writing",
+      "source": "./plugins/psoares-writing",
+      "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
+      "category": "writing",
+      "keywords": ["writing", "prose", "humanize", "style", "editing"]
+    }
+  ]
+}

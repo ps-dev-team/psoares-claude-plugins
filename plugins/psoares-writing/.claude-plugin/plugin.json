@@ -1,0 +1,10 @@
+{
+  "name": "psoares-writing",
+  "version": "0.1.0",
+  "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["writing", "prose", "humanize", "style", "editing"]
+}

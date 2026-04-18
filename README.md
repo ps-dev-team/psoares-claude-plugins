@@ -1,64 +1,57 @@
-# psoares-skills
+# psoares-claude-plugins
 
-Reusable AI coding skills by Paulo Soares, following the [Agent Skills](https://agentskills.io/specification) open format. Compatible with Claude Code, VS Code, and any agent that supports the spec.
+A marketplace of Claude Code plugins by Paulo Soares.
 
-## Structure
-
-```
-skills/
-├── skill-name/
-│   ├── SKILL.md              # Required: metadata + instructions
-│   ├── spec.md               # Skill spec (planning artifact)
-│   ├── scripts/              # Optional: executable code
-│   ├── references/           # Optional: documentation
-│   └── assets/               # Optional: templates, resources
-```
-
-Each `SKILL.md` uses YAML frontmatter per the [Agent Skills spec](https://agentskills.io/specification):
-
-```yaml
----
-name: skill-name
-description: What this skill does and when to use it.
-license: MIT
-metadata:
-  author: psoares
----
-```
-
-## How to Use
-
-Symlink or copy the skill folder into your project's skills directory:
+## Install
 
 ```bash
-ln -s /path/to/psoares-skills/skills/skill-name /path/to/project/skills/skill-name
+/plugin marketplace add psoares/psoares-claude-plugins
+/plugin install psoares-writing@psoares-claude-plugins
 ```
 
-For Claude Code specifically, skills go in `.claude/skills/`:
+Replace the GitHub slug with wherever this repo lives.
 
-```bash
-ln -s /path/to/psoares-skills/skills/skill-name .claude/skills/skill-name
+## Plugins
+
+| Plugin | What it does |
+| --- | --- |
+| [`psoares-writing`](plugins/psoares-writing) | Writing tooling. Ships the `psoares-writing:human-prose` skill for humanizing AI output across languages. |
+
+See [TODO.md](TODO.md) for what's planned.
+
+## Layout
+
+```
+.
+├── .claude-plugin/
+│   └── marketplace.json          # Catalog manifest
+├── plugins/
+│   └── <plugin-name>/
+│       ├── .claude-plugin/
+│       │   └── plugin.json       # Plugin manifest
+│       ├── skills/               # Optional
+│       ├── commands/             # Optional
+│       ├── agents/               # Optional
+│       └── hooks/                # Optional
+└── README.md
 ```
 
-## Workflow
+Each plugin is self-contained under `plugins/<plugin-name>/`. The root `.claude-plugin/marketplace.json` lists them so users can install the whole catalog with one `marketplace add` command.
 
-1. Create `skills/<name>/spec.md` — plan the skill first
-2. Review and refine the spec
-3. Build `SKILL.md` with frontmatter and instructions
+## Adding a new plugin
 
-## Standards
+1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json`
+2. Add components (skills, commands, agents, hooks) under the plugin directory
+3. Register the plugin in `.claude-plugin/marketplace.json`
 
-- **Spec first** — Every skill starts with a `spec.md` in its folder
-- **Secrets in env or rc** — API keys go in `.env` or shell rc, never hardcoded
-- **Self-contained** — No external state beyond documented requirements
-- **Description triggers** — The `description` field must include keywords that help agents identify when to activate the skill
-- **Imperative style** — Commands, not "you should"
-- **Relative paths** — Reference files relative to skill root
-- **Concise** — Keep `SKILL.md` under 500 lines; move detail to `references/`
+## Standards for skills inside plugins
 
-## Skills
-
-*No skills yet. See [TODO.md](TODO.md) for planned skills.*
+- Spec first. Drop a `spec.md` in the skill folder before writing `SKILL.md`.
+- Secrets in env or shell rc, never hardcoded.
+- Self-contained. No external state beyond what the skill documents.
+- The `description` field in `SKILL.md` frontmatter must include trigger keywords so the agent activates the skill reliably.
+- Imperative voice. Commands, not "you should".
+- Keep `SKILL.md` under ~500 lines. Push detail into `references/`.
 
 ## License
 
