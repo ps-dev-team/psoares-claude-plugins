@@ -1,0 +1,10 @@
+{
+  "name": "psoares-content-extract",
+  "version": "0.1.0",
+  "description": "Capture raw content (metadata, transcript, frames) from social media videos. Ships with view-youtube-video and view-instagram-reel skills that produce structured output for downstream extraction/analysis.",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["youtube", "instagram", "reel", "transcript", "content", "analysis", "yt-dlp", "gemini", "whisper"]
+}
