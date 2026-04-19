@@ -93,6 +93,10 @@ The skill tries these in order: `$IG_COOKIES_FILE` → `~/.config/instagram/cook
 
 The Instagram skill enforces a 60-second cooldown between requests (stored in the cache dir) to avoid temporary blocks. The script auto-waits.
 
-## Roadmap
+## `extract-content` skill
 
-- `extract-content` — reads a `view.json` and asks the user (a) what to extract (summary, deep dive, action items, repurpose ideas, transcript…) and (b) which model to use (Claude session / Gemini / OpenAI), then renders the answer.
+Reads a `view.json` and produces an analysis. Always uses the current Claude session (no external API) — any model choice for transcription lives in the view skills, not here.
+
+Interactive flow: analysis type (Notes & Summary / Quick / Deep Dive / Action Items / Repurpose / Transcript / Other) → optional extra context → optional tone and length → output language (PT-PT default) → save destination. Handles PT-PT-specific defaults consistently.
+
+Trigger it with phrases like `"analisa este vídeo"`, `"resume este reel"`, `"dá-me os action items"`, `"extract key points"`, `"repurpose this video"`.
