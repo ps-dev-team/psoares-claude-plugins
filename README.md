@@ -17,6 +17,7 @@ Replace the GitHub slug with wherever this repo lives.
 | --- | --- |
 | [`psoares-writing`](plugins/psoares-writing) | Writing tooling. Ships the `psoares-writing:human-prose` skill for humanizing AI output across languages. |
 | [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
+| [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
 
 See [TODO.md](TODO.md) for what's planned.
 
@@ -41,9 +42,13 @@ Each plugin is self-contained under `plugins/<plugin-name>/`. The root `.claude-
 
 ## Adding a new plugin
 
-1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json`
-2. Add components (skills, commands, agents, hooks) under the plugin directory
-3. Register the plugin in `.claude-plugin/marketplace.json`
+1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json` (with `name`, `version`, `description`).
+2. Add a `README.md` at `plugins/<plugin-name>/README.md`.
+3. Add components (skills, commands, agents, hooks) under the plugin directory.
+4. Register the plugin in `.claude-plugin/marketplace.json`.
+5. Mention the plugin in the table at the top of this README.
+
+A project-local hook (`.claude/settings.json` → `.claude/scripts/validate-release.sh`) runs on `git push` and blocks the push if any of the above is missing, or if any `SKILL.md` lacks `name`/`description` frontmatter.
 
 ## Standards for skills inside plugins
 

@@ -17,6 +17,13 @@
       "description": "Gruvbox Material Dark statusline with directory, git branch, model, context bar, cost estimate, agent, and vim mode.",
       "category": "ui",
       "keywords": ["statusline", "gruvbox", "theme", "ui"]
+    },
+    {
+      "name": "psoares-content-extract",
+      "source": "./plugins/psoares-content-extract",
+      "description": "Capture raw content (metadata, transcript, frames) from YouTube videos and Instagram reels, then analyze it in the current Claude session. Skills: view-youtube-video, view-instagram-reel, extract-content.",
+      "category": "content",
+      "keywords": ["youtube", "instagram", "reel", "transcript", "content", "analysis", "yt-dlp", "gemini", "whisper"]
     }
   ]
 }
