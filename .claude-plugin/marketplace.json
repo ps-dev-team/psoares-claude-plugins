@@ -21,7 +21,7 @@
     {
       "name": "psoares-content-extract",
       "source": "./plugins/psoares-content-extract",
-      "description": "Capture raw content (metadata, transcript, frames) from YouTube videos and Instagram reels, analyze it in the current Claude session, and download YouTube videos (full or trimmed). Skills: view-youtube-video, view-instagram-reel, extract-content, clip-youtube-video.",
+      "description": "Capture raw content (metadata, transcript, frames) from YouTube videos and Instagram reels, analyze it in the current Claude session, download YouTube videos (full or trimmed), and extract multiple clips from long-form content (podcasts, courses) via a conversational brainstorm. Skills: view-youtube-video, view-instagram-reel, extract-content, clip-youtube-video, clip-video-parts.",
       "category": "content",
       "keywords": ["youtube", "instagram", "reel", "transcript", "content", "analysis", "yt-dlp", "gemini", "whisper"]
     }

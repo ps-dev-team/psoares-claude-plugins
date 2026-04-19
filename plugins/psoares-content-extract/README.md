@@ -39,6 +39,12 @@ Downloads a YouTube video to disk — the full thing or a trimmed range. Uses `y
 
 Trigger phrases: *"descarrega este vídeo"*, *"saca de 1:20 a 2:45"*, *"só o áudio deste youtube"*.
 
+### `clip-video-parts`
+
+Multi-clip extractor for long videos (podcasts, courses, interviews). Takes a local file (or a YouTube URL — chains `clip-youtube-video` to download first), runs OpenAI Whisper for timestamped transcript and Gemini 2.5 Flash for visual analysis, then presents 8-15 candidate sections and brainstorms with the user which ones to cut. Exports each as a separate clip.
+
+Trigger phrases: *"saca partes deste vídeo"*, *"divide este podcast em clips"*, *"extrai os melhores momentos"*, *"quero highlights deste vídeo"*.
+
 ## Dependencies
 
 These are **binary dependencies** — Claude Code plugins don't have a built-in install system, so you install them once on your machine. Each skill's `view.sh` checks them on startup and exits with a clear install hint if anything is missing.
