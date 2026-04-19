@@ -33,6 +33,12 @@ Feeds on an Instagram Reel (or post) URL and produces:
 
 Accepts `instagram.com/reel/`, `instagram.com/p/`, and `instagram.com/stories/` URLs.
 
+### `clip-youtube-video`
+
+Downloads a YouTube video to disk — the full thing or a trimmed range. Uses `yt-dlp --download-sections` so partial downloads only fetch the requested segment. Interactive flow asks full-vs-range, quality (auto / 1080p / 720p / 480p / audio-only), and save destination.
+
+Trigger phrases: *"descarrega este vídeo"*, *"saca de 1:20 a 2:45"*, *"só o áudio deste youtube"*.
+
 ## Dependencies
 
 These are **binary dependencies** — Claude Code plugins don't have a built-in install system, so you install them once on your machine. Each skill's `view.sh` checks them on startup and exits with a clear install hint if anything is missing.
