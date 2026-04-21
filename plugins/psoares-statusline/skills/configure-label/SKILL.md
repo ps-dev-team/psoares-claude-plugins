@@ -66,6 +66,8 @@ If the user picks "Other", ask for the exact hex value and validate it matches `
 
 ### 6. Write the wrapper
 
+Before writing, sanity-check that the plugin is actually in the cache: list `$CONFIG_DIR/plugins/cache/psoares-claude-plugins/psoares-statusline/` and confirm at least one versioned subdirectory (e.g. `0.2.0/`) containing `scripts/statusline.sh` exists. If it doesn't, stop and ask the user where the plugin lives — the marketplace install path is what this skill assumes.
+
 Write `$CONFIG_DIR/statusline.sh` with this content (substitute `<LABEL>` and `<HEX>`):
 
 ```bash
@@ -73,7 +75,14 @@ Write `$CONFIG_DIR/statusline.sh` with this content (substitute `<LABEL>` and `<
 # psoares-statusline account wrapper — exports label, delegates to the plugin.
 export CLAUDE_LABEL="<LABEL>"
 export CLAUDE_LABEL_COLOR="<HEX>"
-exec bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/psoares-claude-plugins/psoares-statusline/scripts/statusline.sh"
+
+# Plugin lives under a versioned dir in Claude Code's cache
+# (…/psoares-statusline/<version>/scripts/statusline.sh). Pick the highest
+# version so the wrapper self-heals across plugin upgrades.
+plugin_root="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/psoares-claude-plugins/psoares-statusline"
+plugin_script=$(ls -1d "$plugin_root"/*/scripts/statusline.sh 2>/dev/null | sort -V | tail -1)
+[ -n "$plugin_script" ] || exit 0
+exec bash "$plugin_script"
 ```
 
 Make the file executable (`chmod +x`).
@@ -105,6 +114,6 @@ Print the rendered output so the user can verify the colors before the next prom
 
 ## Notes
 
-- The plugin path `plugins/cache/psoares-claude-plugins/psoares-statusline/scripts/statusline.sh` assumes the plugin was installed from the `psoares-claude-plugins` marketplace. If the user installed it differently, ask where the plugin lives before writing the wrapper.
+- The wrapper discovers the plugin under `plugins/cache/psoares-claude-plugins/psoares-statusline/<version>/scripts/statusline.sh`, which is where Claude Code's marketplace installer stores it. The version subdirectory is resolved at runtime, so the wrapper keeps working after plugin upgrades. If the user installed the plugin differently, ask where it lives before writing the wrapper and adjust the `plugin_root` path accordingly.
 - Multiple accounts with different `$CLAUDE_CONFIG_DIR` values each need their own wrapper — run this skill once per account.
 - The wrapper intentionally uses `exec` so the plugin script replaces the wrapper process (no extra shell in the pipeline).
