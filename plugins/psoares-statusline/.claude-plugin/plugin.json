@@ -1,7 +1,7 @@
 {
   "name": "psoares-statusline",
   "version": "0.2.0",
-  "description": "Gruvbox Material Dark statusline for Claude Code with optional account label, git branch, model, context bar, cost estimate, and agent indicator. Ships with a configure-label skill for interactive setup.",
+  "description": "Gruvbox Material Dark statusline for Claude Code with optional account label, git branch, model, context bar, cost estimate, and agent indicator. Ships with a setup-statusline skill for interactive activation.",
   "author": {
     "name": "Paulo Soares"
   },
