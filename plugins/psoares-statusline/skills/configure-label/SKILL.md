@@ -64,30 +64,35 @@ Use `AskUserQuestion`: "What hex color should the label use?" — offer a handfu
 
 If the user picks "Other", ask for the exact hex value and validate it matches `^#[0-9A-Fa-f]{6}$`. Reject anything else and re-ask.
 
-### 6. Write the wrapper
+### 6. Resolve the installed plugin version
 
-Before writing, sanity-check that the plugin is actually in the cache: list `$CONFIG_DIR/plugins/cache/psoares-claude-plugins/psoares-statusline/` and confirm at least one versioned subdirectory (e.g. `0.2.0/`) containing `scripts/statusline.sh` exists. If it doesn't, stop and ask the user where the plugin lives — the marketplace install path is what this skill assumes.
+Claude Code's marketplace installer stores the plugin under a versioned directory:
 
-Write `$CONFIG_DIR/statusline.sh` with this content (substitute `<LABEL>` and `<HEX>`):
+```
+$CONFIG_DIR/plugins/cache/psoares-claude-plugins/psoares-statusline/<VERSION>/scripts/statusline.sh
+```
+
+List that cache directory and pick the highest version present (there should normally be exactly one) — call it `VERSION`. Verify the file `$CONFIG_DIR/plugins/cache/psoares-claude-plugins/psoares-statusline/$VERSION/scripts/statusline.sh` exists. If nothing is there, stop and ask the user where the plugin lives — the marketplace install path is what this skill assumes.
+
+You will bake `$VERSION` into the wrapper as a literal string (step 7). The user re-runs this skill after upgrading the plugin so the wrapper picks up the new version.
+
+### 7. Write the wrapper
+
+Write `$CONFIG_DIR/statusline.sh` with this content (substitute `<LABEL>`, `<HEX>`, and `<VERSION>` — the version from step 6):
 
 ```bash
 #!/usr/bin/env bash
 # psoares-statusline account wrapper — exports label, delegates to the plugin.
+# Re-run /psoares-statusline:configure-label after upgrading the plugin so the
+# version baked below gets refreshed.
 export CLAUDE_LABEL="<LABEL>"
 export CLAUDE_LABEL_COLOR="<HEX>"
-
-# Plugin lives under a versioned dir in Claude Code's cache
-# (…/psoares-statusline/<version>/scripts/statusline.sh). Pick the highest
-# version so the wrapper self-heals across plugin upgrades.
-plugin_root="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/psoares-claude-plugins/psoares-statusline"
-plugin_script=$(ls -1d "$plugin_root"/*/scripts/statusline.sh 2>/dev/null | sort -V | tail -1)
-[ -n "$plugin_script" ] || exit 0
-exec bash "$plugin_script"
+exec bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/psoares-claude-plugins/psoares-statusline/<VERSION>/scripts/statusline.sh"
 ```
 
 Make the file executable (`chmod +x`).
 
-### 7. Update settings.json
+### 8. Update settings.json
 
 Read `$CONFIG_DIR/settings.json` (create it as `{}` if missing). Set `statusLine` to:
 
@@ -102,7 +107,7 @@ Read `$CONFIG_DIR/settings.json` (create it as `{}` if missing). Set `statusLine
 
 Substitute `<CONFIG_DIR>` with the absolute path. If `settings.json` is a symlink (the user may keep dotfiles under version control — check with `ls -l` first), edit the symlink target rather than replacing the link. If `statusLine` already points somewhere else, ask the user before overwriting.
 
-### 8. Preview and confirm
+### 9. Preview and confirm
 
 Run the wrapper against a sample input to show the user what it looks like:
 
@@ -114,6 +119,6 @@ Print the rendered output so the user can verify the colors before the next prom
 
 ## Notes
 
-- The wrapper discovers the plugin under `plugins/cache/psoares-claude-plugins/psoares-statusline/<version>/scripts/statusline.sh`, which is where Claude Code's marketplace installer stores it. The version subdirectory is resolved at runtime, so the wrapper keeps working after plugin upgrades. If the user installed the plugin differently, ask where it lives before writing the wrapper and adjust the `plugin_root` path accordingly.
+- The version baked into the wrapper is the version installed **at the moment this skill runs**. After upgrading the plugin, the wrapper keeps pointing at the old versioned path and the statusline silently stops rendering — tell the user to re-run this skill as part of every plugin upgrade. If the user installed the plugin outside the `psoares-claude-plugins` marketplace, ask where it lives before writing the wrapper and adjust the path accordingly.
 - Multiple accounts with different `$CLAUDE_CONFIG_DIR` values each need their own wrapper — run this skill once per account.
 - The wrapper intentionally uses `exec` so the plugin script replaces the wrapper process (no extra shell in the pipeline).
