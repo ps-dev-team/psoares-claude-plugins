@@ -1,10 +1,10 @@
 {
   "name": "psoares-dev",
-  "version": "0.1.0",
-  "description": "Development workflow tooling. Includes the create-github-issue skill for filing grounded, well-scoped GitHub issues from the codebase.",
+  "version": "0.2.0",
+  "description": "Development workflow tooling. Includes create-github-issue for filing grounded, well-scoped GitHub issues from the codebase, and journal-session for recording what happened in a Claude session as a narrative project journal.",
   "author": {
     "name": "Paulo Soares"
   },
   "license": "MIT",
-  "keywords": ["github", "issues", "workflow", "dev", "gh", "tickets"]
+  "keywords": ["github", "issues", "workflow", "dev", "gh", "tickets", "journal", "session", "documentation"]
 }

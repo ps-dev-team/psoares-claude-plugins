@@ -18,6 +18,7 @@ Replace the GitHub slug with wherever this repo lives.
 | [`psoares-writing`](plugins/psoares-writing) | Writing tooling. Ships the `psoares-writing:human-prose` skill for humanizing AI output across languages. |
 | [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
 | [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
+| [`psoares-dev`](plugins/psoares-dev) | Development workflow tooling. Ships `create-github-issue` for grounded GitHub issues and `journal-session` for narrative project journals. |
 
 See [TODO.md](TODO.md) for what's planned.
 
