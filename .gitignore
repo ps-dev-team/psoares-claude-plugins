@@ -1,0 +1,5 @@
+# Superpowers working docs (design specs, implementation plans) — local only
+docs/superpowers/
+
+# macOS
+.DS_Store
