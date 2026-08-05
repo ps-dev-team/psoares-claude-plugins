@@ -27,3 +27,16 @@ and follows `.github/ISSUE_TEMPLATE/` when present.
 Triggers on "abrir/criar um ticket/issue", "file a bug", "let's track this", and similar —
 bug reports, feature requests, tech-debt, or exploratory/spike tickets. Requires the GitHub
 CLI (`gh`) installed and authenticated.
+
+### `journal-session`
+
+Writes a narrative journal entry for the current Claude session into the project's
+`docs/journal/`, and keeps an index at `docs/journal/README.md`. Commits record *what*
+changed; this records what dies with the conversation — why one option won over another,
+what was tried and abandoned, and what was left open.
+
+Invoked on demand ("regista esta sessão", "journal this", "log this session"), never
+automatically. The entry is narrative rather than a changelog: detail about the changes
+stays in the commits, reachable through the SHAs in the entry's frontmatter. Entries are
+always written in English. A session whose commits already tell the whole story gets no
+entry — the skill says so instead of writing filler.

@@ -8,5 +8,6 @@
 
 ## Done
 
+- [x] **journal-session** — Narrative per-session journal in `docs/journal/` (in `psoares-dev`)
 - [x] **human-prose** — Rewrite text to sound naturally human, avoid AI patterns (in `psoares-writing`)
 - [x] **youtube-clip** — shipped as `psoares-content-extract` with five skills: `view-youtube-video`, `view-instagram-reel`, `extract-content`, `clip-youtube-video`, `clip-video-parts`

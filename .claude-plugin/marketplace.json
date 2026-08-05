@@ -28,9 +28,9 @@
     {
       "name": "psoares-dev",
       "source": "./plugins/psoares-dev",
-      "description": "Development workflow tooling. Includes the create-github-issue skill for filing grounded, well-scoped GitHub issues from the codebase.",
+      "description": "Development workflow tooling. Skills: create-github-issue for filing grounded, well-scoped GitHub issues from the codebase, and journal-session for recording what happened in a Claude session as a narrative project journal.",
       "category": "dev",
-      "keywords": ["github", "issues", "workflow", "dev", "gh", "tickets"]
+      "keywords": ["github", "issues", "workflow", "dev", "gh", "tickets", "journal", "session", "documentation"]
     }
   ]
 }
