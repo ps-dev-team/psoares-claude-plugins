@@ -114,7 +114,18 @@ export async function start({ url, project = process.cwd(), out, profile, headle
   });
 
   await context.addInitScript(picker);
+
+  /* Closing the last window does not close Chrome on macOS: it lingers with
+     no windows, the profile stays locked, and the next launch fails with
+     "opening in existing browser session". Treat the last page going as the
+     end, so the process exits and lets go of the profile. */
+  const onPageClose = () => {
+    if (context.pages().length === 0) context.close().catch(() => {});
+  };
+  context.on('page', (p) => p.on('close', onPageClose));
+
   const page = context.pages()[0] ?? (await context.newPage());
+  page.on('close', onPageClose);
   await page.goto(url);
   console.log(`annotating ${url} → ${out}`);
   return context;

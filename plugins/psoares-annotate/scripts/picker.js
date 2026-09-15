@@ -1,7 +1,8 @@
 /*
  * The picker, injected into every page of the annotate window by
- * annotate.mjs. A pill at the top right: Annotate on/off, Send. With
- * Annotate on, the pointer outlines whatever it is over with an inspector
+ * annotate.mjs. A 16px dot, draggable anywhere and remembered per site;
+ * click it and a strip unfolds: annotate on/off, send. With annotate on,
+ * the pointer outlines whatever it is over with an inspector
  * tip (tag, slot, size, colour, background, font, radius); a click takes a
  * print-screen of the element among its surroundings, outlined in red, and
  * opens a note. Notes pile up as numbered pins; Send hands the round to the
@@ -116,57 +117,78 @@
 
   const host = document.createElement('div');
   host.setAttribute('data-annotate-picker', '');
-  host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;';
+  /* The font goes on the inline style: `all: initial` there outranks any
+     `:host` rule in the sheet, and would leave the widget in the browser's
+     default serif. */
+  const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  host.style.cssText = `all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;font:10px/1.2 ${MONO};color:#f1f1f4;`;
   const root = host.attachShadow({ mode: 'open' });
   const css = `
-    :host { font: 12px/1.4 ui-sans-serif, system-ui, sans-serif; color: #f1f1f4; }
     * { box-sizing: border-box; }
-    button { font: inherit; cursor: pointer; border: 0; }
-    .pill { pointer-events: auto; position: fixed; top: 10px; right: 10px; display: flex; align-items: center; gap: 4px;
-      padding: 4px; border-radius: 999px; background: #1c1c20; border: 1px solid #34343a; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
-    .pill button { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: transparent; color: #cfcfd6; }
-    .pill button:hover { background: #2a2a2f; color: #fff; }
-    .pill button[aria-pressed="true"] { background: ${RED}; color: #fff; }
-    .pill button.send { background: #f1f1f4; color: #141417; font-weight: 600; }
-    .pill button.send:disabled { opacity: .35; cursor: default; }
-    .pill .where { padding: 0 10px 0 8px; color: #8f8f98; font-family: ui-monospace, monospace; font-size: 11px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    button, textarea { font: inherit; }
+    button { cursor: pointer; border: 0; padding: 0; background: transparent; color: inherit; }
+    .w { pointer-events: auto; position: fixed; display: flex; align-items: center; height: 16px; border-radius: 8px;
+      background: #1c1c20; border: 1px solid #34343a; box-shadow: 0 2px 8px rgba(0,0,0,.35); user-select: none; }
+    .w.flip { flex-direction: row-reverse; }
+    .grip { position: relative; flex: none; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    .grip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8f8f98; }
+    .w.on .grip::before { background: ${RED}; }
+    .w.dragging .grip { cursor: grabbing; }
+    .badge { position: absolute; top: -6px; right: -6px; min-width: 10px; height: 10px; padding: 0 2px; border-radius: 5px;
+      background: #1c1c20; border: 1px solid #34343a; color: #f1f1f4; font-size: 8px; line-height: 8px; text-align: center; font-weight: 600; }
+    .w:not(.collapsed) .badge { display: none; }
+    .w.collapsed .strip { display: none; }
+    .strip { display: flex; align-items: center; height: 14px; }
+    .strip button { height: 14px; padding: 0 6px; color: #cfcfd6; white-space: nowrap; }
+    .strip button:hover { color: #fff; }
+    .w.on .strip .toggle { color: ${RED}; }
+    .strip .send { color: #f1f1f4; font-weight: 600; }
+    .strip .send:disabled { opacity: .35; cursor: default; }
+    .strip .sep { width: 1px; height: 8px; background: #34343a; }
     .box { position: fixed; border-radius: 3px; pointer-events: none; }
     .box.hover { border: 2px solid ${RED}cc; }
     .box.pin { border: 1px solid ${RED}; }
-    .tip { position: fixed; width: 260px; padding: 8px 10px; border-radius: 6px; background: rgba(20,20,23,.95); font-family: ui-monospace, monospace; font-size: 11px; box-shadow: 0 6px 20px rgba(0,0,0,.35); pointer-events: none; }
-    .tip div { display: flex; justify-content: space-between; gap: 12px; }
+    .tip { position: fixed; width: 220px; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,23,.95); box-shadow: 0 4px 14px rgba(0,0,0,.35); pointer-events: none; }
+    .tip div { display: flex; justify-content: space-between; gap: 10px; }
     .tip div span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tip .k { color: #8f8f98; } .tip .h { font-weight: 600; }
-    .num { pointer-events: auto; position: absolute; top: -10px; left: -10px; display: flex; align-items: center; height: 20px; min-width: 20px; padding: 0 5px; border-radius: 999px; background: ${RED}; color: #fff; font: 600 11px ui-monospace, monospace; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-    .num button { margin-left: 3px; width: 14px; height: 14px; border-radius: 50%; background: transparent; color: #fff; padding: 0; line-height: 1; }
+    .num { pointer-events: auto; position: absolute; top: -8px; left: -8px; display: flex; align-items: center; height: 16px; min-width: 16px; padding: 0 4px; border-radius: 8px; background: ${RED}; color: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .num button { margin-left: 2px; width: 12px; height: 12px; border-radius: 50%; color: #fff; line-height: 1; }
     .num button:hover { background: rgba(255,255,255,.25); }
-    .editor { pointer-events: auto; position: fixed; width: 320px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #1c1c20; border: 1px solid #34343a; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
-    .editor img { width: 100%; max-height: 140px; object-fit: contain; object-position: left top; border-radius: 4px; border: 1px solid #34343a; background: #fff; }
-    .editor .shot { height: 64px; border-radius: 4px; background: #232327; }
-    .editor .path { font-family: ui-monospace, monospace; font-size: 10px; color: #8f8f98; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .editor textarea { resize: none; width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #34343a; background: #141417; color: #f1f1f4; font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; outline: none; }
+    .editor { pointer-events: auto; position: fixed; width: 280px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; background: #1c1c20; border: 1px solid #34343a; box-shadow: 0 8px 28px rgba(0,0,0,.45); font-size: 11px; }
+    .editor img { width: 100%; max-height: 120px; object-fit: contain; object-position: left top; border-radius: 3px; border: 1px solid #34343a; background: #fff; }
+    .editor .shot { height: 56px; border-radius: 3px; background: #232327; }
+    .editor .path { font-size: 10px; color: #8f8f98; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .editor textarea { resize: none; width: 100%; padding: 6px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #34343a; background: #141417; color: #f1f1f4; line-height: 1.4; outline: none; }
     .editor textarea:focus { border-color: #6b6b75; }
-    .editor .row { display: flex; justify-content: flex-end; gap: 4px; }
-    .editor .row button { padding: 4px 8px; border-radius: 4px; background: transparent; color: #8f8f98; font-size: 11px; }
+    .editor .row { display: flex; justify-content: flex-end; gap: 6px; }
+    .editor .row button { height: 28px; padding: 0 12px; border-radius: 5px; color: #8f8f98; font-size: 12px; }
     .editor .row button:hover { background: #232327; color: #f1f1f4; }
-    .editor .row button.add { background: #f1f1f4; color: #141417; font-weight: 500; }
+    .editor .row button.add { background: #f1f1f4; color: #141417; font-weight: 600; }
     .editor .row button.add:disabled { opacity: .4; cursor: default; }
-    .toast { pointer-events: none; position: fixed; top: 48px; right: 10px; padding: 6px 10px; border-radius: 6px; background: #1c1c20; border: 1px solid #34343a; color: #cfcfd6; font-size: 11px; }
+    .toast { pointer-events: none; position: fixed; padding: 4px 8px; border-radius: 4px; background: #1c1c20; border: 1px solid #34343a; color: #cfcfd6; white-space: nowrap; }
   `;
   root.innerHTML = `<style>${css}</style>
-    <div class="pill">
-      <span class="where" title=""></span>
-      <button class="toggle" aria-pressed="false"><span class="dot"></span>Annotate</button>
-      <button class="send" disabled>Send</button>
+    <div class="w collapsed">
+      <div class="grip" title=""><span class="badge" hidden></span></div>
+      <div class="strip">
+        <span class="sep"></span>
+        <button class="toggle" aria-pressed="false">annotate</button>
+        <span class="sep"></span>
+        <button class="send" disabled>send</button>
+      </div>
     </div>
     <div class="layer"></div>`;
-  const pill = root.querySelector('.pill');
+  const widget = root.querySelector('.w');
+  const grip = root.querySelector('.grip');
+  const badge = root.querySelector('.badge');
   const toggleBtn = root.querySelector('.toggle');
   const sendBtn = root.querySelector('.send');
-  const where = root.querySelector('.where');
   const layer = root.querySelector('.layer');
-  const mount = () => (document.documentElement || document).appendChild(host);
+  const mount = () => {
+    (document.documentElement || document).appendChild(host);
+    placeWidget();
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
 
@@ -188,11 +210,71 @@
   const refreshState = async () => {
     const s = await window.__annotateState();
     count = s.count;
-    where.textContent = s.project.split('/').slice(-1)[0];
-    where.title = s.project;
-    sendBtn.textContent = count ? `Send ${count}` : 'Send';
+    grip.title = `annotate · ${s.project}`;
+    sendBtn.textContent = count ? `send ${count}` : 'send';
     sendBtn.disabled = !count;
+    badge.textContent = count;
+    badge.hidden = !count;
+    placeWidget();
   };
+
+  /* ------------------------------- widget ------------------------------- */
+
+  /* The dot sits where the user left it, per site, and is the drag handle in
+     both states. Open, the strip unfolds to the right, or to the left when
+     that would run off screen; the dot itself never moves on open/close. */
+  const POS_KEY = '__annotate.pos';
+  let pos = (() => {
+    try {
+      const p = JSON.parse(localStorage.getItem(POS_KEY));
+      if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) return p;
+    } catch {}
+    return { x: innerWidth - 26, y: 10 };
+  })();
+  const DOT = 16;
+
+  function placeWidget() {
+    pos.x = Math.min(Math.max(0, pos.x), innerWidth - DOT);
+    pos.y = Math.min(Math.max(0, pos.y), innerHeight - DOT);
+    widget.style.top = `${pos.y}px`;
+    const w = widget.offsetWidth || DOT;
+    const flip = pos.x + w > innerWidth - 2;
+    widget.classList.toggle('flip', flip);
+    widget.style.left = `${flip ? pos.x + DOT - w : pos.x}px`;
+  }
+
+  function setCollapsed(on) {
+    widget.classList.toggle('collapsed', on);
+    placeWidget();
+  }
+
+  grip.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY, ox = pos.x, oy = pos.y;
+    let moved = false;
+    grip.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (!moved && Math.hypot(dx, dy) < 3) return;
+      moved = true;
+      widget.classList.add('dragging');
+      pos = { x: ox + dx, y: oy + dy };
+      placeWidget();
+    };
+    const up = () => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      widget.classList.remove('dragging');
+      if (moved) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
+      } else setCollapsed(!widget.classList.contains('collapsed'));
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
+  });
 
   const el = (html) => {
     const t = document.createElement('template');
@@ -278,7 +360,7 @@
       row.children[0].textContent = rows[i][0];
       row.children[1].textContent = rows[i][1];
     });
-    const { top, left } = place(r, 260, 110, 6);
+    const { top, left } = place(r, 220, 96, 6);
     Object.assign(t.style, { top: `${top}px`, left: `${left}px` });
     return t;
   }
@@ -288,7 +370,7 @@
       ${draft.image ? `<img alt="">` : `<div class="shot"></div>`}
       <div class="path"></div>
       <textarea rows="3" placeholder="What is wrong with it?"></textarea>
-      <div class="row"><button class="cancel">Cancel</button><button class="add">Add ⌘↩</button></div>
+      <div class="row"><button class="cancel">cancel</button><button class="add">add ⌘↩</button></div>
     </div>`);
     if (draft.image) e.querySelector('img').src = draft.image;
     e.querySelector('.path').textContent = draft.info.slots || draft.info.path;
@@ -308,7 +390,7 @@
     };
     e.querySelector('.cancel').onclick = cancel;
     add.onclick = keep;
-    const { top, left } = place(r, 320, 260, 8);
+    const { top, left } = place(r, 280, 230, 8);
     Object.assign(e.style, { top: `${top}px`, left: `${left}px` });
     requestAnimationFrame(() => ta.focus());
     return e;
@@ -373,6 +455,7 @@
   function setActive(on) {
     active = on;
     toggleBtn.setAttribute('aria-pressed', String(on));
+    widget.classList.toggle('on', on);
     if (on) document.head.appendChild(cursorStyle);
     else cursorStyle.remove();
     hover = null;
@@ -387,13 +470,16 @@
     draft = null;
     setActive(false);
     await refreshState();
-    if (dir) toast(`Sent → ${dir.split('/').slice(-2).join('/')}`);
+    if (dir) toast(`sent → ${dir.split('/').slice(-2).join('/')}`);
   };
 
   function toast(msg) {
     const t = el(`<div class="toast"></div>`);
     t.textContent = msg;
+    const below = pos.y + DOT + 6;
+    t.style.top = `${below + 24 < innerHeight ? below : pos.y - 28}px`;
     root.appendChild(t);
+    t.style.left = `${Math.min(Math.max(4, pos.x), innerWidth - t.offsetWidth - 4)}px`;
     setTimeout(() => t.remove(), 2500);
   }
 
@@ -443,7 +529,10 @@
     raf = requestAnimationFrame(render);
   };
   addEventListener('scroll', follow, true);
-  addEventListener('resize', follow);
+  addEventListener('resize', () => {
+    placeWidget();
+    follow();
+  });
 
   refreshState();
 })();
