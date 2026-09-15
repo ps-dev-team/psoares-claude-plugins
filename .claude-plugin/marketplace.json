@@ -9,28 +9,74 @@
       "source": "./plugins/psoares-writing",
       "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
       "category": "writing",
-      "keywords": ["writing", "prose", "humanize", "style", "editing"]
+      "keywords": [
+        "writing",
+        "prose",
+        "humanize",
+        "style",
+        "editing"
+      ]
     },
     {
       "name": "psoares-statusline",
       "source": "./plugins/psoares-statusline",
       "description": "Gruvbox Material Dark statusline with directory, git branch, model, context bar, cost estimate, agent, and vim mode.",
       "category": "ui",
-      "keywords": ["statusline", "gruvbox", "theme", "ui"]
+      "keywords": [
+        "statusline",
+        "gruvbox",
+        "theme",
+        "ui"
+      ]
     },
     {
       "name": "psoares-content-extract",
       "source": "./plugins/psoares-content-extract",
       "description": "Capture raw content (metadata, transcript, frames) from YouTube videos and Instagram reels, analyze it in the current Claude session, download YouTube videos (full or trimmed), and extract multiple clips from long-form content (podcasts, courses) via a conversational brainstorm. Skills: view-youtube-video, view-instagram-reel, extract-content, clip-youtube-video, clip-video-parts.",
       "category": "content",
-      "keywords": ["youtube", "instagram", "reel", "transcript", "content", "analysis", "yt-dlp", "gemini", "whisper"]
+      "keywords": [
+        "youtube",
+        "instagram",
+        "reel",
+        "transcript",
+        "content",
+        "analysis",
+        "yt-dlp",
+        "gemini",
+        "whisper"
+      ]
     },
     {
       "name": "psoares-dev",
       "source": "./plugins/psoares-dev",
       "description": "Development workflow tooling. Skills: create-github-issue for filing grounded, well-scoped GitHub issues from the codebase, and journal-session for recording what happened in a Claude session as a narrative project journal.",
       "category": "dev",
-      "keywords": ["github", "issues", "workflow", "dev", "gh", "tickets", "journal", "session", "documentation"]
+      "keywords": [
+        "github",
+        "issues",
+        "workflow",
+        "dev",
+        "gh",
+        "tickets",
+        "journal",
+        "session",
+        "documentation"
+      ]
+    },
+    {
+      "name": "psoares-annotate",
+      "source": "./plugins/psoares-annotate",
+      "description": "Point at things on screen instead of describing them. /annotate opens the project's app in a Chrome window with a picker; each note becomes a print-screen of the element plus its details, filed into the project as a round. /annotations reads the round, acts on every note, and cleans up.",
+      "category": "dev",
+      "keywords": [
+        "annotate",
+        "annotations",
+        "screenshot",
+        "ui",
+        "feedback",
+        "browser",
+        "design-review"
+      ]
     }
   ]
 }

@@ -1,0 +1,10 @@
+{
+  "name": "psoares-annotate",
+  "version": "0.1.0",
+  "description": "Point at things on screen instead of describing them: /annotate opens the project in a Chrome window with a picker; each note becomes a print-screen of the element plus its details, filed into the project as a round; /annotations reads the round, acts, and cleans up.",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["annotate", "annotations", "screenshot", "ui", "feedback", "browser", "design-review"]
+}

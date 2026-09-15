@@ -1,0 +1,9 @@
+{
+  "name": "psoares-annotate",
+  "private": true,
+  "type": "module",
+  "description": "Opens a project in a Chrome window with an annotation picker; rounds land in the project as files for the agent.",
+  "dependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}
