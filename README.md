@@ -19,6 +19,7 @@ Replace the GitHub slug with wherever this repo lives.
 | [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
 | [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
 | [`psoares-dev`](plugins/psoares-dev) | Development workflow tooling. Ships `create-github-issue` for grounded GitHub issues and `journal-session` for narrative project journals. |
+| [`psoares-annotate`](plugins/psoares-annotate) | Point at things on screen instead of describing them. `/annotate <url>` opens the app in a Chrome window with a picker; `/annotations` reads the filed rounds (screenshot + details per note), acts, cleans up. |
 
 See [TODO.md](TODO.md) for what's planned.
 
