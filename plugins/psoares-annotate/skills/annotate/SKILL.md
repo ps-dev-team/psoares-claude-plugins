@@ -5,8 +5,11 @@ description: >
   so the user can click elements and leave notes that land in the project as
   screenshots plus details for the agent. Use when the user says "/annotate
   <url>", "open the annotator", "let me annotate", "I want to point at things
-  on screen", "abre o anotador", "deixa-me anotar", or asks for the annotation
-  window on a URL or port.
+  on screen", "abre o anotador", "deixa-me anotar", asks for the annotation
+  window on a URL or port, or wants to show UI problems visually instead of
+  describing them ("let me show you what's wrong", "it's easier if I point
+  at it", "deixa-me mostrar-te"). Not for reading notes already filed: that
+  is the `annotations` skill.
 license: MIT
 metadata:
   author: psoares
@@ -25,15 +28,15 @@ The user annotates and presses Send; each round lands in the project as
    server in the project (`package.json` scripts, a `port` in a config,
    `lsof -iTCP -sTCP:LISTEN -P | grep node`). Else ask for it. Never guess a
    port silently.
-2. The plugin root is two directories above this skill's base directory.
-   If `<plugin root>/node_modules/playwright-core` is missing, run
-   `npm install --prefix <plugin root>` once (it installs `playwright-core`
-   only; Chrome is the user's own).
+2. If `${CLAUDE_PLUGIN_ROOT}/node_modules/playwright-core` is missing, run
+   `npm install --prefix "${CLAUDE_PLUGIN_ROOT}"` once. It installs
+   `playwright-core` only, no browser download: the script drives the
+   user's own Chrome.
 3. Launch in the background, from the project directory, so rounds land in
    the project:
 
    ```
-   node <plugin root>/scripts/annotate.mjs <url>
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/annotate.mjs" <url>
    ```
 
    Use the Bash tool with `run_in_background: true`. The process lives until

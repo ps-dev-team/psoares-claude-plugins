@@ -19,7 +19,8 @@ and state, when the app sets them), `path` (CSS path from the nearest id), `tag`
 ## Output
 
 Code changes in the project, one per note, each verified where the note was made; a per-note
-report; the round's folder deleted.
+report; the round's folder deleted through `scripts/done.mjs <stamp>`, which refuses anything
+under `.annotations/` that is not a round (no `notes.json`).
 
 ## Non-Goals
 
