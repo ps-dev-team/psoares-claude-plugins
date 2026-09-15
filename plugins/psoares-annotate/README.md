@@ -3,9 +3,11 @@
 Point at things on screen instead of describing them.
 
 `/annotate <url>` opens the project's running app in a window of your own Chrome with a
-picker on top: hover shows an inspector tip (tag, slot, size, colour, background, font,
-radius), a click takes a print-screen of the element outlined in red among its surroundings
-and opens a note. Notes pile up as numbered pins; Send files the round into the project.
+picker on top: a 16px dot you can drag anywhere (it remembers its place per site); click it
+and a strip unfolds with `annotate` and `send`. With annotate on, hover shows an inspector tip
+(tag, slot, size, colour, background, font, radius), a click takes a print-screen of the
+element outlined in red among its surroundings and opens a note. Notes pile up as numbered
+pins; send files the round into the project.
 `/annotations` makes Claude read the round, look at every screenshot, act on each note, and
 delete the round.
 
@@ -22,9 +24,11 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 ## Use
 
 1. Run the app (`localhost:3000`, whatever it is).
-2. `/annotate http://localhost:3000`. A Chrome window opens with a pill at the top right.
-3. Click **Annotate**, click any element, write what is wrong, `⌘↩`. Repeat, on any page.
-4. **Send**. Then tell Claude "check the annotations" or run `/annotations`.
+2. `/annotate http://localhost:3000`. A Chrome window opens with a small dot at the top right;
+   drag it wherever it is out of the way.
+3. Click the dot, then **annotate**; click any element, write what is wrong, `⌘↩`. Repeat, on
+   any page. Click the dot again to fold the strip away; a badge shows how many notes wait.
+4. **send**. Then tell Claude "check the annotations" or run `/annotations`.
 
 ## What lands in the project
 
