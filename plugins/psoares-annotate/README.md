@@ -35,7 +35,9 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
   1.png, 2.png, …            the element, outlined in red, with 32px around it, at 2x
 ```
 
-Claude deletes a round after reading it, so the folder only ever holds what is pending.
+Claude deletes a round after handling it (`scripts/done.mjs <stamp>`, which only removes
+folders holding a `notes.json`), so the directory only ever holds what is pending. A round
+you asked Claude to skip, or one it could not finish, stays and comes back next time.
 
 ## Skills
 
