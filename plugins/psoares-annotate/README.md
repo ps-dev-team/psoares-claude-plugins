@@ -14,7 +14,7 @@ delete the round.
 ## Install
 
 ```
-/plugin marketplace add psoares/psoares-claude-plugins
+/plugin marketplace add ps-dev-team/psoares-claude-plugins
 /plugin install psoares-annotate@psoares-claude-plugins
 ```
 

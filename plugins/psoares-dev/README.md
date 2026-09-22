@@ -5,7 +5,7 @@ Development workflow tooling for Claude Code.
 ## Install
 
 ```
-/plugin marketplace add psoares/psoares-claude-plugins
+/plugin marketplace add ps-dev-team/psoares-claude-plugins
 /plugin install psoares-dev@psoares-claude-plugins
 ```
 
