@@ -1,0 +1,23 @@
+{
+  "skill_name": "product-copy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write the hero section for Relay, a webhook delivery service for developers. It retries for 72 hours, signs payloads with HMAC, stores every attempt for 30 days, and you can replay any of them. Free up to 10,000 deliveries a month. Self-serve, no sales call.",
+      "expected_output": "Headline under eight words stating the outcome (webhooks that arrive / delivered). Subheadline says what it is, for whom, how, using the numbers given (72 hours, 30 days, HMAC). Two CTAs, verb first, e.g. [Start sending] [Read the docs]. No em-dashes, no 'Not a X, but Y', no staccato triplets, no adjective clusters, no invented numbers.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Here is our current landing page headline and subheadline. Tell me what's wrong and rewrite it.\n\nHeadline: 'Not just another CRM. A second brain for your sales team.'\nSubheadline: 'Powerful. Intuitive. Seamless — everything you need to close faster, smarter, and with total confidence.'",
+      "expected_output": "Identifies: the 'Not just X. Y.' contradiction, the staccato triplet, the em-dash, the adjective cluster with no nouns or numbers, the absence of a mechanism. Rewrite states what the product does with a concrete noun, and marks missing numbers as [FACT NEEDED]. Does not invent customers or stats.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Escreve a secção de pricing para um produto de facturação para freelancers em Portugal. Plano grátis até 5 facturas por mês, plano Pro a 9€/mês sem limite, com envio automático para o e-fatura. Sem contrato, cancela quando quiseres.",
+      "expected_output": "PT-PT. Headline names the unit (por factura / por mês). Tiers named by audience, each with price, unit, limits with numbers, one CTA. Below: one-line answers to what counts as a factura, what happens past the limit, how to cancel. No travessões, no 'Não é X, é Y', no staccato.",
+      "files": []
+    }
+  ]
+}

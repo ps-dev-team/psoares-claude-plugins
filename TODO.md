@@ -8,6 +8,7 @@
 
 ## Done
 
+- [x] **product-copy** + **ui-copy** — copy that sells software, on the website and inside the app (in `psoares-product-prose`)
 - [x] **annotate** — point at things on screen: `/annotate <url>` opens a Chrome window with a picker, `/annotations` reads the rounds (in `psoares-annotate`)
 - [x] **journal-session** — Narrative per-session journal in `docs/journal/` (in `psoares-dev`)
 - [x] **human-prose** — Rewrite text to sound naturally human, avoid AI patterns (in `psoares-writing`)

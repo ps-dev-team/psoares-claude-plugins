@@ -16,6 +16,7 @@ Replace the GitHub slug with wherever this repo lives.
 | Plugin | What it does |
 | --- | --- |
 | [`psoares-writing`](plugins/psoares-writing) | Writing tooling. Ships the `psoares-writing:human-prose` skill for humanizing AI output across languages. |
+| [`psoares-product-prose`](plugins/psoares-product-prose) | Prose that sells software. `product-copy` for the website (landing, pricing, feature, comparison pages, modelled on Stripe, Supabase, Vercel, Resend, OpenRouter); `ui-copy` for every string inside the app (buttons, errors, empty states, onboarding, upgrade prompts). |
 | [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
 | [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
 | [`psoares-dev`](plugins/psoares-dev) | Development workflow tooling. Ships `create-github-issue` for grounded GitHub issues and `journal-session` for narrative project journals. |

@@ -1,0 +1,29 @@
+{
+  "skill_name": "ui-copy",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review these strings from our magic-link sign-in flow and rewrite them:\n\n1. 'One click in the mail signs you in here.'\n2. 'Not there? Check spam, and that the address is right. The link is good for an hour and works once.'\n3. Button: 'Go'",
+      "expected_output": "Names the pattern (mannered brevity: dropped articles, rhetorical question, spliced rules, folksy verb). Rewrites to the conventional shape in full sentences: 'We sent a sign-in link to {email}. Click it to continue.' / 'Didn't get the email? Check your spam folder or [resend the link]. The link expires in 1 hour.' / button becomes 'Sign in' or 'Resend link'. Table with Before, After, reason in five words or fewer.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "What should the confirmation dialog say when a user deletes a project that has 3 active deployments? Deleting takes the deployments offline immediately and cannot be undone.",
+      "expected_output": "Title names the action and object with count: 'Delete {project}?' Body states the consequence in one sentence: '3 deployments go offline immediately. This can't be undone.' Buttons name both actions: [Delete project] [Keep project]. No 'Are you sure?', no OK/Cancel, no exclamation marks.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm building the empty state for the Invoices page in a React component. Write the strings. The first invoice is created automatically when a customer pays.",
+      "expected_output": "States what the area is for and why it's empty, with the one action or the fact that no action is needed: 'No invoices yet. Your first one is created when a customer pays.' Delivered as a table (Element, Copy, Notes) and then as strings ready to paste into the component. No 'Nothing here yet!', no 'Oops'.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Write the upgrade prompt shown when a Free user tries to create a 4th project. Free allows 3 projects. Pro is $20/month with unlimited projects.",
+      "expected_output": "Names the limit with the number (3 of 3), the gain with the number (unlimited projects), the price ($20/month), one CTA that says what happens ([Upgrade to Pro]) and a way out ([Not now]). No urgency, no 'unlock', no exclamation marks.",
+      "files": []
+    }
+  ]
+}
