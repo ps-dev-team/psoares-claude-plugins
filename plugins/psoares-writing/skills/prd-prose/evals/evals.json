@@ -1,0 +1,29 @@
+{
+  "skill_name": "prd-prose",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Rewrite these requirements so engineering can build from them:\n\n- The page should ideally load pretty fast so the user doesn't get annoyed and leave.\n- We want a way for users to change their passwords if they forget them.\n- The dashboard will show a bunch of different metrics depending on who is logged in.\n- Handle payment errors gracefully.",
+      "expected_output": "Each becomes a numbered requirement starting with an imperative verb and tagged MUST/SHOULD/MAY. Performance one has a number and unit or a [DATA NEEDED] marker for the target. Password one names the role (unauthenticated user), the trigger (Forgot password link), and the action (send reset email). Metrics one references a role mapping and suggests a table. Payment one is split into concrete cases with exact messages or [DATA NEEDED]. No em-dashes, no hedges, no 'gracefully'.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Write acceptance criteria for: Viewers cannot export CSV, Editors and Admins can. The disabled option should explain why.",
+      "expected_output": "Given/when/then criteria, one per role and state, with the exact tooltip text or a [DATA NEEDED] placeholder for it. Roles in bold. Numbered AC-1, AC-2. Testable from each line alone.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Escreve os requisitos em PT-PT para: os admins conseguem revogar API keys, e uma key revogada deixa de funcionar rapidamente. Era bom termos também um log de quem revogou.",
+      "expected_output": "PT-PT, 'deve' for MUST, imperative verb first: 'Permitir a um **Admin** revogar...'. 'Rapidamente' becomes a number with a unit or [DATA NEEDED: tempo máximo]. The log becomes a MUST or SHOULD requirement stated as a decision, not 'era bom'. 'API key' and 'log' stay in English. No travessões.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Here is the problem section of my PRD. Fix it.\n\n- checkout drop-off 15%\n- 42 tickets about card errors in august\n- users retry same card\n- need better error msg",
+      "expected_output": "Rewritten as one or two paragraphs in the human register, not bullets: every fact kept with its source or a [DATA NEEDED] marker, the author's reading of the cause stated, why this fix first. No em-dashes, no hedging, no 'users are frustrated'. Does not turn the problem statement into numbered requirements.",
+      "files": []
+    }
+  ]
+}

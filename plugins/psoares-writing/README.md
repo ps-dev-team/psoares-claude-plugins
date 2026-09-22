@@ -31,7 +31,13 @@ The words inside the app: buttons, labels, placeholders, errors, empty states, c
 
 Ships a catalogue of moments with before/after pairs (`references/moments.md`).
 
-## Rules all three enforce
+### `prd-prose`
+
+A style layer for requirements writing: PRDs, feature specs, acceptance criteria, user stories, ticket descriptions. A PRD has sections a person reads to understand (problem, context, goals, risks) and sections a person reads to build (requirements, acceptance criteria, permissions, errors). The first get the `human-prose` register; the second get the decision register: imperative verb first, MUST/SHOULD/MAY as RFC 2119 defines them, one requirement per sentence, every quantity with a number and a unit, one noun per concept, tables for mappings. Numbers are never invented; missing data is marked `[DATA NEEDED: ...]`.
+
+Ships bad/good pairs for every requirement type, including the PT-PT register (`references/examples.md`).
+
+## Rules all four enforce
 
 - No em-dashes.
 - No staccato stacks ("Fast. Simple. Yours.").
@@ -39,7 +45,7 @@ Ships a catalogue of moments with before/after pairs (`references/moments.md`).
 - No mannered brevity in UI: fragments as sentences, dropped articles, rhetorical questions the app answers itself.
 - Numbers are never invented. Missing facts are left as `[FACT NEEDED: ...]`.
 
-`product-copy` and `ui-copy` load `human-prose` for the final pass.
+`product-copy` and `ui-copy` load `human-prose` for the final pass. `prd-prose` loads it for the problem and context sections and switches to the decision register for the requirement sections.
 
 ## License
 
