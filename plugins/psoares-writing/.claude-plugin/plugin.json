@@ -1,7 +1,7 @@
 {
   "name": "psoares-writing",
-  "version": "0.2.0",
-  "description": "Writing and prose tooling. Skills: human-prose (humanize AI output), product-copy (website copy that sells software), ui-copy (strings inside an app).",
+  "version": "0.3.0",
+  "description": "Writing and prose tooling. Skills: human-prose (humanize AI output), product-copy (website copy that sells software), ui-copy (strings inside an app), prd-prose (tone and sentence shape for requirements and specs).",
   "author": {
     "name": "Paulo Soares"
   },
@@ -15,6 +15,9 @@
     "copywriting",
     "landing-page",
     "microcopy",
-    "ux-writing"
+    "ux-writing",
+    "prd",
+    "requirements",
+    "spec"
   ]
 }
