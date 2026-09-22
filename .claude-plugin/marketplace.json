@@ -18,6 +18,22 @@
       ]
     },
     {
+      "name": "psoares-product-prose",
+      "source": "./plugins/psoares-product-prose",
+      "description": "Prose for websites and apps that sell software. Skills: product-copy for landing, pricing, feature, and comparison pages (modelled on Stripe, Supabase, Vercel, Resend, OpenRouter), and ui-copy for buttons, errors, empty states, onboarding, upgrade prompts, and every other string inside the app.",
+      "category": "writing",
+      "keywords": [
+        "copywriting",
+        "landing-page",
+        "marketing",
+        "saas",
+        "microcopy",
+        "ux-writing",
+        "product",
+        "prose"
+      ]
+    },
+    {
       "name": "psoares-statusline",
       "source": "./plugins/psoares-statusline",
       "description": "Gruvbox Material Dark statusline with directory, git branch, model, context bar, cost estimate, agent, and vim mode.",
