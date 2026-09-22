@@ -5,11 +5,10 @@ A marketplace of Claude Code plugins by Paulo Soares.
 ## Install
 
 ```bash
-/plugin marketplace add psoares/psoares-claude-plugins
+/plugin marketplace add ps-dev-team/psoares-claude-plugins
 /plugin install psoares-writing@psoares-claude-plugins
 ```
 
-Replace the GitHub slug with wherever this repo lives.
 
 ## Plugins
 

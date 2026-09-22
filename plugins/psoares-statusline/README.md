@@ -7,7 +7,7 @@ Shows: optional account label, working directory, git branch (worktree-aware), m
 ## Install
 
 ```
-/plugin marketplace add psoares/psoares-claude-plugins
+/plugin marketplace add ps-dev-team/psoares-claude-plugins
 /plugin install psoares-statusline@psoares-claude-plugins
 ```
 

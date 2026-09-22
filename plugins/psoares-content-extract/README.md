@@ -5,7 +5,7 @@ Capture raw content from social media videos â€” metadata, transcript, frames â€
 ## Install
 
 ```
-/plugin marketplace add psoares/psoares-claude-plugins
+/plugin marketplace add ps-dev-team/psoares-claude-plugins
 /plugin install psoares-content-extract@psoares-claude-plugins
 ```
 
