@@ -7,30 +7,19 @@
     {
       "name": "psoares-writing",
       "source": "./plugins/psoares-writing",
-      "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
+      "description": "Writing and prose tooling. Skills: human-prose for humanizing AI output across languages, product-copy for website copy that sells software (landing, pricing, feature, comparison pages, modelled on Stripe, Supabase, Vercel, Resend, OpenRouter), and ui-copy for every string inside an app (buttons, errors, empty states, onboarding, upgrade prompts).",
       "category": "writing",
       "keywords": [
         "writing",
         "prose",
         "humanize",
         "style",
-        "editing"
-      ]
-    },
-    {
-      "name": "psoares-product-prose",
-      "source": "./plugins/psoares-product-prose",
-      "description": "Prose for websites and apps that sell software. Skills: product-copy for landing, pricing, feature, and comparison pages (modelled on Stripe, Supabase, Vercel, Resend, OpenRouter), and ui-copy for buttons, errors, empty states, onboarding, upgrade prompts, and every other string inside the app.",
-      "category": "writing",
-      "keywords": [
+        "editing",
         "copywriting",
         "landing-page",
-        "marketing",
-        "saas",
         "microcopy",
         "ux-writing",
-        "product",
-        "prose"
+        "saas"
       ]
     },
     {

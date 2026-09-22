@@ -1,10 +1,20 @@
 {
   "name": "psoares-writing",
-  "version": "0.1.0",
-  "description": "Writing and prose tooling. Includes the human-prose skill for humanizing AI output across languages.",
+  "version": "0.2.0",
+  "description": "Writing and prose tooling. Skills: human-prose (humanize AI output), product-copy (website copy that sells software), ui-copy (strings inside an app).",
   "author": {
     "name": "Paulo Soares"
   },
   "license": "MIT",
-  "keywords": ["writing", "prose", "humanize", "style", "editing"]
+  "keywords": [
+    "writing",
+    "prose",
+    "humanize",
+    "style",
+    "editing",
+    "copywriting",
+    "landing-page",
+    "microcopy",
+    "ux-writing"
+  ]
 }
