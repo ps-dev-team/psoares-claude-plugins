@@ -41,7 +41,7 @@ The user annotates and presses Send; each round lands in the project as
 
    Use the Bash tool with `run_in_background: true`. The process lives until
    the user closes the window; do not wait on it.
-4. Tell the user, in two or three lines: the window is open; press `` ` ``
+4. Tell the user, in two or three lines: the window is open; press `` ` `` or `´`
    (or click the small dot) to switch to annotate, click things or point and
    press `A`, write notes, send, then say "check the annotations" (or
    `/annotations`). Holding `⌥`/`Alt` pauses annotating; `Esc` closes a note;

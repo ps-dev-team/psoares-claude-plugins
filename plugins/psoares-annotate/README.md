@@ -26,7 +26,7 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 1. Run the app (`localhost:3000`, whatever it is).
 2. `/annotate http://localhost:3000`. A Chrome window opens with a small dot at the top right;
    drag it wherever it is out of the way.
-3. Press `` ` `` (or click the dot, then **navigate** to switch it to **annotate**); click any
+3. Press `` ` `` or `´` (or click the dot, then **navigate** to switch it to **annotate**); click any
    element, or point at it and press `A`, write what is wrong, `⌘↩`. Repeat, on any page. Click
    the dot again to fold the strip away; a badge shows how many notes wait.
 4. **send**. Then tell Claude "check the annotations" or run `/annotations`.
@@ -35,7 +35,7 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 
 | Key | What it does |
 | --- | --- |
-| `` ` `` | Switch between annotate and navigate. The mode stays until you switch again, across pages in the window. |
+| `` ` `` or `´` | Switch between annotate and navigate. The mode stays until you switch again, across pages in the window. |
 | hold `⌥` / `Alt` | Pause annotate mode: no outline, clicks go to the page. Release to resume. |
 | `A` | In annotate mode, open a note on the element under the pointer, as a click would. |
 | `Esc` | Close the open note box; with none open, back to navigate. |
@@ -44,8 +44,10 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 None of these fire while you type in a field, the page's or the note box. The dot shows the
 mode: a grey ring is navigate, a red dot is annotate, a red ring is annotate paused. Hover the
 dot for the keys. On macOS, Option-click on a link downloads it: that is Chrome, not the picker.
-The switch key is the backtick character, or the key where a US keyboard has it (left of `1`).
-On some non-US layouts neither matches; the dot's strip always works.
+The switch key is the backtick, or the acute accent `´` for keyboards without one (on a
+Portuguese keyboard, the key right of `P`, alone). The accent is a dead key there; the picker
+catches it, so no accent lands on the page, and it never fires inside a field, where the accent
+types as usual. If neither works on your layout, the dot's strip always does.
 
 ## What lands in the project
 

@@ -8,7 +8,7 @@
  * opens a note. Notes pile up as numbered pins; Send hands the round to the
  * process, which writes it into the project.
  *
- * Backtick switches mode without the dot; the process keeps the mode, so it
+ * Backtick or acute accent (´) switches mode without the dot; the process keeps the mode, so it
  * survives navigation. Holding Alt/Option pauses annotate mode: no outline,
  * clicks reach the page, release to resume. In annotate mode, A opens a
  * note on the element under the pointer, as a click would; Esc closes it.
@@ -226,7 +226,7 @@
       if (mode === 'navigate') draft = null;
       apply();
     }
-    grip.title = `annotate · ${s.project}\n\` switches annotate / navigate\nhold ${ALT} to pause annotating\nA notes the element under the pointer · esc closes the note`;
+    grip.title = `annotate · ${s.project}\n\` or ´ switches annotate / navigate\nhold ${ALT} to pause annotating\nA notes the element under the pointer · esc closes the note`;
     sendBtn.textContent = count ? `send ${count}` : 'send';
     sendBtn.disabled = !count;
     badge.textContent = count;
@@ -553,6 +553,17 @@
     },
     true,
   );
+  /* The switch key: the backtick, or the acute accent for keyboards without
+     one (Portuguese). The accent is often a dead key, reported as 'Dead'
+     with the next character still to come, so it is known by its physical
+     key: right of P on pt-PT (BracketRight), on pt-BR (BracketLeft), and
+     the other spots accent keys sit in. Matching 'Dead' only there leaves
+     the tilde and circumflex alone, and '+', which shares a key with an
+     accent position on pt-PT, is never 'Dead'. */
+  const ACCENT_CODES = new Set(['BracketRight', 'BracketLeft', 'Equal', 'Backquote']);
+  const isSwitchKey = (e) =>
+    e.key === '`' || e.key === '´' || (e.key === 'Dead' && ACCENT_CODES.has(e.code));
+
   /* Typing never switches mode: not in the page's fields, not in ours. */
   const typing = (e) => {
     const t = e.composedPath()[0];
@@ -566,7 +577,7 @@
         return;
       }
       if (
-        (e.key === '`' || e.code === 'Backquote') &&
+        isSwitchKey(e) &&
         !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat && !typing(e)
       ) {
         e.preventDefault();
