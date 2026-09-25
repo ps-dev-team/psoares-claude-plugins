@@ -3,8 +3,8 @@
 ## Purpose
 
 Let the user point at things on screen instead of describing them. `/annotate <url>` opens
-the project's URL in a window of the user's own Chrome with a picker injected (a 16px dot, draggable, remembered per site,
-that unfolds into an annotate/send strip): hover shows an
+the project's URL in a window of the user's own Chrome with a picker injected (a small dark panel, draggable and foldable,
+remembered per site, holding the mode, the round's notes list, and Send): hover shows an
 inspector tip, a click takes a print-screen of the element (outlined in red, 32px of
 surroundings, the browser's own pixels) and opens a note. Send files the round into the
 project as `.annotations/<stamp>/notes.json` plus one PNG per note.
