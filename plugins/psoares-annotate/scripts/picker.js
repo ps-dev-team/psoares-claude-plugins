@@ -1,12 +1,17 @@
 /*
  * The picker, injected into every page of the annotate window by
  * annotate.mjs. A 16px dot, draggable anywhere and remembered per site;
- * click it and a strip unfolds: annotate on/off, send. With annotate on,
- * the pointer outlines whatever it is over with an inspector
+ * click it and a strip unfolds: the mode (annotate or navigate), send. In
+ * annotate mode the pointer outlines whatever it is over with an inspector
  * tip (tag, slot, size, colour, background, font, radius); a click takes a
  * print-screen of the element among its surroundings, outlined in red, and
  * opens a note. Notes pile up as numbered pins; Send hands the round to the
  * process, which writes it into the project.
+ *
+ * Backtick switches mode without the dot; the process keeps the mode, so it
+ * survives navigation. Holding Alt/Option pauses annotate mode: no outline,
+ * clicks reach the page, release to resume. In annotate mode, A opens a
+ * note on the element under the pointer, as a click would; Esc closes it.
  *
  * Everything lives in a shadow root on <html>, so the page's CSS cannot
  * touch it and it cannot touch the page. Vanilla on purpose: it runs in
@@ -131,8 +136,9 @@
       background: #1c1c20; border: 1px solid #34343a; box-shadow: 0 2px 8px rgba(0,0,0,.35); user-select: none; }
     .w.flip { flex-direction: row-reverse; }
     .grip { position: relative; flex: none; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    .grip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8f8f98; }
-    .w.on .grip::before { background: ${RED}; }
+    .grip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid #8f8f98; }
+    .w.on .grip::before { background: ${RED}; border-color: ${RED}; }
+    .w.on.paused .grip::before { background: transparent; }
     .w.dragging .grip { cursor: grabbing; }
     .badge { position: absolute; top: -6px; right: -6px; min-width: 10px; height: 10px; padding: 0 2px; border-radius: 5px;
       background: #1c1c20; border: 1px solid #34343a; color: #f1f1f4; font-size: 8px; line-height: 8px; text-align: center; font-weight: 600; }
@@ -173,7 +179,7 @@
       <div class="grip" title=""><span class="badge" hidden></span></div>
       <div class="strip">
         <span class="sep"></span>
-        <button class="toggle" aria-pressed="false">annotate</button>
+        <button class="toggle" aria-pressed="false">navigate</button>
         <span class="sep"></span>
         <button class="send" disabled>send</button>
       </div>
@@ -197,7 +203,10 @@
 
   /* -------------------------------- state ------------------------------- */
 
-  let active = false;
+  let mode = 'navigate'; // or 'annotate'; the process holds the real value
+  let paused = false; // Alt/Option held
+  let active = false; // annotate mode and not paused: the picker is live
+  let pointer = null; // last { x, y } seen, for the A key
   let hover = null;
   let draft = null; // { id, el, info, image, text }
   let local = []; // notes made on this page: { id, el, n }
@@ -207,10 +216,17 @@
   const isOurs = (n) => n === host || (n && n.closest && n.closest('[data-annotate-picker]'));
   const rectOf = (el) => el.getBoundingClientRect();
 
+  const ALT = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌥' : 'Alt';
+
   const refreshState = async () => {
     const s = await window.__annotateState();
     count = s.count;
-    grip.title = `annotate · ${s.project}`;
+    if (s.mode !== mode) {
+      mode = s.mode;
+      if (mode === 'navigate') draft = null;
+      apply();
+    }
+    grip.title = `annotate · ${s.project}\n\` switches annotate / navigate\nhold ${ALT} to pause annotating\nA notes the element under the pointer · esc closes the note`;
     sendBtn.textContent = count ? `send ${count}` : 'send';
     sendBtn.disabled = !count;
     badge.textContent = count;
@@ -452,23 +468,45 @@
     render();
   }
 
-  function setActive(on) {
-    active = on;
-    toggleBtn.setAttribute('aria-pressed', String(on));
-    widget.classList.toggle('on', on);
-    if (on) document.head.appendChild(cursorStyle);
+  /* Mode and pause decide whether the picker is live; the dot shows which:
+     grey ring navigate, red dot annotate, red ring annotate paused. */
+  function apply() {
+    const annotating = mode === 'annotate';
+    widget.classList.toggle('on', annotating);
+    widget.classList.toggle('paused', annotating && paused);
+    toggleBtn.textContent = mode;
+    toggleBtn.setAttribute('aria-pressed', String(annotating));
+    placeWidget();
+    const next = annotating && !paused;
+    if (next === active) return;
+    active = next;
+    if (active) (document.head || document.documentElement).appendChild(cursorStyle);
     else cursorStyle.remove();
     hover = null;
-    if (!on) draft = null;
     render();
   }
 
-  toggleBtn.onclick = () => setActive(!active);
+  function setMode(next) {
+    if (next === mode) return;
+    mode = next;
+    if (mode === 'navigate') draft = null;
+    window.__annotateMode(mode);
+    apply();
+    render();
+  }
+
+  function setPaused(on) {
+    if (on === paused) return;
+    paused = on;
+    apply();
+  }
+
+  toggleBtn.onclick = () => setMode(mode === 'annotate' ? 'navigate' : 'annotate');
   sendBtn.onclick = async () => {
     const dir = await window.__annotateSend();
     local = [];
     draft = null;
-    setActive(false);
+    setMode('navigate');
     await refreshState();
     if (dir) toast(`sent → ${dir.split('/').slice(-2).join('/')}`);
   };
@@ -488,6 +526,8 @@
   document.addEventListener(
     'mousemove',
     (e) => {
+      pointer = { x: e.clientX, y: e.clientY };
+      setPaused(e.altKey);
       if (!active || draft) return;
       const t = document.elementFromPoint(e.clientX, e.clientY);
       const next = t && !isOurs(t) ? t : null;
@@ -501,7 +541,7 @@
   document.addEventListener(
     'click',
     (e) => {
-      if (!active || isOurs(e.target)) return;
+      if (!active || e.altKey || isOurs(e.target)) return;
       e.preventDefault();
       e.stopPropagation();
       if (draft) return;
@@ -513,15 +553,57 @@
     },
     true,
   );
+  /* Typing never switches mode: not in the page's fields, not in ours. */
+  const typing = (e) => {
+    const t = e.composedPath()[0];
+    return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || ''));
+  };
   document.addEventListener(
     'keydown',
     (e) => {
-      if (!active || e.key !== 'Escape') return;
-      if (draft) cancel();
-      else setActive(false);
+      if (e.key === 'Alt') {
+        setPaused(true);
+        return;
+      }
+      if (
+        (e.key === '`' || e.code === 'Backquote') &&
+        !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat && !typing(e)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMode(mode === 'annotate' ? 'navigate' : 'annotate');
+        return;
+      }
+      if (e.key === 'Escape' && draft) {
+        cancel();
+        return;
+      }
+      if (!active) return;
+      if (e.key === 'Escape') {
+        setMode('navigate');
+        return;
+      }
+      /* A does what a click on the hovered element would. */
+      if (
+        (e.key === 'a' || e.key === 'A') &&
+        !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.repeat &&
+        !draft && pointer && !typing(e)
+      ) {
+        const t = hover || document.elementFromPoint(pointer.x, pointer.y);
+        if (!t || isOurs(t)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        hover = null;
+        pick(t);
+      }
     },
     true,
   );
+  document.addEventListener('keyup', (e) => e.key === 'Alt' && setPaused(false), true);
+  /* Alt released in another window never sends a keyup here. */
+  addEventListener('blur', () => setPaused(false));
+  /* Another tab may have switched mode meanwhile. */
+  addEventListener('focus', refreshState);
   let raf = 0;
   const follow = () => {
     if (!local.length && !draft) return;

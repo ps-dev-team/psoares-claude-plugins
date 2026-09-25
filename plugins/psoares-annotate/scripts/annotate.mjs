@@ -68,6 +68,8 @@ export async function start({ url, project = process.cwd(), out, profile, headle
   /* Notes live here, not in the page: the user may move between pages of the
      app before sending, and a navigation would lose in-page state. */
   let pending = [];
+  /* Same for the mode: annotate or navigate, kept across page loads. */
+  let mode = 'navigate';
 
   await context.exposeFunction('__annotateShot', async (clip) => {
     const page = context.pages().find((p) => !p.isClosed());
@@ -94,9 +96,14 @@ export async function start({ url, project = process.cwd(), out, profile, headle
   });
   await context.exposeFunction('__annotateState', () => ({
     project,
+    mode,
     count: pending.length,
     ids: pending.map((n) => n.id),
   }));
+  await context.exposeFunction('__annotateMode', (next) => {
+    if (next === 'annotate' || next === 'navigate') mode = next;
+    return mode;
+  });
   await context.exposeFunction('__annotateSend', () => {
     if (!pending.length) return null;
     const dir = join(out, stamp());
