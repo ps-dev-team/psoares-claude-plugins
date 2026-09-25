@@ -3,11 +3,12 @@
 Point at things on screen instead of describing them.
 
 `/annotate <url>` opens the project's running app in a window of your own Chrome with a
-picker on top: a 16px dot you can drag anywhere (it remembers its place per site); click it
-and a strip unfolds with the mode (`navigate` or `annotate`) and `send`. In annotate mode, hover shows an inspector tip
-(tag, slot, size, colour, background, font, radius), a click takes a print-screen of the
-element outlined in red among its surroundings and opens a note. Notes pile up as numbered
-pins; send files the round into the project.
+picker on top: a small dark panel, in the style of the Product Studio's prototype controls,
+that you drag by its grip and fold by its chevron (both remembered per site). It holds the mode
+(`Annotate` or `Navigate`), the list of this round's notes, **Send**, and the keys. In annotate
+mode, hover shows an inspector tip (tag, slot, size, colour, background, font, radius), and a
+click takes a print-screen of the element outlined in red among its surroundings and opens a
+note. Notes show on the page as numbered pins; Send files the round into the project.
 `/annotations` makes Claude read the round, look at every screenshot, act on each note, and
 delete the round.
 
@@ -24,12 +25,27 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 ## Use
 
 1. Run the app (`localhost:3000`, whatever it is).
-2. `/annotate http://localhost:3000`. A Chrome window opens with a small dot at the top right;
-   drag it wherever it is out of the way.
-3. Press `` ` `` or `´` (or click the dot, then **navigate** to switch it to **annotate**); click any
-   element, or point at it and press `A`, write what is wrong, `⌘↩`. Repeat, on any page. Click
-   the dot again to fold the strip away; a badge shows how many notes wait.
-4. **send**. Then tell Claude "check the annotations" or run `/annotations`.
+2. `/annotate http://localhost:3000`. A Chrome window opens with the panel at the bottom left;
+   drag it by its grip wherever it is out of the way.
+3. Press `` ` `` or `´` (or pick **Annotate** in the panel); click any element, or point at it and
+   press `A`, write what is wrong, `⌘↩`. Repeat, on any page. Fold the panel with its chevron;
+   folded, it shows the mode and how many notes wait.
+4. Review the list, then **Send**. Then tell Claude "check the annotations" or run
+   `/annotations`.
+
+### The notes list
+
+Every note of the round, in the order it will be sent: number, the start of the text, the page
+it is on (`↗` when it is another page).
+
+- **Click a note** to scroll to its element and outline it. A note from another page takes you
+  there first.
+- **Edit** (pencil) to change the text: `⌘↩` or clicking away saves, `Esc` cancels.
+- **Delete** (bin), or the `×` on its pin on the page.
+- **Drag** a note by its grip to reorder; the numbers on the list and the pins follow.
+
+The panel, pins, outlines and note box are hidden while a screenshot is taken, so they never
+show in one.
 
 ### Keys
 
@@ -41,13 +57,13 @@ plugin once, for `playwright-core` (no browser download; it drives your Chrome).
 | `Esc` | Close the open note box; with none open, back to navigate. |
 | `⌘↩` / `Ctrl+↩` | Add the note. |
 
-None of these fire while you type in a field, the page's or the note box. The dot shows the
-mode: a grey ring is navigate, a red dot is annotate, a red ring is annotate paused. Hover the
-dot for the keys. On macOS, Option-click on a link downloads it: that is Chrome, not the picker.
+None of these fire while you type in a field, the page's or the note box. The panel's header
+shows the mode: grey `NAVIGATE`, yellow `ANNOTATE`, and `PAUSED` while Alt is held. The keys are
+listed in the panel, and on the header's mode label as a tooltip. On macOS, Option-click on a link downloads it: that is Chrome, not the picker.
 The switch key is the backtick, or the acute accent `´` for keyboards without one (on a
 Portuguese keyboard, the key right of `P`, alone). The accent is a dead key there; the picker
 catches it, so no accent lands on the page, and it never fires inside a field, where the accent
-types as usual. If neither works on your layout, the dot's strip always does.
+types as usual. If neither works on your layout, the panel's mode buttons always do.
 
 ## What lands in the project
 
@@ -73,6 +89,8 @@ you asked Claude to skip, or one it could not finish, stays and comes back next 
 
 `scripts/annotate.mjs` launches Chrome through `playwright-core` with a persistent profile
 (`~/.claude/psoares-annotate/profile`, so logins stick) and injects `scripts/picker.js` into
-every page. The picker talks to the process through exposed functions; screenshots are the
+every page. The picker lives in a shadow root, with the host's inline style set `!important`, so the
+page's CSS cannot restyle it and its CSS cannot touch the page. Its icons are Lucide's (ISC),
+inlined; nothing is fetched. The picker talks to the process through exposed functions; screenshots are the
 browser's own pixels (`page.screenshot` with a clip), so canvases, iframes, fonts and floating
 menus come out as on screen. No server, no extension, nothing sent anywhere.
