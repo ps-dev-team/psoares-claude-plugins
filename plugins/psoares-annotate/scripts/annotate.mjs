@@ -73,9 +73,10 @@ export async function start({ url, project = process.cwd(), out, profile, headle
   /* A note to scroll to once the page it was made on has loaded. */
   let focus = null;
 
-  await context.exposeFunction('__annotateShot', async (clip) => {
-    const page = context.pages().find((p) => !p.isClosed());
-    if (!page) return null;
+  /* A binding, not a function: the caller's page is the one to shoot. With
+     several tabs open, the first open page is often not where the note was. */
+  await context.exposeBinding('__annotateShot', async ({ page }, clip) => {
+    if (!page || page.isClosed()) return null;
     const buf = await page.screenshot({
       type: 'png',
       clip: {
