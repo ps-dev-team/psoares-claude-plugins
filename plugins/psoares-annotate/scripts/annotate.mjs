@@ -68,6 +68,10 @@ export async function start({ url, project = process.cwd(), out, profile, headle
   /* Notes live here, not in the page: the user may move between pages of the
      app before sending, and a navigation would lose in-page state. */
   let pending = [];
+  /* Same for the mode: annotate or navigate, kept across page loads. */
+  let mode = 'navigate';
+  /* A note to scroll to once the page it was made on has loaded. */
+  let focus = null;
 
   /* A binding, not a function: the caller's page is the one to shoot. With
      several tabs open, the first open page is often not where the note was. */
@@ -93,11 +97,36 @@ export async function start({ url, project = process.cwd(), out, profile, headle
     pending = pending.filter((n) => n.id !== id);
     return pending.length;
   });
-  await context.exposeFunction('__annotateState', () => ({
-    project,
-    count: pending.length,
-    ids: pending.map((n) => n.id),
-  }));
+  /* The list the picker shows: no images, they are large and it has no use
+     for them. `focus` is handed over once. */
+  await context.exposeFunction('__annotateState', () => {
+    const f = focus;
+    focus = null;
+    return {
+      project,
+      mode,
+      focus: f,
+      count: pending.length,
+      notes: pending.map(({ id, note, url, route, path }) => ({ id, note, url, route, path })),
+    };
+  });
+  await context.exposeFunction('__annotateEdit', (id, text) => {
+    const n = pending.find((x) => x.id === id);
+    if (n && typeof text === 'string' && text.trim()) n.note = text;
+    return Boolean(n);
+  });
+  await context.exposeFunction('__annotateOrder', (ids) => {
+    const at = new Map(ids.map((id, i) => [id, i]));
+    pending.sort((a, b) => (at.get(a.id) ?? Infinity) - (at.get(b.id) ?? Infinity));
+    return pending.length;
+  });
+  await context.exposeFunction('__annotateFocus', (id) => {
+    focus = id;
+  });
+  await context.exposeFunction('__annotateMode', (next) => {
+    if (next === 'annotate' || next === 'navigate') mode = next;
+    return mode;
+  });
   await context.exposeFunction('__annotateSend', () => {
     if (!pending.length) return null;
     const dir = join(out, stamp());
