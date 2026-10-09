@@ -6,7 +6,7 @@ A marketplace of Claude Code plugins by Paulo Soares.
 
 ```bash
 /plugin marketplace add ps-dev-team/psoares-claude-plugins
-/plugin install psoares-writing@psoares-claude-plugins
+/plugin install psoares-dev@psoares-claude-plugins
 ```
 
 
@@ -14,11 +14,11 @@ A marketplace of Claude Code plugins by Paulo Soares.
 
 | Plugin | What it does |
 | --- | --- |
-| [`psoares-writing`](plugins/psoares-writing) | Writing tooling. `human-prose` humanizes AI output across languages; `product-copy` writes website copy that sells software (modelled on Stripe, Supabase, Vercel, Resend, OpenRouter); `ui-copy` writes every string inside an app (buttons, errors, empty states, onboarding, upgrade prompts); `prd-prose` sets the tone of PRDs, specs, and acceptance criteria. |
 | [`psoares-statusline`](plugins/psoares-statusline) | Gruvbox Material Dark statusline: cwd, git branch, model, context bar, cost, agent, vim mode. |
 | [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
 | [`psoares-dev`](plugins/psoares-dev) | Development workflow tooling. Ships `create-github-issue` for grounded GitHub issues and `journal-session` for narrative project journals. |
-| [`psoares-annotate`](plugins/psoares-annotate) | Point at things on screen instead of describing them. `/annotate <url>` opens the app in a Chrome window with a picker; `/annotations` reads the filed rounds (screenshot + details per note), acts, cleans up. |
+
+`psoares-writing` and `psoares-annotate` moved to [s2-ai-labs/s2-ai-skills](https://github.com/s2-ai-labs/s2-ai-skills) as `s2-writing` and `s2-annotate`.
 
 See [TODO.md](TODO.md) for what's planned.
 
