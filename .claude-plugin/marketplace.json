@@ -5,27 +5,6 @@
   },
   "plugins": [
     {
-      "name": "psoares-writing",
-      "source": "./plugins/psoares-writing",
-      "description": "Writing and prose tooling. Skills: human-prose for humanizing AI output across languages, product-copy for website copy that sells software (landing, pricing, feature, comparison pages, modelled on Stripe, Supabase, Vercel, Resend, OpenRouter), and ui-copy for every string inside an app (buttons, errors, empty states, onboarding, upgrade prompts), and prd-prose for the tone and sentence shape of PRDs, specs, and acceptance criteria.",
-      "category": "writing",
-      "keywords": [
-        "writing",
-        "prose",
-        "humanize",
-        "style",
-        "editing",
-        "copywriting",
-        "landing-page",
-        "microcopy",
-        "ux-writing",
-        "saas",
-        "prd",
-        "requirements",
-        "spec"
-      ]
-    },
-    {
       "name": "psoares-statusline",
       "source": "./plugins/psoares-statusline",
       "description": "Gruvbox Material Dark statusline with directory, git branch, model, context bar, cost estimate, agent, and vim mode.",
@@ -69,21 +48,6 @@
         "journal",
         "session",
         "documentation"
-      ]
-    },
-    {
-      "name": "psoares-annotate",
-      "source": "./plugins/psoares-annotate",
-      "description": "Point at things on screen instead of describing them. /annotate opens the project's app in a Chrome window with a picker; each note becomes a print-screen of the element plus its details, filed into the project as a round. /annotations reads the round, acts on every note, and cleans up.",
-      "category": "dev",
-      "keywords": [
-        "annotate",
-        "annotations",
-        "screenshot",
-        "ui",
-        "feedback",
-        "browser",
-        "design-review"
       ]
     }
   ]
