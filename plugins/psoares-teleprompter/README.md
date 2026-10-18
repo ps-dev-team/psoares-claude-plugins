@@ -34,3 +34,15 @@ voice follow can track word for word.
 
 Triggers on "teleprompter script", "write a video script", "add tabs to this script", "guião
 para o teleprompter", and when editing a `.md` script that already uses `::` directives.
+
+### `video-script`
+
+Writes the words of a video recorded one sentence at a time: course lessons, app
+walkthroughs, demos, tutorials. One sentence per line, each within one breath (about 15
+words), and each line stands alone, so any take can be cut or re-recorded. The script doubles
+as the cut list: line N is take N, which lets an editor, or an AI given the script and the
+video, match takes to lines.
+
+It loads `human-prose` for the voice, and `teleprompter-script` when the script is read from
+the app. Each format has its own reference: `references/lesson.md` for lessons and demos.
+Social media is next.
