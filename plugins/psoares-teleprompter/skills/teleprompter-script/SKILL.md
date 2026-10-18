@@ -4,7 +4,8 @@ description: >-
   Use when writing, drafting, formatting, rewriting or fixing a script for the
   Markdown Teleprompter app: YouTube or course videos, talks, demos, screen
   recordings, presentations read from a prompter. Covers the app's Markdown
-  directives (::chapter, ::cue, ::alert, ::speaker, ::pause, ::speed, ::tab),
+  directives (::chapter, ::cue, ::alert, ::speaker, ::pause, ::speed, ::tab,
+  ::note), presenter notes for screen sharing,
   presenter tabs with say="..." voice cues, heading cues like
   ## Wrap-up {say="..."}, scroll="on"/"off", and how to write text that sounds
   natural when read aloud and works with voice follow. Trigger phrases:
@@ -64,13 +65,14 @@ code blocks. Headings `#`, `##` and `###` are section stops for Enter / Shift+En
 - Attributes go in braces right after the name: `{key="value" other="value"}`. Values in double
   quotes may contain spaces and apostrophes, but not `"` or `}`.
 - Number-only directives take a bare value: `::pause{5}`, `::speed{0.8}`.
-- **Block** directives (`::cue`, `::alert`, `::tab`) have content on the lines after the opening
+- **Block** directives (`::cue`, `::alert`, `::tab`, `::note`) have content on the lines after the opening
   line and end with a line that is only `::`. Never forget the closing `::`.
 - **Line** directives (`::chapter`, `::speaker`, `::pause`, `::speed`) are a single line with no
   closing `::`.
 - Put a blank line before and after every directive.
-- In normal flow, a block cannot contain another directive: no line inside a `::cue` or
-  `::alert` may start with `::`. Only a `::tab` can hold nested `::cue` and `::alert` blocks.
+- In normal flow, a block cannot contain another directive: no line inside a `::cue`,
+  `::alert` or `::note` may start with `::`. Only a `::tab` can hold nested `::cue`, `::alert`
+  and `::note` blocks.
 
 ## Directive reference
 
@@ -155,8 +157,16 @@ before the passage it affects. Slow down (0.7 to 0.9) for technical terms or num
 
 A mini script for a part you present instead of read. See the next section.
 
-Do not use `::note`. The parser knows the name, but the prompter has no style for it and shows
-its content as plain text. Use `::cue` or `::alert` instead.
+### Note
+
+```markdown
+::note{title="Demo setup" say="okay, back to the script"}
+- Close Slack
+- Log in to the demo account
+::
+```
+
+Notes for the presenter while they share their screen. See "Presenter notes" below.
 
 ## Presenter tabs
 
@@ -266,6 +276,97 @@ Use normal read text for:
 Tab bullets are prompts, not sentences to read: 3 to 6 short items, a few words each. Put the
 lead-in to a group in the read text just before it ("Let me show you three features.") and a
 heading with a cue right after it.
+
+## Presenter notes
+
+### What they are
+
+A `::note` is for the presenter's eyes only, for the moments they leave the script to show
+their screen: the steps of a demo, what to have open, a demo password, a number to quote. It is
+never shown on the caster. The desktop app shows it in the notes window, a small panel kept on
+the screen being shared or recorded and hidden from the recording.
+
+On the caster, the note's place shows as a marker with its title and the sentence to say. When
+the marker reaches the reading line the caster stops: playback pauses and voice follow waits. The
+presenter does the demo with the note in front of them, then says the note's cue to go on with
+the script. Space, Enter or the Stream Deck play key also continue.
+
+### Attributes
+
+| Attribute | Values | Default |
+| --- | --- | --- |
+| `title` | Name shown on the caster marker and in the notes window | `Note` |
+| `say` | Phrase that continues the script after the note. Several separated with `\|` | The next heading's cue |
+
+### Writing the continue cue
+
+The `say` phrase is what the presenter says coming back from the screen to the script, so write
+it into the script as part of the talk: the first words of the read text right after the note
+are a good place, or a segue the presenter will naturally say. It follows the same matching
+rules as tab cues (see "How cues are matched"): 2 to 4 key words, distinct from what the
+presenter will say during the demo.
+
+```markdown
+Let me show you how it looks on a real project.
+
+::note{title="Project demo" say="okay, back to the script|that's the project"}
+1. Open the sample project
+2. Run the build
+3. Show the output folder
+::
+
+Okay, back to the script. What you just saw takes five minutes to set up.
+```
+
+Without `say`, the next heading's cue continues, so a note right before a heading with a good
+`{say="..."}` cue needs no `say` of its own. A note followed only by text and no `say` can be
+continued with the keyboard only; always give it a `say`.
+
+### Notes in a row and notes in tabs
+
+- Notes with only blank lines between them are shown together in the notes window, like tabs,
+  and each one stops the caster in turn, each with its own cue. Prefer one note with a list over
+  several notes in a row, unless the presenter really stops between them.
+- A `::note` inside a `::tab` shows in the notes window only, as a highlighted block in that tab.
+  The caster leaves it out of the tab and does not stop for it. Use it for details the
+  presenter needs during the demo but should not see on the prompter: a password, an exact menu
+  path, a file name.
+- A note's content is any Markdown without directives: lists, short paragraphs, bold.
+
+### When to use a note, a tab or a cue
+
+- **`::cue`**: a one-line direction the presenter sees on the caster as they read ("Switch to
+  the screen recording."). The script keeps scrolling.
+- **`::tab`**: a part presented freely from the prompter, with reminders on the caster itself,
+  in any order.
+- **`::note`**: the presenter leaves the prompter to share their screen and needs the reminders
+  next to what they are showing. The caster waits until they come back.
+
+## The notes window
+
+The desktop app also shows the tabs in a notes window (Caster > Open Notes, Cmd+Option+Enter): a
+small see-through panel the presenter keeps on the screen they are presenting or recording, so
+the demo reminders sit next to the app being shown. It is hidden from screen recordings unless
+the presenter turns that off.
+
+What it shows comes from the script, so the way tabs are written decides how useful it is:
+
+- It shows the tab groups and the notes, one tab or note at a time, with the same tab strip.
+  Read text, cues and alerts outside tabs and notes are not shown.
+- It follows the caster: it opens the tab group the caster enters and the note the caster stops
+  at.
+- Each tab group or run of notes is named after the heading or chapter just before it, in the
+  selector at the top of the window. Put a short, distinct heading before each one ("Three
+  features", "Demo setup"), not a long sentence.
+- Short tab titles fit the strip. Two or three words each.
+- The window is small and glanced at sideways: lists of a few words read better than
+  paragraphs. A `scroll="on"` tab still works there, but the presenter has to scroll it by
+  hand, so keep demo tabs as short lists and use `scroll="on"` only for real mini scripts.
+- Lists in tabs keep their order and numbering. A numbered list (`1.`) is right for steps that
+  must happen in order, a `-` list for points in any order.
+- A `::cue` or `::alert` inside a tab shows in the notes too, which makes it a good place for a
+  reminder like "use the demo account" that should be in front of the presenter during the
+  demo.
 
 ## Writing for spoken delivery
 
@@ -379,12 +480,14 @@ presenter can go back by voice.
 
 ## Checklist
 
-- Every `::cue`, `::alert` and `::tab` has its closing `::` line, including nested blocks
+- Every `::cue`, `::alert`, `::tab` and `::note` has its closing `::` line, including nested blocks
   inside tabs (a tab with a nested alert ends with two `::` lines).
 - Every directive is on its own line, with blank lines around it.
 - No line starting with `::` inside a `::cue` or `::alert` in normal flow.
-- Only these directives: `chapter`, `cue`, `alert`, `speaker`, `pause`, `speed`, `tab`. No
-  `::note`, no invented attributes.
+- Only these directives: `chapter`, `cue`, `alert`, `speaker`, `pause`, `speed`, `tab`,
+  `note`. No invented attributes.
+- Every `::note` in the flow has a `say` cue, or is followed by a heading whose cue continues
+  it. The cue appears in the read text right after the note or is a natural segue.
 - `alert` types are `info`, `warning`, `tip` or `danger`. `scroll` is `on` or `off`.
 - Every `::speed` that slows down or speeds up is followed later by `::speed{1}`.
 - Every tab has a `title`. Cues in a group are distinct from each other and from the tab text.
