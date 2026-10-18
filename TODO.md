@@ -2,12 +2,12 @@
 
 ## Planned
 
-- [ ] **script-editor** — Edit video scripts with teleprompter formatting
 - [ ] **reel-planner** — Plan social media reels with hooks, structure, CTAs
 - [ ] **course-creator** — Create course content from raw materials
 
 ## Done
 
+- [x] **script-editor** — shipped as `teleprompter-script` in `psoares-teleprompter`: write and edit scripts for the Markdown Teleprompter app, with directives, presenter tabs and voice cues
 - [x] **prd-prose** — tone and sentence shape for PRDs, specs, acceptance criteria (moved to `s2-writing` in s2-ai-skills)
 - [x] **product-copy** + **ui-copy** — copy that sells software, on the website and inside the app (moved to `s2-writing` in s2-ai-skills)
 - [x] **annotate** — point at things on screen: `/annotate <url>` opens a Chrome window with a picker, `/annotations` reads the rounds (moved to `s2-annotate` in s2-ai-skills)
