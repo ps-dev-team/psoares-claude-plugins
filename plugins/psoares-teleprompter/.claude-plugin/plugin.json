@@ -1,7 +1,7 @@
 {
   "name": "psoares-teleprompter",
-  "version": "0.1.0",
-  "description": "Script writing for the Markdown Teleprompter app. Includes teleprompter-script for writing and editing video and presentation scripts in the app's Markdown syntax: directives, presenter tabs, voice cues and spoken-delivery style.",
+  "version": "0.2.0",
+  "description": "Script writing for the Markdown Teleprompter app. Includes teleprompter-script for writing and editing video and presentation scripts in the app's Markdown syntax: directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
   "author": {
     "name": "Paulo Soares"
   },
