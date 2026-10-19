@@ -39,7 +39,7 @@ para o teleprompter", and when editing a `.md` script that already uses `::` dir
 
 Writes the words of a video recorded one sentence at a time: course lessons, app
 walkthroughs, demos, tutorials. One sentence per line, each within one breath (about 15
-words), and each line stands alone, so any take can be cut or re-recorded. The script doubles
+words), with lists wherever a line names things, so they are read with intention and can show on screen. The script doubles
 as the cut list: line N is take N, which lets an editor, or an AI given the script and the
 video, match takes to lines.
 

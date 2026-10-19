@@ -11,8 +11,9 @@ ending.
 2. **The body follows the screen.** One line per thing the viewer sees or does, in the order
    the screen shows it. Where the recording moves to a new area, a short line names it:
    "Now, the client page." "Last, the Clients list."
-3. **The closing line points to the next lesson.** "Next, processes and sessions." In the last
-   lesson of a course, it says where to find the course again instead.
+3. **The closing line does not name the next lesson.** "I'll see you in the next lesson." A
+   course changes: a lesson added in between makes "Next, processes and sessions" wrong, and
+   the recording cannot be fixed. Never name another lesson by its number or its position.
 
 ## One lesson, one topic
 
@@ -20,7 +21,8 @@ ending.
   (adding a client, then managing clients), it is two lessons. Say so and propose the split
   before writing.
 - Short beats complete. Something that has its own lesson gets one line here: "Processes and
-  sessions have their own lesson." Do not explain it twice.
+  sessions have their own lesson." Name the topic, never where that lesson sits. Do not
+  explain it twice.
 - Aim for one to three minutes. A lesson over about 50 lines is usually two lessons.
 
 ## Writing from a recording
@@ -50,4 +52,4 @@ When the user gives a transcript of a lesson they already recorded:
 - [ ] Each new area is introduced by a short line naming it.
 - [ ] Nothing is explained that has its own lesson.
 - [ ] Product names match the screen exactly.
-- [ ] The last line points to the next lesson.
+- [ ] No line names another lesson by its number or its position.
