@@ -93,6 +93,52 @@ word, an icon, the part of the app.
   line, with the part's name in **bold** at the start. The bold word is where the graphic
   lands.
 
+## Easy to say
+
+The speaker may be reading a language that is not their first, and a line that reads well on
+paper can still trip the tongue. Every line should be easy to say on the first try.
+
+- **The speaker's hard words come first.** Before writing, look for `hard-words.md` in the
+  scripts folder (the folder that holds the script, or its nearest parent that has one). Never
+  use a word or phrase on that list; use the alternative it gives. If the file does not exist,
+  carry on without it.
+- **Short, common words.** "Use", not "utilise"; "help", not "facilitate"; "start", not
+  "commence".
+- **Watch where words meet.** Avoid a word ending in a consonant cluster next to one starting
+  with a cluster: "its strengths", "sixth session", "asks students". Rephrase so a vowel sits
+  between them.
+- **No runs of the same sound.** Three or more s, sh or z sounds close together ("sessions,
+  processes and assessments") make a tongue twister. When a core product word is sibilant,
+  keep the words around it plain.
+- **Few "th" words** when a simple alternative exists: "complete" for "thorough", "all" for
+  "the entirety of".
+- **No stacked nouns.** "The client session summary document" becomes "the summary of the
+  session".
+- **In Portuguese:** no chained clitics ("dá-lho", "far-se-á"), no runs of sibilants
+  ("sessões dos processos seguintes"), and a shorter word over one of five syllables or more
+  when it says the same.
+- **Write each language as spoken.** Do not write in one language and translate word for word.
+  Translate the line, then say it, then fix what trips.
+
+### The hard-words file
+
+The speaker's own list, kept beside the scripts, not in this plugin, so it grows without a
+release. One section per language, one entry per line, the alternative after the arrow:
+
+```markdown
+## EN
+- thorough → complete
+- its strengths → what it does well
+
+## PT
+- dá-lho → dá-lhe isso
+```
+
+Add to it when the speaker says a word tripped them. When a recording was read from a script,
+its transcript can find more: lines recorded several times, or where the transcript differs
+from the script, point at the words to add. Propose those to the speaker; do not add them
+without asking.
+
 ## Voice
 
 The speaker's voice wins over any rule here.
@@ -149,6 +195,7 @@ in both, so the two files stay aligned. Lists keep the same items in the same or
 - [ ] Every line is one sentence, within one breath.
 - [ ] Every line that names two or more things is a list.
 - [ ] No noun is repeated just to avoid "it".
+- [ ] No word from `hard-words.md`, no clusters where words meet, no runs of s sounds.
 - [ ] No cues, brackets or directions in the read text.
 - [ ] The order is the order of the video, and it never jumps back.
 - [ ] The speaker's own lines and beats are still there.
