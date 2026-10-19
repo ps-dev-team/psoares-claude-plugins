@@ -143,6 +143,19 @@ without asking.
 
 The speaker's voice wins over any rule here.
 
+- **Warm, not clipped.** The speaker is a person guiding someone, not a manual. Short is about
+  cutting filler, never about cutting the warmth. Say who is doing what: "I'll show you",
+  "you'll see", "let's add", "vou-te mostrar", "vamos ver".
+
+  | Clipped | Warm |
+  | --- | --- |
+  | In this lesson, you add your first client. | In this lesson, I'll show you how to add your first client. |
+  | That's your first client. | And that's it, your first client is in. |
+  | Now, the client page. | Now let's look at the client's page. |
+
+  A warm line is a few words longer, and that is fine. Filler is still out: no "super easy",
+  "amazing", "without further ado".
+
 - Keep the speaker's "I" lines: "I know that's a lot to take in, so I made this short course."
 - Keep spoken beats the speaker wrote on purpose, like an ellipsis before a reveal: "Behind
   all of it... there is AI."

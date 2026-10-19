@@ -6,11 +6,13 @@ ending.
 
 ## Shape
 
-1. **The opening line says what the lesson covers.** "In this lesson, you add your first
-   client." No greeting after the first lesson of a course, no "welcome back".
+1. **The opening line says what the lesson covers, as a guide would.** "In this lesson, I'll
+   show you how to add your first client." In Portuguese: "Nesta lição, vou-te mostrar como
+   adicionar o teu primeiro cliente." No greeting after the first lesson of a course, no
+   "welcome back".
 2. **The body follows the screen.** One line per thing the viewer sees or does, in the order
    the screen shows it. Where the recording moves to a new area, a short line names it:
-   "Now, the client page." "Last, the Clients list."
+   "Now let's look at the client's page." "Last, the Clients list."
 3. **The closing line does not name the next lesson.** "I'll see you in the next lesson." A
    course changes: a lesson added in between makes "Next, processes and sessions" wrong, and
    the recording cannot be fixed. Never name another lesson by its number or its position.
