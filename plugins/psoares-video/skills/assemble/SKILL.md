@@ -75,3 +75,30 @@ sh "${CLAUDE_PLUGIN_ROOT}/lib/sheet.sh" <project>/build/<id>.mp4 <project>/build
 Look for: the pointer where the action is, zooms landing on their target and easing back,
 nothing cut off at a window's edge, the fade at each scene change, and the last frame held to
 the end of the voice. Then copy the video where the user keeps finished ones, and say where.
+
+## The report
+
+Every video is handed over with its report, `build/<id>.report.md`, copied beside the video. It
+lets the user, who has already heard the voice, see what changed and where to look without
+watching the whole video. Keep it short, and give every item its time in the finished video
+(`m:ss.s`), so the user can jump straight to it.
+
+The assembler writes the facts:
+
+- **The voice:** every pause added (where, how long, before which line) and nothing else; or that
+  the voice is untouched.
+- **Needs a look:** what went wrong on the take: beats that ran late or slow, an element that was
+  missing, a beat that failed.
+
+Before handing over, add the **Decisions** by hand: what you chose that the script did not say,
+and anything the user may not like. For example:
+
+- a pause added or lengthened, and why (a dialog needed time to open);
+- a gesture used (a loop around an area, a selection box, a text selection) and on what;
+- a zoom added or left out;
+- a step shown differently from the script, or left out, and why;
+- data on screen that looks odd (a stray test client, a wrong date, a banner);
+- anything you were unsure of.
+
+Lead with what most needs the user's eye. If nothing does, say so in one line. When handing over,
+paste the report's Decisions and Needs a look into the reply, not only the file path.

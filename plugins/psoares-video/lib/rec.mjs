@@ -163,7 +163,7 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
 
 export class Window {
   constructor(name, context, page, project) {
-    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], marks: [], movedAt: 0 });
+    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], marks: [], notes: [], movedAt: 0 });
     this.rand = seeded(name);
   }
   // config.pointer.human (default on) lets the hand do small things of its
@@ -172,6 +172,11 @@ export class Window {
   get base() { return this._base ?? this.project.config.app.base; }
   set base(v) { this._base = v; }
   now() { return (Date.now() - this.t0) / 1000; }
+  // Something worth a look, logged and kept for the video's report.
+  note(msg) {
+    console.log(`[${this.name}] ${msg}`);
+    if (this.t0) this.notes.push([+this.now().toFixed(2), msg]);
+  }
   onTrack(type, x, y, kind) {
     if (type === 'shape' && kind) this.shape = kind;
   }
@@ -258,7 +263,7 @@ export class Window {
   // Moves onto an element; `at` picks a point in its box (0..1), default centre.
   async hover(locator, ms = 550, at = [0.5, 0.5]) {
     const b = await this.box(locator);
-    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    if (!b) { this.note(`missing ${String(locator)}`); return false; }
     await this.moveTo(b.x + b.width * at[0], b.y + b.height * at[1], ms);
     return true;
   }
@@ -285,7 +290,7 @@ export class Window {
   }
   async dragBy(locator, dx, dy, ms = 1100, at) {
     const b = await this.box(locator);
-    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    if (!b) { this.note(`missing ${String(locator)}`); return false; }
     const ax = at?.[0] ?? 0.5, ay = at?.[1] ?? 0.5;
     return this.drag(locator, [b.x + b.width * ax + dx, b.y + b.height * ay + dy], ms, at);
   }
@@ -296,7 +301,7 @@ export class Window {
   // closing slightly inside where it began.
   async circle(locator, { turns = 0.95 + this.rand() * 0.45, ms = 560 + this.rand() * 220, pad = 12 + this.rand() * 10 } = {}) {
     const b = await this.box(locator);
-    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    if (!b) { this.note(`missing ${String(locator)}`); return false; }
     const ox = b.x + b.width / 2, oy = b.y + b.height / 2;
     const rx = Math.max(30, b.width / 2 + pad), ry = Math.max(24, b.height / 2 + pad);
     const a0 = Math.atan2((this.cy - oy) / ry, (this.cx - ox) / rx);
@@ -314,7 +319,7 @@ export class Window {
   // Back and forth under an element, like underlining it while reading.
   async underline(locator, { strokes = 2 + Math.floor(this.rand() * 3), ms = 320 + this.rand() * 140, gap = 6 + this.rand() * 6 } = {}) {
     const b = await this.box(locator);
-    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    if (!b) { this.note(`missing ${String(locator)}`); return false; }
     const y = b.y + b.height + gap, x0 = b.x + b.width * 0.04, x1 = b.x + b.width * 0.96;
     await this.moveTo(x0, y, 450, { hook: false });
     for (let i = 0; i < strokes; i++) {
@@ -361,7 +366,7 @@ export class Window {
   // app under it never reacts. Target: an element, or [x, y, width, height].
   async marquee(target, { hold = 1800, pad = 10, ms = 650 } = {}) {
     let b = Array.isArray(target) ? { x: target[0], y: target[1], width: target[2], height: target[3] } : await this.box(target);
-    if (!b) { console.log(`[${this.name}] missing`, String(target)); return false; }
+    if (!b) { this.note(`missing ${String(target)}`); return false; }
     const x0 = b.x - pad, y0 = b.y - pad, x1 = b.x + b.width + pad, y1 = b.y + b.height + pad;
     await this.moveTo(x0, y0, 550);
     await sleep(180);
@@ -393,7 +398,7 @@ export class Window {
       const a = rects[0], b = rects.at(-1);
       return [a.left + 1, a.top + a.height / 2, b.right - 1, b.top + b.height / 2];
     }, word).catch(() => null);
-    if (!ends) { console.log(`[${this.name}] no text to select`, String(locator)); return false; }
+    if (!ends) { this.note(`no text to select in ${String(locator)}`); return false; }
     await this.moveTo(ends[0], ends[1], 550);
     await sleep(200);
     await this.press(true);
@@ -419,7 +424,7 @@ export class Window {
     if (Array.isArray(target)) [x, y] = target;
     else {
       const b = await this.box(target);
-      if (!b) { console.log(`[${this.name}] zoom target missing`, String(target)); return; }
+      if (!b) { this.note(`zoom target missing: ${String(target)}`); return; }
       x = b.x + b.width / 2; y = b.y + b.height / 2;
     }
     this.zooms.push({ t: this.now(), scale, x, y });
@@ -455,7 +460,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   }
   const { output, view } = project.config;
   t0 = Date.now();
-  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], marks: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
+  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], marks: [], notes: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
   await Promise.all(shoots.map((s) => s.cdp.send('Page.startScreencast', {
     format: 'jpeg', quality: 90, everyNthFrame: 1,
     maxWidth: Math.round((s.w.page.viewportSize()?.width ?? view.width) * output.width / view.width), maxHeight: output.height,
@@ -464,7 +469,9 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   for (const s of shoots) await s.w.page.mouse.move(s.w.cx + 0.5, s.w.cy);
 
   const now = () => (Date.now() - t0) / 1000 + start;
-  for (const [at, run, opts = {}] of beats.sort((a, b) => a[0] - b[0])) {
+  const notes = []; // [voice time, what happened], for the report
+  const order = beats.sort((a, b) => a[0] - b[0]);
+  for (const [bi, [at, run, opts = {}]] of order.entries()) {
     if (at < start || at > end) continue;
     const go = at - (opts.lead ?? lead);
     let wait = (go - now()) * 1000;
@@ -479,13 +486,17 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     }
     if (wait > 0) await sleep(wait);
     const late = now() - go;
-    if (late > 0.6) console.log(`late ${late.toFixed(2)}s at ${at.toFixed(2)}`);
+    const flag = (msg) => { console.log(msg); notes.push([+at.toFixed(2), msg]); };
+    if (late > 0.6) flag(`late ${late.toFixed(2)}s at ${at.toFixed(2)}`);
     const b0 = Date.now();
     try {
       await Promise.race([run(), sleep(opts.max ?? 15000).then(() => { throw new Error('timed out'); })]);
-    } catch (e) { console.log('beat', at.toFixed(2), e.message.split('\n')[0]); }
+    } catch (e) { flag(`beat ${at.toFixed(2)} failed: ${e.message.split('\n')[0]}`); }
     const took = (Date.now() - b0) / 1000;
-    if (took > 1.5) console.log(`slow ${took.toFixed(2)}s at ${at.toFixed(2)}`);
+    // Slow only if it ran into the next beat's time; a long gesture is fine.
+    const next = order[bi + 1];
+    const over = next ? now() - (next[0] - (next[2]?.lead ?? lead)) : 0;
+    if (over > 0.3) flag(`slow ${took.toFixed(2)}s at ${at.toFixed(2)}, ran ${over.toFixed(2)}s into the next beat`);
   }
   const rest = (end - now()) * 1000;
   if (rest > 0) await sleep(rest);
@@ -503,7 +514,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     if (s.frames.length) lines.push(`file '${s.frames.at(-1)[0]}'`);
     fs.writeFileSync(path.join(s.dir, 'list.txt'), lines.join('\n'));
     const vp = s.w.page.viewportSize();
-    fs.writeFileSync(path.join(s.dir, 'meta.json'), JSON.stringify({ id, seg, start, end, total, view: vp, frames: s.frames.map(([f, t]) => [path.basename(f), +t.toFixed(4)]) }));
+    fs.writeFileSync(path.join(s.dir, 'meta.json'), JSON.stringify({ id, seg, start, end, total, view: vp, notes: [...notes, ...s.w.notes.map(([t, m]) => [+(t + start).toFixed(2), `${s.w.name}: ${m}`])], frames: s.frames.map(([f, t]) => [path.basename(f), +t.toFixed(4)]) }));
     fs.writeFileSync(path.join(s.dir, 'pointer.json'), JSON.stringify({ view: vp, moves: s.w.moves, presses: s.w.presses, zooms: s.w.zooms, marks: s.w.marks }));
     s.w.t0 = 0;
     console.log(`${id}-${seg}-${s.w.name}: ${s.frames.length} frames, ${total.toFixed(2)}s (voice ${start.toFixed(2)}-${end.toFixed(2)})`);

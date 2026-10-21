@@ -78,9 +78,17 @@ function camera(raw, from, len, w, h, out) {
 }
 
 const parts = [];
+// The report: what was done to the voice and what went wrong on the take,
+// with the time in the finished video, so the user knows where to look.
+const report = { notes: [], gaps: [] };
+const tc = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 for (const [k, s] of segments.entries()) {
   const raws = s.windows.map((spec) => p('raw', `${id}-${s.name}-${spec.account ?? 'anon'}`));
   const meta = JSON.parse(fs.readFileSync(path.join(raws[0], 'meta.json'), 'utf8'));
+  for (const raw of raws) {
+    const m = JSON.parse(fs.readFileSync(path.join(raw, 'meta.json'), 'utf8'));
+    for (const [t, msg] of m.notes ?? []) report.notes.push([t, `${s.name}: ${msg}`]);
+  }
   // This part's span in voice time, overlapping its neighbours by half a fade.
   const a = k === 0 ? 0 : s.start - T / 2;
   const b = k === segments.length - 1 ? length : segments[k + 1].start + T / 2;
@@ -163,7 +171,27 @@ if (!L.lines || !fs.existsSync(mp3)) {
     voice = p('build', `${id}-voice.wav`);
     ff(['-i', mp3, '-filter_complex', f, '-map', '[a]', voice]);
     console.log('gaps cut at', cuts.map((c) => c.at.toFixed(2)).join(' '));
+    let added = 0;
+    cuts.forEach((c, i) => {
+      const line = gapLines[i];
+      report.gaps.push(`${tc(c.at + added)}: ${c.gap.toFixed(1)} s of pause before line ${line.i} ("${(line.text ?? '').slice(0, 60)}"), in the voice's own silence there`);
+      added += c.gap;
+    });
   }
   ff([...video, '-i', voice, ...vmap, '-map', `${parts.length}:a`, ...enc, '-c:a', 'aac', '-b:a', '256k', final]);
+}
+// The report beside the video. The facts are written here; whoever made the
+// video adds what they decided (see the screen skill, "The report").
+{
+  const file = p('build', `${id}.report.md`);
+  const lines = [`# ${id}: report`, '', `Length ${tc(length)}.`, '', '## The voice', ''];
+  if (!fs.existsSync(p('audio', `${id}.mp3`))) lines.push('No voice.');
+  else lines.push(report.gaps.length ? 'Pauses added (nothing else in the voice was changed):' : 'The voice is untouched: no pauses added.', '', ...report.gaps.map((g) => `- ${g}`));
+  lines.push('', '## Needs a look', '');
+  const notes = report.notes.sort((x, y) => x[0] - y[0]);
+  lines.push(...(notes.length ? notes.map(([t, m]) => `- ${tc(t)}: ${m}`) : ['Nothing went wrong on the take.']));
+  lines.push('', '## Decisions', '', '(Added by whoever made the video: what they chose that the script did not say.)', '');
+  fs.writeFileSync(file, lines.join('\n'));
+  console.log('report', file);
 }
 console.log(final, execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', final]).toString().trim());
