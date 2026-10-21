@@ -63,7 +63,8 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 - **The cursor shape** is the page's own, recorded at every move from the CSS cursor under the
   pointer (as Screen Studio records the system's): arrow, I-beam over text (any text that can be
   selected, as Chrome shows it, and fields), open hand where the
-  page offers to grab, not-allowed, resize arrows. The pointing hand is shown **only around a
+  page offers to grab, not-allowed, resize arrows. A shape shows only once it has held for about a
+  quarter of a second, so crossing text on the way somewhere stays the arrow. The pointing hand is shown **only around a
   click** (from just before the press to just after the release), and a closed hand while the
   button is held (a drag).
 - **A click is the hand's gesture, never the page's.** The recorder never animates what is

@@ -203,8 +203,13 @@ const Scene = (props: CameraProps) => {
   const tilt = Math.max(-14, Math.min(14, pvx * 0.006));
   // The shape the page showed under the real pointer, a beat behind it, so the
   // hand appears as the drawn pointer arrives (Screen Studio records the same).
+  // A shape must hold a moment before it shows: crossing a line of text on
+  // the way somewhere stays the arrow, resting on it shows the I-beam.
   const si = at(moves, t - 0.05, (m) => m[0]);
   let shape = (si >= 0 && moves[si][3]) || 'arrow';
+  if (shape !== 'arrow' && shape !== 'hand') {
+    for (let i = Math.max(0, at(moves, t - 0.25, (m) => m[0])); i <= si; i++) if ((moves[i][3] || 'arrow') !== shape) { shape = 'arrow'; break; }
+  }
   // The hand only for a click: from just before the press to just after the
   // release, wherever the page would show it. Elsewhere it is the arrow.
   // A shape of its own (an open hand on a drag handle, an I-beam) stays.
@@ -232,7 +237,8 @@ const Scene = (props: CameraProps) => {
   // The selection boxes: the far corner is the drawn pointer while it pulls,
   // then stays; the box fades in over its first moments and out after t2.
   const boxes = marks.filter((m) => t >= m.t0 && t <= m.t2 + 0.35).map((m) => {
-    const fx = t < m.t1 ? px : rawAt(moves, m.t1, view)[0], fy = t < m.t1 ? py : rawAt(moves, m.t1, view)[1];
+    // The far corner is the drawn pointer until it has settled at the end.
+    const [fx, fy] = path[Math.max(0, Math.min(path.length - 1, Math.round((Math.min(t, m.t1 + SETTLE) - from) * fps)))] ?? [px, py];
     const o = Math.min(1, (t - m.t0) / 0.08) * (t > m.t2 ? 1 - (t - m.t2) / 0.35 : 1);
     return { x: Math.min(m.x, fx), y: Math.min(m.y, fy), w: Math.abs(fx - m.x), h: Math.abs(fy - m.y), o };
   });
