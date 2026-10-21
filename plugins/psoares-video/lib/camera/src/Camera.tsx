@@ -26,7 +26,9 @@ export type CameraProps = {
   /** [time, 1 down | 0 up] */
   presses: [number, number][];
   zooms: Zoom[];
-  pointer: { size: number; show: boolean; blur?: boolean; images?: Record<string, CursorImage> | null };
+  /** Selection boxes: from (x, y), pulled by the pointer from t0 to t1, held until t2. */
+  marks?: { t0: number; t1: number; t2: number; x: number; y: number }[];
+  pointer: { size: number; show: boolean; blur?: boolean; marquee?: string; images?: Record<string, CursorImage> | null };
   blur: { shutter: number; samples: number };
 };
 
@@ -156,6 +158,18 @@ const pulse = (since: number, depth: number, fps: number) => {
   return 1 - depth + depth * up;
 };
 
+// A selection box: a light fill, a dashed edge over a white one, rounded, with
+// a soft shadow, so it reads on light and dark screens alike.
+const Marquee = ({ x, y, w, h, o, k, color }: { x: number; y: number; w: number; h: number; o: number; k: number; color: string }) => {
+  const r = Math.min(10, w / 2, h / 2) * k, line = 1.6 * k;
+  return (
+    <svg style={{ position: 'absolute', left: x * k, top: y * k, width: w * k, height: h * k, overflow: 'visible', opacity: o, filter: `drop-shadow(0 ${3 * k}px ${8 * k}px rgba(0,0,0,0.22))` }}>
+      <rect x={0} y={0} width={w * k} height={h * k} rx={r} fill={color} fillOpacity={0.08} stroke="#fff" strokeWidth={line * 2.6} />
+      <rect x={0} y={0} width={w * k} height={h * k} rx={r} fill="none" stroke={color} strokeWidth={line} strokeDasharray={`${6 * k} ${4 * k}`} strokeLinecap="round" />
+    </svg>
+  );
+};
+
 const Scene = (props: CameraProps) => {
   const frame = useCurrentFrame();
   const { fps, width, height, view, frames, moves, presses, zooms, pointer, from } = props;
@@ -210,15 +224,24 @@ const Scene = (props: CameraProps) => {
   // The press is the hand's own gesture; the page is never touched. A click
   // dips the cursor and lets it spring back with a small bounce. A drag dips
   // at the grab and again, less, at the release.
+  const marks = props.marks ?? [];
   const squeeze = pairs.reduce((sq, [d, u]) => {
     const long = u - d > DRAG;
     return sq * pulse(t - d, long ? 0.14 : 0.24, fps) * (long ? pulse(t - u, 0.08, fps) : 1);
-  }, 1);
+  }, 1) * marks.reduce((sq, m) => sq * pulse(t - m.t0, 0.14, fps) * pulse(t - m.t1, 0.08, fps), 1);
+  // The selection boxes: the far corner is the drawn pointer while it pulls,
+  // then stays; the box fades in over its first moments and out after t2.
+  const boxes = marks.filter((m) => t >= m.t0 && t <= m.t2 + 0.35).map((m) => {
+    const fx = t < m.t1 ? px : rawAt(moves, m.t1, view)[0], fy = t < m.t1 ? py : rawAt(moves, m.t1, view)[1];
+    const o = Math.min(1, (t - m.t0) / 0.08) * (t > m.t2 ? 1 - (t - m.t2) / 0.35 : 1);
+    return { x: Math.min(m.x, fx), y: Math.min(m.y, fy), w: Math.abs(fx - m.x), h: Math.abs(fy - m.y), o };
+  });
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${cam.s})` }}>
         {frames.length ? <Img src={staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
+        {boxes.map((b, i) => <Marquee key={i} {...b} k={k} color={pointer.marquee ?? '#0a84ff'} />)}
         {pointer.show
           ? smear.map(([sx, sy, o], i) => (
               <div key={i} style={{ opacity: o }}>

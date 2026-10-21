@@ -163,7 +163,7 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
 
 export class Window {
   constructor(name, context, page, project) {
-    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], movedAt: 0 });
+    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], marks: [], movedAt: 0 });
     this.rand = seeded(name);
   }
   // config.pointer.human (default on) lets the hand do small things of its
@@ -354,6 +354,24 @@ export class Window {
     }, ms);
     await this.page.mouse.move(sx, sy); this.logMove(sx, sy); this.cx = sx; this.cy = sy;
   }
+  // Marks an area, as a person drags a selection box on a desktop: the cursor
+  // goes to one corner, presses, pulls the box to the other corner and lets
+  // go. The box is drawn by the assembler (dashed, rounded, with a shadow)
+  // and stays `hold` ms, then fades. Nothing is pressed in the page, so the
+  // app under it never reacts. Target: an element, or [x, y, width, height].
+  async marquee(target, { hold = 1800, pad = 10, ms = 650 } = {}) {
+    let b = Array.isArray(target) ? { x: target[0], y: target[1], width: target[2], height: target[3] } : await this.box(target);
+    if (!b) { console.log(`[${this.name}] missing`, String(target)); return false; }
+    const x0 = b.x - pad, y0 = b.y - pad, x1 = b.x + b.width + pad, y1 = b.y + b.height + pad;
+    await this.moveTo(x0, y0, 550);
+    await sleep(180);
+    const mark = { t0: this.now(), x: x0, y: y0 };
+    await this.moveTo(x1, y1, ms, { hook: false, exact: true });
+    Object.assign(mark, { t1: this.now(), t2: this.now() + hold / 1000 });
+    if (this.t0) this.marks.push(mark);
+    await sleep(160);
+    return true;
+  }
   // Selects an element's text the way a person does: press at the start of
   // the first line, drag to the end of the last, let go. The cursor is the
   // I-beam throughout, and the selection is the page's own.
@@ -437,7 +455,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   }
   const { output, view } = project.config;
   t0 = Date.now();
-  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
+  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], marks: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
   await Promise.all(shoots.map((s) => s.cdp.send('Page.startScreencast', {
     format: 'jpeg', quality: 90, everyNthFrame: 1,
     maxWidth: Math.round((s.w.page.viewportSize()?.width ?? view.width) * output.width / view.width), maxHeight: output.height,
@@ -486,7 +504,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     fs.writeFileSync(path.join(s.dir, 'list.txt'), lines.join('\n'));
     const vp = s.w.page.viewportSize();
     fs.writeFileSync(path.join(s.dir, 'meta.json'), JSON.stringify({ id, seg, start, end, total, view: vp, frames: s.frames.map(([f, t]) => [path.basename(f), +t.toFixed(4)]) }));
-    fs.writeFileSync(path.join(s.dir, 'pointer.json'), JSON.stringify({ view: vp, moves: s.w.moves, presses: s.w.presses, zooms: s.w.zooms }));
+    fs.writeFileSync(path.join(s.dir, 'pointer.json'), JSON.stringify({ view: vp, moves: s.w.moves, presses: s.w.presses, zooms: s.w.zooms, marks: s.w.marks }));
     s.w.t0 = 0;
     console.log(`${id}-${seg}-${s.w.name}: ${s.frames.length} frames, ${total.toFixed(2)}s (voice ${start.toFixed(2)}-${end.toFixed(2)})`);
   }

@@ -55,6 +55,7 @@ Each window `w` has:
 | `w.type(text, delay)` / `w.key('Enter')` | Keyboard. Click the field first. |
 | `w.drag(locator, [x, y], ms)` / `w.dragBy(locator, dx, dy, ms)` | Press on a handle, carry it, let go. Drawn as a closed hand while held. |
 | `w.select(locator, ms, word)` | Select an element's text, or only `word` in it: press at its start, drag to its end, let go. The I-beam throughout. |
+| `w.marquee(target, { hold, pad, ms })` | Drag a selection box around an area (an element or `[x, y, w, h]`): dashed, rounded, light fill, soft shadow. Drawn by the assembler; nothing is pressed in the page. Stays `hold` ms, then fades. |
 | `w.circle(locator)` | A loop around an element, a little uneven, as if circling it on paper. |
 | `w.underline(locator)` | Back and forth under an element, like underlining it while reading. |
 | `w.shake()` | A quick shake side to side; the drawn cursor grows while it lasts (macOS shake-to-find). |

@@ -93,6 +93,11 @@ like a person using the app. Write beats with this in mind; none of it needs cod
   one thing. `w.circle(target)` loops around
   it, `w.underline(target)` goes back and forth under it, `w.shake()` shakes and the drawn
   cursor grows, as macOS does. Their size, turns and speed vary each time.
+- **A selection box** is `w.marquee(target)`: the cursor drags a dashed, rounded box from one
+  corner of an area to the other, as on a desktop, and it stays while the voice talks about that
+  area. It is drawn in the render (white edge under the dashes, a light fill, a soft shadow, so it
+  reads on light and dark screens); the page is never pressed. The colour is
+  `pointer.marquee` (default macOS blue). Use it for "this part here", when a loop is too loose.
 - **Motion blur on the pointer alone,** as Screen Studio's: a fast cursor smears along its path,
   a still one is sharp. The camera is never blurred. `pointer.blur: false` turns it off.
 - **Only real pointer events** from the page itself are tracked; events apps or iframes fire on

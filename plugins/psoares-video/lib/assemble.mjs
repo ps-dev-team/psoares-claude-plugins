@@ -66,8 +66,8 @@ function camera(raw, from, len, w, h, out) {
   const ptr = JSON.parse(fs.readFileSync(path.join(raw, 'pointer.json'), 'utf8'));
   const props = {
     fps, width: w, height: h, from, duration: len, view: meta.view,
-    frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms,
-    pointer: { size: config.pointer.size, show: true, blur: config.pointer.blur !== false, images: cursorImages() }, blur: config.camera.blur,
+    frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms, marks: ptr.marks ?? [],
+    pointer: { size: config.pointer.size, show: true, blur: config.pointer.blur !== false, marquee: config.pointer.marquee ?? '#0a84ff', images: cursorImages() }, blur: config.camera.blur,
   };
   const propsFile = path.join(raw, `camera-${from.toFixed(2)}.json`);
   fs.writeFileSync(propsFile, JSON.stringify(props));
