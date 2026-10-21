@@ -57,7 +57,7 @@ export function playwright(project) {
 // needs longer than the voice gives it; every later time moves with it.
 // Without a voice (B-roll), pass `lines: null` and use plain seconds.
 export function timings(project, id, gaps = {}) {
-  const file = project.p('audio', `${id}.lines.json`);
+  const file = project.p('audio', 'timings', `${id}.lines.json`);
   if (!fs.existsSync(file)) {
     const L = (s) => { if (typeof s !== 'number') throw new Error(`no voice for ${id}: beats use seconds`); return s; };
     L.lines = null; L.end = () => 0;

@@ -1,6 +1,7 @@
 # python3 tts.py <project> <id>: reads scripts/<id>.md with the project's
-# ElevenLabs voice and writes audio/<id>.mp3, audio/<id>.align.json and
-# audio/<id>.lines.json (each line's start and end, and each word's start).
+# ElevenLabs voice and writes audio/<id>.mp3, and beside it in audio/timings/
+# <id>.align.json and <id>.lines.json (each line's start and end, and each
+# word's start), so the audio folder shows only the voices.
 #
 # The key is ELEVENLABS_API_KEY, from the environment or ~/.config/elevenlabs/.env.
 # It is never printed.
@@ -78,9 +79,11 @@ def main():
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out + '.mp3', 'wb').write(base64.b64decode(d['audio_base64']))
     align = d.get('normalized_alignment') or d.get('alignment')
-    json.dump(align, open(out + '.align.json', 'w'))
+    tdir = os.path.join(root, 'audio', 'timings')
+    os.makedirs(tdir, exist_ok=True)
+    json.dump(align, open(os.path.join(tdir, vid + '.align.json'), 'w'))
     lines = lines_of(align)
-    json.dump(lines, open(out + '.lines.json', 'w'), indent=1)
+    json.dump(lines, open(os.path.join(tdir, vid + '.lines.json'), 'w'), indent=1)
     for l in lines:
         print(f"{l['i']:3} {l['start']:7.2f}  {l['text']}")
     print(f'wrote audio/{vid}.mp3 ({len(text)} characters, {lines[-1]["end"]:.1f}s)' if lines else 'no spoken lines')
