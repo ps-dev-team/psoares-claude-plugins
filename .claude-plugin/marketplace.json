@@ -65,6 +65,21 @@
         "voice",
         "recording"
       ]
+    },
+    {
+      "name": "psoares-video",
+      "source": "./plugins/psoares-video",
+      "description": "Voiced screen demos and B-roll from a script. Skills: voice (ElevenLabs eleven_v4 with line and word timings), screen (real headed Chrome, one or two windows, beats timed to the voice), assemble (large drawn pointer, 2x spring zoom, browser frame for two windows, fades, 4K).",
+      "category": "content",
+      "keywords": [
+        "video",
+        "screen recording",
+        "demo",
+        "b-roll",
+        "elevenlabs",
+        "voice",
+        "lesson"
+      ]
     }
   ]
 }

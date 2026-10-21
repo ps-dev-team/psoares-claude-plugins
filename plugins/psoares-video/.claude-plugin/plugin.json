@@ -1,0 +1,10 @@
+{
+  "name": "psoares-video",
+  "version": "0.1.0",
+  "description": "Voiced screen demos and B-roll from a script: voice (ElevenLabs eleven_v4 with line and word timings), screen (real headed Chrome, one or two windows, beats timed to the voice, pointer and zooms recorded as data), assemble (large drawn pointer, 2x spring zoom with motion blur, plain browser frame for two windows, fades, the voice with its gaps, 4K 60 fps).",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["video", "screen recording", "demo", "b-roll", "elevenlabs", "voice", "playwright", "remotion", "lesson"]
+}
