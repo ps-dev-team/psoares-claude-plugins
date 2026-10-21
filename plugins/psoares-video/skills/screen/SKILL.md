@@ -61,10 +61,9 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 - **Moves** take time by distance (a short hop is quick), bow slightly, start fast and settle.
   `ms` on `hover`, `click`, `moveTo` is the most a move may take, not its length.
 - **The cursor shape** is the page's own, recorded at every move from the CSS cursor under the
-  pointer (as Screen Studio records the system's): arrow, I-beam over text (any text that can be
-  selected, as Chrome shows it, and fields), open hand where the
-  page offers to grab, not-allowed, resize arrows. A shape shows only once it has held for about a
-  quarter of a second, so crossing text on the way somewhere stays the arrow. The pointing hand is shown **only around a
+  pointer (as Screen Studio records the system's): arrow, open hand where the page offers to grab, not-allowed, resize arrows. A shape shows only once it has held for about a
+  quarter of a second, so crossing text on the way somewhere stays the arrow. The I-beam shows only while the hand works with text (clicking into a field,
+  selecting); resting on text is the arrow. The pointing hand is shown **only around a
   click** (from just before the press to just after the release), and a closed hand while the
   button is held (a drag).
 - **A click is the hand's gesture, never the page's.** The recorder never animates what is
@@ -88,21 +87,48 @@ like a person using the app. Write beats with this in mind; none of it needs cod
   hand that moved last sometimes drifts: a small loop, a sway, a figure eight. Each rest is
   generated new (random circles added together), never picked from a fixed list.
   `pointer.human: false` turns hooks and rests off.
-- **Gestures to point at something** while the voice names it. Use `w.circle(target)` for an
-  **area** (a section, a card, a group): a quick loop around it. For a **button**, just move onto
-  it; the arrow is enough, and the hand comes only for the click. `w.rest()` is a small point at
-  one thing. `w.circle(target)` loops around
-  it, `w.underline(target)` goes back and forth under it, `w.shake()` shakes and the drawn
-  cursor grows, as macOS does. Their size, turns and speed vary each time.
-- **A selection box** is `w.marquee(target)`: the cursor drags a dashed, rounded box from one
-  corner of an area to the other, as on a desktop, and it stays while the voice talks about that
-  area. It is drawn in the render (white edge under the dashes, a light fill, a soft shadow, so it
-  reads on light and dark screens); the page is never pressed. The colour is
-  `pointer.marquee` (default macOS blue). Use it for "this part here", when a loop is too loose.
+- **Gestures and the selection box** (`w.circle`, `w.underline`, `w.select`, `w.marquee`,
+  `w.shake`) are specials, used rarely. Read "Keep it plain" below before using any of them.
+  `w.circle(target)` is a quick loop around an area; `w.underline(target)` goes back and forth
+  under it; `w.shake()` shakes and the drawn cursor grows, as macOS does; `w.marquee(target)`
+  drags a dashed, rounded selection box around an area, drawn in the render (the page is never
+  pressed), which lets go of the cursor at the corner and stays `hold` ms. Their size, turns and
+  speed vary each time.
 - **Motion blur on the pointer alone,** as Screen Studio's: a fast cursor smears along its path,
   a still one is sharp. The camera is never blurred. `pointer.blur: false` turns it off.
 - **Only real pointer events** from the page itself are tracked; events apps or iframes fire on
   their own are ignored (one in the path makes the drawn pointer jump).
+
+## Keep it plain
+
+The video is a person using the app calmly. Plain moves, hovers and clicks carry almost all of it,
+and the voice does the explaining. Zooms, gestures and pauses are specials: each one is a choice
+made for one moment, and a video full of them looks restless and buggy. When unsure, leave it out.
+
+- **Zoom: only to stay on one place.** Zoom in when the voice stays on one small part of the
+  screen for a while (roughly 10 to 30 s: a menu that opens and is gone through item by item, a
+  panel being filled in). Zoom in on that one place, do the moves there, and **zoom out before the
+  pointer leaves for somewhere else**. Never move a zoom from one place to another, and never zoom
+  in again within a few seconds of zooming out: the camera swinging across the screen reads as a
+  glitch. Most lessons need one or two zooms; many need none. Nothing on a normal-size page needs
+  a zoom just because it is small.
+- **Gestures: one at a time, only for a reason.** A loop around an area when the voice introduces
+  that area and the eye would not find it on its own. An underline or a selection only for the
+  exact words the voice is about (text being edited, deleted, replaced). The selection box only
+  when the user asks for it, or once to frame a group the voice names together. Never put two
+  gestures on the same thing, never a gesture on every item of a list, and never a gesture where a
+  hover is enough. A whole lesson usually has a handful at most.
+- **The I-beam never shows on its own.** Hover headings and text with the arrow. Only clicking
+  into a field, typing, or `w.select` shows it.
+- **Pauses: only where the screen needs time.** A gap after a click that opens something big (a
+  page, a dialog, a generated result), or to hold on a result the voice is about. Not after every
+  click, not after a menu that is gone through at once, and not to fill silence. See "Give the
+  screen time"; when in doubt, no gap.
+- **Plain is the default for each line.** For each line of the voice, first write the plainest
+  beat (move there, hover, click). Add a special only if the line cannot land without it.
+
+The recorder flags in the report a zoom moved without zooming out, and a zoom in right after a zoom
+out. Fix those before handing over.
 
 ## 3. Probe
 
@@ -148,27 +174,27 @@ add a pause with `gaps`, never a faster pointer. A gap puts silence before a lin
 that line on move later, and the assembler cuts the same silence into the voice at its natural
 pause, so the voice is not cut mid-word.
 
-Add a gap before the next line when:
+Add a gap before the next line only when:
 
-- **A click opens something**: a page, a menu, a dialog, a panel, a generated result. Let it
-  arrive and sit still for a moment (about 0.6 to 1.2 s) before the voice talks about the next
-  thing.
-- **Two actions would run back to back**: a click, then at once a move to the next thing because
+- **A click opens something big**: a page, a dialog, a panel, a generated result. Let it arrive
+  and sit still for a moment (about 0.6 to 1 s) before the voice moves on. A menu that the voice
+  goes through at once needs none.
+- **Two actions would run back to back**: a click, then at once a rush to the next thing because
   the next line starts. Put the pause between them, so each action is seen.
-- **The result is the point**: something filled in, saved, moved or changed. Hold on it (1 to
-  2 s) while nothing moves except, perhaps, a small rest of the hand.
-- **The pointer has far to go**: a long move, a scroll, a drag, typing. Measure the beat's real
-  length in the log (`slow`, `late`) and give it the time it took, plus a beat to settle.
-- **A zoom goes in or out**: the camera needs about 0.6 s to settle, and the viewer a moment to
-  read.
+- **The result is the point**: something saved, filled in or changed that the voice is about.
+  Hold on it briefly.
+
+Never add a gap to make room for a gesture or a zoom: drop the gesture, or start it earlier.
+A beat that runs late is fixed first by making it simpler, and only then by a gap.
 
 How to find them:
 
 1. Before recording, read the beats against the timings: wherever a beat's action plus what it
    opens takes longer than the time until the next beat, add a gap of the difference plus about
    half a second.
-2. After recording, watch the log: `late` and `slow` lines mark beats that had no room. Add a gap
-   before the line that follows, and record again.
+2. After recording, watch the log: `late` and `slow` lines mark beats that had no room. Make the
+   beat simpler first; only if it still needs the time, add a gap before the line that follows,
+   and record again.
 3. Watch the result: anywhere the pointer leaves before the screen has settled, add a gap there.
 
 **A pause never costs the voice anything.** The voice is fixed and the picture fits around it:
@@ -178,8 +204,8 @@ If there is no real pause before a line, the assembler stops and says so; move t
 another line, or let the beat start earlier. Listen to every pause in the result: it must sound
 like the speaker taking a breath, never like a cut.
 
-Keep gaps where they help the picture, not everywhere: a lesson that pauses after every line drags.
-A pause of 0.5 to 1.5 s is usual; more than 2 s should show something worth looking at.
+Keep gaps rare: a lesson that stops after every click drags and feels broken. A pause of 0.5 to
+1 s is usual; more than 1.5 s needs something on screen worth looking at.
 
 ## 5. Record
 

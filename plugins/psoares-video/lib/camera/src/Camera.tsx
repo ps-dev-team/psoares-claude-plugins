@@ -207,6 +207,9 @@ const Scene = (props: CameraProps) => {
   // the way somewhere stays the arrow, resting on it shows the I-beam.
   const si = at(moves, t - 0.05, (m) => m[0]);
   let shape = (si >= 0 && moves[si][3]) || 'arrow';
+  // The I-beam only when the hand works with text: clicking into a field or
+  // selecting. Resting on text or a field is the arrow.
+  if (shape === 'ibeam' && !presses.some(([pt]) => t >= pt - 0.2 && t <= pt + 0.4)) shape = 'arrow';
   if (shape !== 'arrow' && shape !== 'hand') {
     for (let i = Math.max(0, at(moves, t - 0.25, (m) => m[0])); i <= si; i++) if ((moves[i][3] || 'arrow') !== shape) { shape = 'arrow'; break; }
   }
@@ -237,8 +240,13 @@ const Scene = (props: CameraProps) => {
   // The selection boxes: the far corner is the drawn pointer while it pulls,
   // then stays; the box fades in over its first moments and out after t2.
   const boxes = marks.filter((m) => t >= m.t0 && t <= m.t2 + 0.35).map((m) => {
-    // The far corner is the drawn pointer until it has settled at the end.
-    const [fx, fy] = path[Math.max(0, Math.min(path.length - 1, Math.round((Math.min(t, m.t1 + SETTLE) - from) * fps)))] ?? [px, py];
+    // The far corner is the drawn pointer while it pulls. At the release the
+    // box lets go of the pointer and finishes growing to its spot on its own,
+    // so a pointer that moves on at once does not drag the box with it.
+    const g1 = path[Math.max(0, Math.min(path.length - 1, Math.round((m.t1 - from) * fps)))] ?? [px, py];
+    const r1 = rawAt(moves, m.t1, view);
+    const done = t < m.t1 ? 0 : spring({ frame: (t - m.t1) * fps, fps, config: SPRING });
+    const [fx, fy] = t < m.t1 ? [px, py] : [g1[0] + (r1[0] - g1[0]) * done, g1[1] + (r1[1] - g1[1]) * done];
     const o = Math.min(1, (t - m.t0) / 0.08) * (t > m.t2 ? 1 - (t - m.t2) / 0.35 : 1);
     return { x: Math.min(m.x, fx), y: Math.min(m.y, fy), w: Math.abs(fx - m.x), h: Math.abs(fy - m.y), o };
   });

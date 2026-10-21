@@ -48,14 +48,6 @@ const TRACK = `
       'row-resize': 'resizeupdown', 'ns-resize': 'resizeupdown', 'n-resize': 'resizeupdown', 's-resize': 'resizeupdown', move: 'move' };
     if (named[c]) return named[c];
     if (c === 'auto' && e.target instanceof Element && e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable=true]')) return 'ibeam';
-    // Over text that can be selected, Chrome shows the I-beam on its own.
-    if (c === 'auto' && e.target instanceof Element && getComputedStyle(e.target).userSelect !== 'none') {
-      const r = document.caretRangeFromPoint?.(e.clientX, e.clientY);
-      if (r && r.startContainer.nodeType === 3 && r.startContainer.textContent.trim()) {
-        const box = document.createRange(); box.selectNodeContents(r.startContainer);
-        for (const q of box.getClientRects()) if (e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom) return 'ibeam';
-      }
-    }
     return 'arrow';
   };
   // The path and the presses come from the recorder itself (it knows where it
@@ -419,7 +411,12 @@ export class Window {
   // now; the assembler eases into it with the spring. zoom(null) zooms out.
   async zoom(target, scale = this.project.config.camera.zoom) {
     if (!this.t0) return;
+    const last = this.zooms.at(-1);
     if (target == null) { this.zooms.push({ t: this.now(), scale: 1, x: 0, y: 0 }); return; }
+    // A zoom is for one place the voice stays on. Moving it, or zooming in
+    // again right after zooming out, reads as a restless camera.
+    if (last && last.scale > 1) this.note('zoom moved to another place without zooming out first');
+    else if (last && this.now() - last.t < 3) this.note(`zoom in ${(this.now() - last.t).toFixed(1)}s after a zoom out: reads as a camera move`);
     let x, y;
     if (Array.isArray(target)) [x, y] = target;
     else {
