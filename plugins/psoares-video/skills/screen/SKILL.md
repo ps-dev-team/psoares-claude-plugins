@@ -61,12 +61,17 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 - **Moves** take time by distance (a short hop is quick), bow slightly, start fast and settle.
   `ms` on `hover`, `click`, `moveTo` is the most a move may take, not its length.
 - **The cursor shape** is the page's own, recorded at every move from the CSS cursor under the
-  pointer (as Screen Studio records the system's): arrow, I-beam over text, open hand where the
+  pointer (as Screen Studio records the system's): arrow, I-beam over text (any text that can be
+  selected, as Chrome shows it, and fields), open hand where the
   page offers to grab, not-allowed, resize arrows. The pointing hand is shown **only around a
   click** (from just before the press to just after the release), and a closed hand while the
   button is held (a drag).
-- **A click** waits for the drawn pointer to land, then the pressed element dips and springs
-  back (an elastic scale drawn by the page, so it is in the frames).
+- **A click is the hand's gesture, never the page's.** The recorder never animates what is
+  filmed. The cursor lands as the arrow, turns into the pointing hand about 0.15 s before the
+  press, dips at the press and springs back with a small bounce, then is the arrow again. It
+  does this for any click, whatever is under it.
+- **Selecting text** is `w.select(target)`: a press and drag that starts on text keeps the I-beam,
+  with no hand, and the page shows its real selection.
 - **A drag** is `w.drag(handle, [x, y])` or `w.dragBy(handle, dx, dy)`: press, carry, let go.
   The cursor is the open hand up to the press, the closed hand while held, and never the pointing
   hand. The carry takes a steady `ms` (default 1.1 s, no hook), and the drawn cursor follows it

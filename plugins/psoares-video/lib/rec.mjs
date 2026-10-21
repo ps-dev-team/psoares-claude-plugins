@@ -48,6 +48,14 @@ const TRACK = `
       'row-resize': 'resizeupdown', 'ns-resize': 'resizeupdown', 'n-resize': 'resizeupdown', 's-resize': 'resizeupdown', move: 'move' };
     if (named[c]) return named[c];
     if (c === 'auto' && e.target instanceof Element && e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable=true]')) return 'ibeam';
+    // Over text that can be selected, Chrome shows the I-beam on its own.
+    if (c === 'auto' && e.target instanceof Element && getComputedStyle(e.target).userSelect !== 'none') {
+      const r = document.caretRangeFromPoint?.(e.clientX, e.clientY);
+      if (r && r.startContainer.nodeType === 3 && r.startContainer.textContent.trim()) {
+        const box = document.createRange(); box.selectNodeContents(r.startContainer);
+        for (const q of box.getClientRects()) if (e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom) return 'ibeam';
+      }
+    }
     return 'arrow';
   };
   // The path and the presses come from the recorder itself (it knows where it
@@ -258,13 +266,6 @@ export class Window {
     if (!(await this.hover(locator, ms, at))) return false;
     // The drawn pointer trails on its spring: let it land before the press.
     await sleep(200);
-    // The pressed thing gives a little, like a real button: it dips and
-    // springs back. Drawn by the page, so the recording catches it.
-    await this.page.evaluate(([x, y]) => {
-      const el = document.elementFromPoint(x, y)?.closest('button, a, [role=button], [role=menuitem], [role=tab], [role=option], label, input');
-      el?.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.94)', offset: 0.3 }, { transform: 'scale(1.025)', offset: 0.65 }, { transform: 'scale(0.995)', offset: 0.85 }, { transform: 'scale(1)' }],
-        { duration: 420, easing: 'ease-out' });
-    }, [this.cx, this.cy]).catch(() => {});
     await this.press(true); await sleep(80); await this.press(false);
     await sleep(120);
     return true;
@@ -352,6 +353,30 @@ export class Window {
       return [sx + (size * env * ox) / sum, sy + (size * env * oy) / sum];
     }, ms);
     await this.page.mouse.move(sx, sy); this.logMove(sx, sy); this.cx = sx; this.cy = sy;
+  }
+  // Selects an element's text the way a person does: press at the start of
+  // the first line, drag to the end of the last, let go. The cursor is the
+  // I-beam throughout, and the selection is the page's own.
+  async select(locator, ms = 700) {
+    const l = typeof locator === 'string' ? this.page.locator(locator) : locator;
+    await this.box(l);
+    const ends = await l.first().evaluate((el) => {
+      const r = document.createRange(); r.selectNodeContents(el);
+      const rects = [...r.getClientRects()].filter((q) => q.width > 0);
+      if (!rects.length) return null;
+      const a = rects[0], b = rects.at(-1);
+      return [a.left + 1, a.top + a.height / 2, b.right - 1, b.top + b.height / 2];
+    }).catch(() => null);
+    if (!ends) { console.log(`[${this.name}] no text to select`, String(locator)); return false; }
+    await this.moveTo(ends[0], ends[1], 550);
+    await sleep(200);
+    await this.press(true);
+    await sleep(100);
+    await this.moveTo(ends[2], ends[3], ms, { hook: false, exact: true });
+    await sleep(100);
+    await this.press(false);
+    await sleep(150);
+    return true;
   }
   async type(text, delay = 85) { await this.page.keyboard.type(text, { delay }); }
   async key(k) { await this.page.keyboard.press(k); }

@@ -146,6 +146,16 @@ const growth = (moves: CameraProps['moves'], from: number, duration: number, fps
   return out;
 };
 
+// One press of the cursor, `since` seconds after it: down fast to 1 - depth,
+// then back up on a springy release that overshoots a little.
+const DOWN = 0.07;
+const pulse = (since: number, depth: number, fps: number) => {
+  if (since < 0 || since > 0.9) return 1;
+  if (since < DOWN) return 1 - depth * Math.sin((since / DOWN) * Math.PI / 2);
+  const up = spring({ frame: (since - DOWN) * fps, fps, config: { mass: 1, stiffness: 380, damping: 13 } });
+  return 1 - depth + depth * up;
+};
+
 const Scene = (props: CameraProps) => {
   const frame = useCurrentFrame();
   const { fps, width, height, view, frames, moves, presses, zooms, pointer, from } = props;
@@ -189,15 +199,21 @@ const Scene = (props: CameraProps) => {
   // A drag is the open hand until the press, the closed hand from the press
   // until just after the release, and never the pointing hand.
   const pairs = holds(presses);
-  const drag = pairs.find(([d, u]) => u - d > DRAG && t >= d - 0.4 && t <= u + 0.15);
-  const near = pairs.some(([d, u]) => t >= d - 0.4 && t <= u + 0.3);
+  // A press that starts on text selects it: the I-beam stays, no hand at all.
+  const shapeAt = (time: number) => { const i = at(moves, time, (m) => m[0]); return (i >= 0 && moves[i][3]) || 'arrow'; };
+  const selecting = pairs.some(([d, u]) => shapeAt(d - 0.02) === 'ibeam' && t >= d - 0.15 && t <= u + 0.25);
+  if (selecting) shape = 'ibeam';
+  const drag = selecting ? undefined : pairs.find(([d, u]) => u - d > DRAG && t >= d - 0.4 && t <= u + 0.15);
+  const near = pairs.some(([d, u]) => t >= d - 0.15 && t <= u + 0.25);
   if (drag) shape = t >= drag[0] ? 'closedhand' : shape === 'hand' || shape === 'arrow' ? 'openhand' : shape;
-  else if (near && plain) shape = 'hand';
-  const pi = at(presses, t, (p) => p[0]);
-  const since = pi >= 0 ? t - presses[pi][0] : 99;
-  const down = pi >= 0 && presses[pi][1] === 1;
-  const press = spring({ frame: since * fps, fps, config: SPRING });
-  const squeeze = down ? 1 - 0.18 * press : 0.82 + 0.18 * press;
+  else if (near && plain && !selecting) shape = 'hand';
+  // The press is the hand's own gesture; the page is never touched. A click
+  // dips the cursor and lets it spring back with a small bounce. A drag dips
+  // at the grab and again, less, at the release.
+  const squeeze = pairs.reduce((sq, [d, u]) => {
+    const long = u - d > DRAG;
+    return sq * pulse(t - d, long ? 0.14 : 0.24, fps) * (long ? pulse(t - u, 0.08, fps) : 1);
+  }, 1);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
