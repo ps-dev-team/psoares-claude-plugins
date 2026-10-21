@@ -83,7 +83,19 @@ const rawAt = (moves: CameraProps['moves'], t: number, view: CameraProps['view']
 // The drawn pointer follows the recorded one on the same spring as the camera,
 // as Screen Studio's does, and stops on its target instead of swinging past.
 // It returns [x, y, vx] per frame; vx tilts the pointer.
-const glide = (moves: CameraProps['moves'], view: CameraProps['view'], from: number, duration: number, fps: number) => {
+// Pairs each press with its release: [down, up].
+const holds = (presses: CameraProps['presses']) => {
+  const out: [number, number][] = [];
+  presses.forEach(([t, d], i) => { if (d === 1) out.push([t, presses.slice(i + 1).find((q) => q[1] === 0)?.[0] ?? Infinity]); });
+  return out;
+};
+// A press held this long is a drag.
+const DRAG = 0.2;
+
+const glide = (moves: CameraProps['moves'], view: CameraProps['view'], from: number, duration: number, fps: number, presses: CameraProps['presses']) => {
+  // While a drag holds the button the pointer is fixed to what it carries, so
+  // it follows the recorded path with no spring behind it.
+  const drags = holds(presses).filter(([d, u]) => u - d > DRAG);
   const { mass, stiffness: k, damping: c } = SPRING;
   const dt = 1 / 480, start = from - 1, end = from + duration;
   let [x, y] = rawAt(moves, start, view);
@@ -99,8 +111,11 @@ const glide = (moves: CameraProps['moves'], view: CameraProps['view'], from: num
   };
   for (let t = start; t <= end + dt; t += dt) {
     const [tx, ty] = rawAt(moves, t, view);
-    [x, vx] = step(x, vx, tx);
-    [y, vy] = step(y, vy, ty);
+    if (drags.some(([d, u]) => t >= d && t <= u)) { vx = (tx - x) / dt; x = tx; y = ty; vy = 0; }
+    else {
+      [x, vx] = step(x, vx, tx);
+      [y, vy] = step(y, vy, ty);
+    }
     while (t >= next && out.length <= duration * fps) { out.push([x, y, vx]); next = from + out.length / fps; }
   }
   return out;
@@ -144,7 +159,7 @@ const Scene = (props: CameraProps) => {
   const tx = width / 2 - cx * k * cam.s, ty = height / 2 - cy * k * cam.s;
 
   const fi = Math.max(0, at(frames, t, (f) => f[1]));
-  const path = useMemo(() => glide(moves, view, from, props.duration, fps), [moves, view, from, props.duration, fps]);
+  const path = useMemo(() => glide(moves, view, from, props.duration, fps, presses), [moves, view, from, props.duration, fps, presses]);
   const [px, py, pvx] = path[Math.min(frame, path.length - 1)] ?? [...rawAt(moves, t, view), 0];
   const grows = useMemo(() => growth(moves, from, props.duration, fps), [moves, from, props.duration, fps]);
   const grow = grows[Math.min(frame, grows.length - 1)] ?? 1;
@@ -171,11 +186,13 @@ const Scene = (props: CameraProps) => {
   // A shape of its own (an open hand on a drag handle, an I-beam) stays.
   const plain = shape === 'hand' || shape === 'arrow';
   if (shape === 'hand') shape = 'arrow';
-  const near = presses.some(([pt, d]) => (d === 1 ? t >= pt - 0.4 && t <= pt + 0.1 : t >= pt - 0.1 && t <= pt + 0.3));
-  if (near && plain) shape = 'hand';
-  // Held down for a moment: a drag, so a closed hand.
-  const last = at(presses, t, (q) => q[0]);
-  if (last >= 0 && presses[last][1] === 1 && t - presses[last][0] > 0.12) shape = 'closedhand';
+  // A drag is the open hand until the press, the closed hand from the press
+  // until just after the release, and never the pointing hand.
+  const pairs = holds(presses);
+  const drag = pairs.find(([d, u]) => u - d > DRAG && t >= d - 0.4 && t <= u + 0.15);
+  const near = pairs.some(([d, u]) => t >= d - 0.4 && t <= u + 0.3);
+  if (drag) shape = t >= drag[0] ? 'closedhand' : shape === 'hand' || shape === 'arrow' ? 'openhand' : shape;
+  else if (near && plain) shape = 'hand';
   const pi = at(presses, t, (p) => p[0]);
   const since = pi >= 0 ? t - presses[pi][0] : 99;
   const down = pi >= 0 && presses[pi][1] === 1;

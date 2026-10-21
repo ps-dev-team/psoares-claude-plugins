@@ -68,6 +68,9 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 - **A click** waits for the drawn pointer to land, then the pressed element dips and springs
   back (an elastic scale drawn by the page, so it is in the frames).
 - **A drag** is `w.drag(handle, [x, y])` or `w.dragBy(handle, dx, dy)`: press, carry, let go.
+  The cursor is the open hand up to the press, the closed hand while held, and never the pointing
+  hand. The carry takes a steady `ms` (default 1.1 s, no hook), and the drawn cursor follows it
+  with no spring lag, so it stays on what it carries.
   Use it for anything the user would drag: a panel, a card, a file, a slider.
 - **No two moves alike.** Each move draws its own length, arc, ease and wobble from a seeded
   random source: it speeds up and settles at the ends, and in between its speed wavers and the
@@ -77,7 +80,10 @@ like a person using the app. Write beats with this in mind; none of it needs cod
   hand that moved last sometimes drifts: a small loop, a sway, a figure eight. Each rest is
   generated new (random circles added together), never picked from a fixed list.
   `pointer.human: false` turns hooks and rests off.
-- **Gestures to point at something** while the voice names it: `w.circle(target)` loops around
+- **Gestures to point at something** while the voice names it. Use `w.circle(target)` for an
+  **area** (a section, a card, a group): a quick loop around it. For a **button**, just move onto
+  it; the arrow is enough, and the hand comes only for the click. `w.rest()` is a small point at
+  one thing. `w.circle(target)` loops around
   it, `w.underline(target)` goes back and forth under it, `w.shake()` shakes and the drawn
   cursor grows, as macOS does. Their size, turns and speed vary each time.
 - **Motion blur on the pointer alone,** as Screen Studio's: a fast cursor smears along its path,

@@ -205,7 +205,10 @@ export class Window {
   //
   // A long move sometimes ends in a hook, as a hand does: it runs a little
   // past and curls back onto the target. `hook` true or false forces it.
-  async moveTo(x, y, ms = 550, { hook } = {}) {
+  //
+  // `exact` makes ms the move's length: a drag carries something, and a page
+  // can't follow a hand that flies.
+  async moveTo(x, y, ms = 550, { hook, exact = false } = {}) {
     const sx = this.cx, sy = this.cy, dx = x - sx, dy = y - sy;
     const dist = Math.hypot(dx, dy);
     if (hook ?? (this.human && dist > 220 && this.rand() < 0.3)) {
@@ -219,7 +222,7 @@ export class Window {
     // The hand speeds up and settles at the ends, and in between its speed
     // wavers and the line drifts a little off true, as a wrist's does.
     const r = this.human ? this.rand : () => 0.5;
-    const dur = Math.min(ms, 140 + 0.2 * dist) * (0.85 + 0.3 * r());
+    const dur = exact ? ms : Math.min(ms, 140 + 0.2 * dist) * (0.85 + 0.3 * r());
     const n = Math.max(6, Math.round(dur / 16));
     const bow = Math.min(60, dist * (0.03 + 0.09 * r())) * (r() < 0.75 === (dx * dy >= 0) ? 1 : -1);
     const nx = dist ? -dy / dist : 0, ny = dist ? dx / dist : 0;
@@ -268,18 +271,18 @@ export class Window {
   }
   // Press on a handle, carry it to a point (or by [dx, dy]), and let go. The
   // drawn pointer is a closed hand while the button is held.
-  async drag(locator, to, ms = 700, at) {
+  async drag(locator, to, ms = 1100, at) {
     if (!(await this.hover(locator, 450, at))) return false;
-    await sleep(160);
+    await sleep(200);
     await this.press(true);
-    await sleep(120);
-    await this.moveTo(to[0], to[1], ms);
-    await sleep(120);
+    await sleep(150);
+    await this.moveTo(to[0], to[1], ms, { hook: false, exact: true });
+    await sleep(150);
     await this.press(false);
     await sleep(150);
     return true;
   }
-  async dragBy(locator, dx, dy, ms = 700, at) {
+  async dragBy(locator, dx, dy, ms = 1100, at) {
     const b = await this.box(locator);
     if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
     const ax = at?.[0] ?? 0.5, ay = at?.[1] ?? 0.5;
@@ -290,7 +293,7 @@ export class Window {
 
   // A loop around an element, as if circling it on paper: a little uneven,
   // closing slightly inside where it began.
-  async circle(locator, { turns = 0.95 + this.rand() * 0.45, ms = 850 + this.rand() * 350, pad = 12 + this.rand() * 10 } = {}) {
+  async circle(locator, { turns = 0.95 + this.rand() * 0.45, ms = 560 + this.rand() * 220, pad = 12 + this.rand() * 10 } = {}) {
     const b = await this.box(locator);
     if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
     const ox = b.x + b.width / 2, oy = b.y + b.height / 2;
