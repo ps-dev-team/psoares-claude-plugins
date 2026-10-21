@@ -80,12 +80,17 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
   const acct = account ? config.accounts[account] : null;
   if (account && !acct) throw new Error(`no account "${account}" in video.config.json`);
   const scale = config.output.width / config.view.width;
-  const context = await chromium.launchPersistentContext(project.p('raw', `profile-${account ?? 'anon'}`), {
+  // config.profiles keeps each account's Chrome profile (and its session) outside
+  // the project, e.g. in ~/.config, so a restart doesn't sign anyone out.
+  const profiles = config.profiles ? config.profiles.replace(/^~/, process.env.HOME) : project.p('raw');
+  const context = await chromium.launchPersistentContext(path.join(profiles, `profile-${account ?? 'anon'}`), {
     channel: 'chrome', headless: false, viewport: v, deviceScaleFactor: scale, locale: config.app.locale,
+    ...(config.app.timezone ? { timezoneId: config.app.timezone } : {}),
     // Off to the side of the screen, so a stray click can't land in it.
     args: [`--window-position=${config.app.windowX + x},40`, '--mute-audio', '--autoplay-policy=no-user-gesture-required'],
   });
   const w = new Window(account ?? 'anon', context, null, project);
+  w.base = base;
   await context.exposeBinding('__track', (_src, type, px, py) => w.onTrack(type, px, py));
   await context.addInitScript(TRACK);
   if (config.pointer.mode === 'page') await context.addInitScript(PAGE_POINTER);

@@ -39,7 +39,7 @@ it. The pointer's path and the zooms are saved as data.
 ### `assemble`
 
 Builds the video: the pointer drawn large and sharp like Screen Studio's, 2× zooms eased with
-Screen Studio's spring and motion blur while moving, two windows in a plain browser frame,
+Screen Studio's spring, two windows in a plain browser frame,
 fades between scenes, the voice with silence cut in where the screen needed time, 4K at 60 fps.
 
 ## A project

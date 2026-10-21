@@ -19,7 +19,7 @@ const DEFAULTS = {
   transition: { kind: 'fadewhite', seconds: 0.7, pad: 0.5 },
   frame: { address: '', stage: '#f5f6fc', gap: 40, single: false },
   pointer: { mode: 'drawn', size: 34 },
-  camera: { zoom: 2, concurrency: 4, blur: { shutter: 180, samples: 12 } },
+  camera: { zoom: 2, concurrency: 4, blur: { shutter: 180, samples: 0 } },
   voice: {
     model: 'eleven_v4', format: 'mp3_44100_192',
     settings: { stability: 0.5, similarity_boost: 0.75, style: 0, use_speaker_boost: true, speed: 1 },

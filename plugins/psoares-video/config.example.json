@@ -18,7 +18,7 @@
   },
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
   "pointer": { "mode": "drawn", "size": 34 },
-  "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 12 } },
+  "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 },
   "playwright": "/optional/folder/that/has/node_modules/playwright"
 }
