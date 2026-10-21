@@ -1,7 +1,25 @@
 // The pointer, drawn large like Screen Studio's, in the shape the page showed:
 // a black arrow with a white edge, a white hand over what can be clicked, an
 // I-beam over text. (x, y) is the hot spot. A press squeezes it from there.
-type Props = { x: number; y: number; size: number; squeeze: number; tilt?: number; shape?: string };
+export type CursorImage = { src: string; hot: [number, number]; aspect: number };
+type Props = { x: number; y: number; size: number; squeeze: number; tilt?: number; shape?: string; image?: CursorImage };
+
+// A cursor from an image set (Screen Studio's SVGs): the arrow's height is
+// about 1.4 x size, so it matches the drawn one; other shapes are scaled to
+// the same width.
+const ImagePointer = ({ x, y, size, squeeze, tilt = 0, image }: Required<Pick<Props, 'x' | 'y' | 'size' | 'squeeze' | 'image'>> & { tilt?: number }) => {
+  const w = size * 0.95, h = w * image.aspect;
+  const [hx, hy] = image.hot;
+  return (
+    <img
+      src={image.src}
+      style={{
+        position: 'absolute', left: x - hx * w, top: y - hy * h, width: w, height: h,
+        transformOrigin: `${hx * 100}% ${hy * 100}%`, transform: `rotate(${tilt}deg) scale(${squeeze})`,
+      }}
+    />
+  );
+};
 
 // Each shape: its path in a 28-unit box, and its hot spot in that box.
 const SHAPES: Record<string, { hot: [number, number]; draw: (stroke: number) => JSX.Element }> = {
@@ -29,7 +47,8 @@ const SHAPES: Record<string, { hot: [number, number]; draw: (stroke: number) => 
   },
 };
 
-export const Pointer = ({ x, y, size, squeeze, tilt = 0, shape = 'arrow' }: Props) => {
+export const Pointer = ({ x, y, size, squeeze, tilt = 0, shape = 'arrow', image }: Props) => {
+  if (image) return <ImagePointer x={x} y={y} size={size} squeeze={squeeze} tilt={tilt} image={image} />;
   const s = SHAPES[shape] ?? SHAPES.arrow;
   const [hx, hy] = s.hot;
   return (

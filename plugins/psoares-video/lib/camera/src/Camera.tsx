@@ -7,7 +7,7 @@
 import { CameraMotionBlur } from '@remotion/motion-blur';
 import { useMemo } from 'react';
 import { AbsoluteFill, Img, spring, staticFile, useCurrentFrame } from 'remotion';
-import { Pointer } from './Pointer';
+import { Pointer, type CursorImage } from './Pointer';
 
 export type Zoom = { t: number; scale: number; x: number; y: number };
 export type CameraProps = {
@@ -26,7 +26,7 @@ export type CameraProps = {
   /** [time, 1 down | 0 up] */
   presses: [number, number][];
   zooms: Zoom[];
-  pointer: { size: number; show: boolean };
+  pointer: { size: number; show: boolean; images?: Record<string, CursorImage> | null };
   blur: { shutter: number; samples: number };
 };
 
@@ -126,7 +126,17 @@ const Scene = (props: CameraProps) => {
   // The shape the page showed under the real pointer, a beat behind it, so the
   // hand appears as the drawn pointer arrives (Screen Studio records the same).
   const si = at(moves, t - 0.05, (m) => m[0]);
-  const shape = (si >= 0 && moves[si][3]) || 'arrow';
+  let shape = (si >= 0 && moves[si][3]) || 'arrow';
+  // The hand only for a click: from just before the press to just after the
+  // release, wherever the page would show it. Elsewhere it is the arrow.
+  // A shape of its own (an open hand on a drag handle, an I-beam) stays.
+  const plain = shape === 'hand' || shape === 'arrow';
+  if (shape === 'hand') shape = 'arrow';
+  const near = presses.some(([pt, d]) => (d === 1 ? t >= pt - 0.4 && t <= pt + 0.1 : t >= pt - 0.1 && t <= pt + 0.3));
+  if (near && plain) shape = 'hand';
+  // Held down for a moment: a drag, so a closed hand.
+  const last = at(presses, t, (q) => q[0]);
+  if (last >= 0 && presses[last][1] === 1 && t - presses[last][0] > 0.12) shape = 'closedhand';
   const pi = at(presses, t, (p) => p[0]);
   const since = pi >= 0 ? t - presses[pi][0] : 99;
   const down = pi >= 0 && presses[pi][1] === 1;
@@ -137,7 +147,7 @@ const Scene = (props: CameraProps) => {
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${cam.s})` }}>
         {frames.length ? <Img src={staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
-        {pointer.show ? <Pointer x={px * k} y={py * k} size={pointer.size * k} squeeze={squeeze} tilt={shape === 'arrow' ? tilt : 0} shape={shape} /> : null}
+        {pointer.show ? <Pointer x={px * k} y={py * k} size={pointer.size * k} squeeze={squeeze} tilt={shape === 'arrow' ? tilt : 0} shape={shape} image={pointer.images?.[shape] ?? pointer.images?.arrow} /> : null}
       </div>
     </AbsoluteFill>
   );

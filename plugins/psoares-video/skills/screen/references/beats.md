@@ -53,6 +53,7 @@ Each window `w` has:
 | `w.hover(locator, ms, at)` | Move there and stay. Returns false (and logs `missing`) when not found. |
 | `w.moveTo(x, y, ms)` | Eased move to a CSS point. |
 | `w.type(text, delay)` / `w.key('Enter')` | Keyboard. Click the field first. |
+| `w.drag(locator, [x, y], ms)` / `w.dragBy(locator, dx, dy, ms)` | Press on a handle, carry it, let go. Drawn as a closed hand while held. |
 | `w.scroll(dy, ms)` | Smooth wheel scroll. |
 | `w.zoom(locator \| [x, y], scale)` | The camera zooms there from now (default `camera.zoom`, 2). |
 | `w.unzoom()` | The camera eases back to the whole window. |

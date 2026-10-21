@@ -1,35 +1,42 @@
-# Sign-in with copied cookies
+# Sign-in
 
-Scripted logins fail on captchas (Turnstile, reCAPTCHA) and should not try to beat them. The
-recorder signs in with the cookies of a session the user opened by hand.
+Recordings run in real Chrome, one **profile per account**, kept outside the project
+(`config.profiles`, e.g. `~/.config/psoares-video/<project>/profiles`), so a restart or a
+cleaned project signs nobody out.
 
-## Per account
+## Signing an account in, once
 
-1. The user opens the app in a **fresh Incognito window** (one per account, so sessions do not
-   mix), signs in, and in the DevTools console runs `copy(document.cookie)`.
-2. They save it with `! pbpaste > /path/to/cookies-<account>.txt` (the `!` runs it in the chat,
-   so the cookie never passes through the conversation).
-3. They close the Incognito window **without signing out.** Signing out ends the session for the
-   recorder too, a little later (when its access token expires).
-4. `video.config.json` points to the file:
+```sh
+node "${CLAUDE_PLUGIN_ROOT}/lib/login.mjs" <project> <account>
+```
 
-   ```json
-   "accounts": {
-     "coach": { "cookies": "/path/to/cookies-coach.txt" },
-     "client": { "cookies": "/path/to/cookies-client.txt", "domain": "app.example.com" }
-   }
-   ```
+It opens that account's profile in **plain Chrome**, with no automation, on `config.app.base` +
+`config.app.login`, and prints the email and password from `config.accounts.<account>` for the
+user to type. The user signs in (and ticks the captcha, if there is one), then closes the window.
+Chrome keeps running after its last window on a Mac: stop the process login.mjs started (its
+PID, never by name) so the session is written, then probe the account to confirm it opens
+signed in.
 
-   `domain` defaults to the host of `app.base`.
+Why plain Chrome: captchas such as Turnstile refuse a window Playwright drives ("the security
+check did not pass"). The profile uses the same keychain flags Playwright does
+(`--use-mock-keychain --password-store=basic`), so the recorder can read the cookies it saved.
 
-## Why the file is written back
+## Rules
 
-Apps on Supabase (and others) rotate the refresh token every time the session refreshes, and
-treat an old token coming back as theft: the whole session is revoked. So a window writes its
-current cookies back to the file when it closes, on Ctrl-C, and on a crash. Never restore an old
-copy of a cookie file, and never run two windows on the same account file at once.
+- Never script the login form past the captcha, and never try to get around a captcha. If a site
+  offers no way to sign in without one, the user signs in by hand, as above.
+- The session stays alive while the account is used; it ends if the account goes unused for long
+  or somebody signs it out elsewhere. Then sign in again.
+- Accounts in `video.config.json`:
 
-When a take lands on the login page, the session is gone: ask the user for a fresh copy.
+  ```json
+  "accounts": { "coach": { "email": "coach@example.com", "password": "…" } }
+  ```
 
-`document.cookie` cannot see `HttpOnly` cookies. If the app keeps its session in one, the user
-copies it from DevTools > Application > Cookies instead, as `name=value; name=value`.
+  Use test accounts only. A real person's password does not belong in a config file.
+
+## Copied cookies (older projects)
+
+An account can instead name a `cookies` file holding a copied `document.cookie`; the window loads
+it and writes the newest session back on close. Profiles replaced this: copying by hand breaks on
+every restart.

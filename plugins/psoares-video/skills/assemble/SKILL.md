@@ -19,12 +19,25 @@ heavy job: nothing else heavy at the same time.
 1. **Each window's clip** is redrawn by the camera (Remotion, installed once into
    `~/.cache/psoares-video/camera`):
    - the picture from the recorded frames;
-   - **the pointer**, drawn from the recorded path: large (`pointer.size`, CSS pixels), black
-     with a white edge and a soft shadow, squeezing a little on each press, always visible;
-   - **the zooms** the beats asked for, eased with Screen Studio's spring
-     (`mass 1, stiffness 169, damping 26`), never past the window's edges, with no motion blur by
-     default. Remotion's CameraMotionBlur adds its samples in 8-bit and tints a pale background
-     green while the camera moves; `camera.blur.samples` above 1 turns it back on.
+   - **the pointer**, large (`pointer.size`, CSS pixels) and always visible. It follows the
+     recorded path on the same spring as the camera, so it glides instead of stepping, and leans
+     a little with horizontal speed. Its shape is the one recorded with each move (arrow,
+     I-beam, open hand, resize, not-allowed), the pointing hand only around a click and a
+     closed hand while the button is held; it squeezes a little on each press;
+   - **the cursor set** comes from `pointer.cursors`, a folder of SVGs named
+     `<shape>-1__<x>-<y>.svg` with the hot spot in percent: Screen Studio's own format, so a set
+     can be copied out of its app (`app.asar`, `assets/cursors/sets/<set>/`) with
+     `npx @electron/asar extract-file`. The default looks in
+     `~/.config/psoares-video/cursors/macos-tahoe`. Keep a set in the user's own folders, not in
+     this plugin: the images belong to Screen Studio and Apple. Without a set, a plain arrow and
+     hand are drawn;
+   - **the zooms** the beats asked for, never past the window's edges. Both springs are Screen
+     Studio's as it plays on screen, measured from its exports: `mass 1, stiffness 169,
+     damping 26`, critically damped. Its project file says `mass 1.5, stiffness 125, damping 12`
+     with a clamp, but in Remotion those numbers bounce and the clamp cuts the bounce into steps
+     (the user saw the zoom "flaky"). No motion blur by default: Remotion's CameraMotionBlur adds
+     its samples in 8-bit and tints a pale background green while the camera moves;
+     `camera.blur.samples` above 1 turns it back on.
 
    With `pointer.mode: "page"` the pointer was drawn in the page during the take; the camera
    step is skipped and the frames are used as they are (faster, no zoom).
@@ -42,7 +55,7 @@ heavy job: nothing else heavy at the same time.
 {
   "output": { "width": 3840, "height": 2160, "fps": 60, "crf": 17 },
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
-  "pointer": { "mode": "drawn", "size": 34 },
+  "pointer": { "mode": "drawn", "size": 34, "cursors": "~/.config/psoares-video/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 }
 }

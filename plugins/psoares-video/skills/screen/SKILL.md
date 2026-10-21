@@ -28,9 +28,14 @@ from the page**, found by probing, never guessed.
 
 ## 1. Sign-in
 
-Never script a login and never try to get past a captcha. The user signs in in their own browser
-and copies the cookies; see `references/sign-in.md`. Each window writes its cookies back when it
-closes, because many apps rotate the session token on every use.
+Never script a login and never try to get past a captcha. Each account has its own Chrome
+profile (`config.profiles`, e.g. in `~/.config`, so a restart signs nobody out), and the user
+signs it in once with `lib/login.mjs`, which opens that profile in plain Chrome: captchas refuse
+a window Playwright drives. After that, recordings open signed in. See `references/sign-in.md`.
+
+Banners the app shows on arrival (a cookie or privacy banner, a tip) go in `config.app.dismiss`
+by their button's name; decline rather than accept, so recordings add nothing to analytics. Set
+`config.app.timezone` and `config.app.locale` to the audience's, or times read wrong.
 
 ## 2. Plan: show, don't tell
 
@@ -47,6 +52,25 @@ Read the script line by line and decide what is on screen during each one.
   before the pointer travels far. Not on every click.
 - **Cut into segments** wherever the account or the scene changes; the assembler puts a fade
   there.
+
+## How the pointer behaves
+
+The recorder moves the pointer like a hand and records what the page shows, so the video reads
+like a person using the app. Write beats with this in mind; none of it needs code in the beat.
+
+- **Moves** take time by distance (a short hop is quick), bow slightly, start fast and settle.
+  `ms` on `hover`, `click`, `moveTo` is the most a move may take, not its length.
+- **The cursor shape** is the page's own, recorded at every move from the CSS cursor under the
+  pointer (as Screen Studio records the system's): arrow, I-beam over text, open hand where the
+  page offers to grab, not-allowed, resize arrows. The pointing hand is shown **only around a
+  click** (from just before the press to just after the release), and a closed hand while the
+  button is held (a drag).
+- **A click** waits for the drawn pointer to land, then the pressed element dips and springs
+  back (an elastic scale drawn by the page, so it is in the frames).
+- **A drag** is `w.drag(handle, [x, y])` or `w.dragBy(handle, dx, dy)`: press, carry, let go.
+  Use it for anything the user would drag: a panel, a card, a file, a slider.
+- **Only real pointer events** from the page itself are tracked; events apps or iframes fire on
+  their own are ignored (one in the path makes the drawn pointer jump).
 
 ## 3. Probe
 

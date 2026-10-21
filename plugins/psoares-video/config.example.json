@@ -2,13 +2,16 @@
   "app": {
     "base": "https://app.example.com",
     "locale": "en-GB",
-    "dismiss": ["Got it"],
+    "dismiss": ["Got it", "Decline"],
+    "login": "/login",
+    "timezone": "Europe/Lisbon",
     "windowX": 2600
   },
   "accounts": {
-    "coach": { "cookies": "/path/to/cookies-coach.txt" },
-    "client": { "cookies": "/path/to/cookies-client.txt" }
+    "coach": { "email": "coach@example.com", "password": "test-password" },
+    "client": { "email": "client@example.com", "password": "test-password" }
   },
+  "profiles": "~/.config/psoares-video/my-project/profiles",
   "view": { "width": 2048, "height": 1152 },
   "output": { "width": 3840, "height": 2160, "fps": 60, "crf": 17 },
   "voice": {
@@ -17,7 +20,7 @@
     "settings": { "stability": 1, "similarity": 1, "clone_strength": 1 }
   },
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
-  "pointer": { "mode": "drawn", "size": 34 },
+  "pointer": { "mode": "drawn", "size": 34, "cursors": "~/.config/psoares-video/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 },
   "playwright": "/optional/folder/that/has/node_modules/playwright"

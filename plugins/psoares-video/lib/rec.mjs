@@ -23,15 +23,19 @@ const TRACK = `
   // system's: a hand over what can be clicked, an I-beam over text.
   const shape = (e) => {
     const c = e.target instanceof Element ? getComputedStyle(e.target).cursor : 'auto';
-    if (c === 'pointer') return 'hand';
-    if (c === 'text') return 'ibeam';
+    const named = { pointer: 'hand', text: 'ibeam', grab: 'openhand', grabbing: 'closedhand', 'not-allowed': 'notallowed',
+      'col-resize': 'resizeleftright', 'ew-resize': 'resizeleftright', 'e-resize': 'resizeleftright', 'w-resize': 'resizeleftright',
+      'row-resize': 'resizeupdown', 'ns-resize': 'resizeupdown', 'n-resize': 'resizeupdown', 's-resize': 'resizeupdown', move: 'move' };
+    if (named[c]) return named[c];
     if (c === 'auto' && e.target instanceof Element && e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable=true]')) return 'ibeam';
     return 'arrow';
   };
-  const send = (type, e) => { if (!e.isTrusted) return; try { window.__track(type, e.clientX, e.clientY, type === 'move' ? shape(e) : ''); } catch {} };
-  document.addEventListener('mousemove', (e) => send('move', e), true);
-  document.addEventListener('mousedown', (e) => send('down', e), true);
-  document.addEventListener('mouseup', (e) => send('up', e), true);
+  // The path and the presses come from the recorder itself (it knows where it
+  // moved); the page only says which cursor it shows. Pointer events, because
+  // a drag handle that captures the pointer silences the mouse ones.
+  const send = (e) => { if (!e.isTrusted) return; try { window.__track('shape', e.clientX, e.clientY, shape(e)); } catch {} };
+  document.addEventListener('pointermove', send, true);
+  document.addEventListener('pointerdown', send, true);
 })();`;
 
 // The pointer drawn in the page, for pointer.mode "page".
@@ -137,10 +141,15 @@ export class Window {
   set base(v) { this._base = v; }
   now() { return (Date.now() - this.t0) / 1000; }
   onTrack(type, x, y, kind) {
-    if (!this.t0) return;
-    const t = this.now();
-    if (type === 'move') this.moves.push([+t.toFixed(4), Math.round(x * 10) / 10, Math.round(y * 10) / 10, kind || 'arrow']);
-    else this.presses.push([+t.toFixed(4), type === 'down' ? 1 : 0]);
+    if (type === 'shape' && kind) this.shape = kind;
+  }
+  // Every move and press is logged here, from the recorder's own actions.
+  logMove(x, y) {
+    if (this.t0) this.moves.push([+this.now().toFixed(4), Math.round(x * 10) / 10, Math.round(y * 10) / 10, this.shape ?? 'arrow']);
+  }
+  async press(down) {
+    if (down) await this.page.mouse.down(); else await this.page.mouse.up();
+    if (this.t0) this.presses.push([+this.now().toFixed(4), down ? 1 : 0]);
   }
   async go(url) {
     await this.page.goto(/^(https?|file):/.test(url) ? url : this.base + url, { waitUntil: 'load' });
@@ -163,7 +172,9 @@ export class Window {
     const nx = dist ? -dy / dist : 0, ny = dist ? dx / dist : 0;
     for (let i = 1; i <= n; i++) {
       const k = ease(i / n), arc = 4 * k * (1 - k) * bow;
-      await this.page.mouse.move(sx + dx * k + nx * arc, sy + dy * k + ny * arc);
+      const mx = sx + dx * k + nx * arc, my = sy + dy * k + ny * arc;
+      await this.page.mouse.move(mx, my);
+      this.logMove(mx, my);
       await sleep(dur / n);
     }
     this.cx = x; this.cy = y;
@@ -185,9 +196,35 @@ export class Window {
     if (!(await this.hover(locator, ms, at))) return false;
     // The drawn pointer trails on its spring: let it land before the press.
     await sleep(200);
-    await this.page.mouse.down(); await sleep(80); await this.page.mouse.up();
+    // The pressed thing gives a little, like a real button: it dips and
+    // springs back. Drawn by the page, so the recording catches it.
+    await this.page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y)?.closest('button, a, [role=button], [role=menuitem], [role=tab], [role=option], label, input');
+      el?.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.94)', offset: 0.3 }, { transform: 'scale(1.025)', offset: 0.65 }, { transform: 'scale(0.995)', offset: 0.85 }, { transform: 'scale(1)' }],
+        { duration: 420, easing: 'ease-out' });
+    }, [this.cx, this.cy]).catch(() => {});
+    await this.press(true); await sleep(80); await this.press(false);
     await sleep(120);
     return true;
+  }
+  // Press on a handle, carry it to a point (or by [dx, dy]), and let go. The
+  // drawn pointer is a closed hand while the button is held.
+  async drag(locator, to, ms = 700, at) {
+    if (!(await this.hover(locator, 450, at))) return false;
+    await sleep(160);
+    await this.press(true);
+    await sleep(120);
+    await this.moveTo(to[0], to[1], ms);
+    await sleep(120);
+    await this.press(false);
+    await sleep(150);
+    return true;
+  }
+  async dragBy(locator, dx, dy, ms = 700, at) {
+    const b = await this.box(locator);
+    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    const ax = at?.[0] ?? 0.5, ay = at?.[1] ?? 0.5;
+    return this.drag(locator, [b.x + b.width * ax + dx, b.y + b.height * ay + dy], ms, at);
   }
   async type(text, delay = 85) { await this.page.keyboard.type(text, { delay }); }
   async key(k) { await this.page.keyboard.press(k); }

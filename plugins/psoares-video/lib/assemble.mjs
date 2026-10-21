@@ -21,6 +21,26 @@ const { L, segments, length } = await loadVideo(project, id);
 const { width: W, height: H, fps, crf } = config.output;
 const T = config.transition.seconds;
 const drawn = config.pointer.mode !== 'page';
+
+// The cursor set: SVGs named <shape>-1__<x>-<y>.svg, x and y the hot spot in
+// percent (Screen Studio's own format, so its sets can be copied out of the
+// app). config.pointer.cursors names the folder; without one the pointer is
+// drawn. Read once, passed to the renderer as data URIs.
+function cursorImages() {
+  const dir = (config.pointer.cursors ?? '~/.config/psoares-video/cursors/macos-tahoe').replace(/^~/, process.env.HOME);
+  if (!fs.existsSync(dir)) return null;
+  const want = { arrow: 'pointer', hand: 'pointinghand', ibeam: 'ibeam', openhand: 'openhand', closedhand: 'closedhand', notallowed: 'notallowed', resizeleftright: 'resizeleftright', resizeupdown: 'resizeupdown', move: 'move' };
+  const out = {};
+  for (const [shape, name] of Object.entries(want)) {
+    const f = fs.readdirSync(dir).find((n) => n.startsWith(name + '-') && n.endsWith('.svg'));
+    if (!f) continue;
+    const m = f.match(/__(\d+)-(\d+)\.svg$/);
+    const svg = fs.readFileSync(path.join(dir, f), 'utf8');
+    const [, w, h] = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/) ?? [0, 1, 1];
+    out[shape] = { src: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64'), hot: [+(m?.[1] ?? 0) / 100, +(m?.[2] ?? 0) / 100], aspect: +h / +w };
+  }
+  return Object.keys(out).length ? out : null;
+}
 const ff = (args) => execFileSync('ffmpeg', ['-v', 'error', '-y', ...args], { stdio: 'inherit' });
 
 // The camera project, installed once outside the plugin (plugin folders are
@@ -47,7 +67,7 @@ function camera(raw, from, len, w, h, out) {
   const props = {
     fps, width: w, height: h, from, duration: len, view: meta.view,
     frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms,
-    pointer: { size: config.pointer.size, show: true }, blur: config.camera.blur,
+    pointer: { size: config.pointer.size, show: true, images: cursorImages() }, blur: config.camera.blur,
   };
   const propsFile = path.join(raw, `camera-${from.toFixed(2)}.json`);
   fs.writeFileSync(propsFile, JSON.stringify(props));
