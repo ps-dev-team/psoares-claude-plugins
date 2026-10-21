@@ -36,7 +36,9 @@ export const segments = (L) => [
   (case-insensitive, punctuation dropped). Lines count from 0, directions excluded: the voice
   skill prints them. A missing word throws before anything is recorded.
 - **`gaps`** give the screen time the voice does not: the line is pushed later, and the assembler
-  cuts the same silence into the voice at the real pause before it.
+  cuts the same silence into the voice at the real pause before it. Use them so the pointer never
+  rushes: after a click that opens something, between two actions that would run back to back,
+  to hold on a result. When to add one is in the skill, "Give the screen time".
 - **`view`** sets a window's CSS size. Two windows side by side are usually half the frame wide
   and full height each (1024 × 1152 for a 2048 × 1152 frame), and appear in the browser frame.
 - Segments overlap their neighbours by `transition.pad` seconds, so the fade has picture on both

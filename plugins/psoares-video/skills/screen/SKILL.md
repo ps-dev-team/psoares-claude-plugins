@@ -140,6 +140,40 @@ export const segments = (L) => [{
 `L(i, 'word')` is when line `i` says that word; the beat starts a little before it, so the pointer
 lands on the word. Without a voice (B-roll), use seconds and export `length`.
 
+### Give the screen time
+
+The voice sets the pace, and the screen must never rush to keep up with it. A viewer needs to see
+what a click did before the voice moves on. When the screen needs more time than the voice gives,
+add a pause with `gaps`, never a faster pointer. A gap puts silence before a line; the beats from
+that line on move later, and the assembler cuts the same silence into the voice at its natural
+pause, so the voice is not cut mid-word.
+
+Add a gap before the next line when:
+
+- **A click opens something**: a page, a menu, a dialog, a panel, a generated result. Let it
+  arrive and sit still for a moment (about 0.6 to 1.2 s) before the voice talks about the next
+  thing.
+- **Two actions would run back to back**: a click, then at once a move to the next thing because
+  the next line starts. Put the pause between them, so each action is seen.
+- **The result is the point**: something filled in, saved, moved or changed. Hold on it (1 to
+  2 s) while nothing moves except, perhaps, a small rest of the hand.
+- **The pointer has far to go**: a long move, a scroll, a drag, typing. Measure the beat's real
+  length in the log (`slow`, `late`) and give it the time it took, plus a beat to settle.
+- **A zoom goes in or out**: the camera needs about 0.6 s to settle, and the viewer a moment to
+  read.
+
+How to find them:
+
+1. Before recording, read the beats against the timings: wherever a beat's action plus what it
+   opens takes longer than the time until the next beat, add a gap of the difference plus about
+   half a second.
+2. After recording, watch the log: `late` and `slow` lines mark beats that had no room. Add a gap
+   before the line that follows, and record again.
+3. Watch the result: anywhere the pointer leaves before the screen has settled, add a gap there.
+
+Keep gaps where they help the picture, not everywhere: a lesson that pauses after every line drags.
+A pause of 0.5 to 1.5 s is usual; more than 2 s should show something worth looking at.
+
 ## 5. Record
 
 ```sh
