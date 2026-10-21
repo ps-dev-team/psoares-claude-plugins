@@ -54,6 +54,10 @@ Each window `w` has:
 | `w.moveTo(x, y, ms)` | Eased move to a CSS point. |
 | `w.type(text, delay)` / `w.key('Enter')` | Keyboard. Click the field first. |
 | `w.drag(locator, [x, y], ms)` / `w.dragBy(locator, dx, dy, ms)` | Press on a handle, carry it, let go. Drawn as a closed hand while held. |
+| `w.circle(locator)` | A loop around an element, a little uneven, as if circling it on paper. |
+| `w.underline(locator)` | Back and forth under an element, like underlining it while reading. |
+| `w.shake()` | A quick shake side to side; the drawn cursor grows while it lasts (macOS shake-to-find). |
+| `w.rest(ms)` | A small generated drift that comes back to the same point. `record()` adds these in long pauses on its own. |
 | `w.scroll(dy, ms)` | Smooth wheel scroll. |
 | `w.zoom(locator \| [x, y], scale)` | The camera zooms there from now (default `camera.zoom`, 2). |
 | `w.unzoom()` | The camera eases back to the whole window. |

@@ -26,7 +26,7 @@ export type CameraProps = {
   /** [time, 1 down | 0 up] */
   presses: [number, number][];
   zooms: Zoom[];
-  pointer: { size: number; show: boolean; images?: Record<string, CursorImage> | null };
+  pointer: { size: number; show: boolean; blur?: boolean; images?: Record<string, CursorImage> | null };
   blur: { shutter: number; samples: number };
 };
 
@@ -106,6 +106,31 @@ const glide = (moves: CameraProps['moves'], view: CameraProps['view'], from: num
   return out;
 };
 
+// macOS grows the cursor when you shake the mouse, so you can find it. Here:
+// three or more quick turns side to side within half a second, each a real
+// swing (not a rest's few pixels), and the cursor grows; it shrinks back
+// slowly once the shaking stops. One value per frame.
+const GROW = 2.2;
+const growth = (moves: CameraProps['moves'], from: number, duration: number, fps: number) => {
+  const out: number[] = [];
+  let g = 1;
+  for (let f = 0; f <= duration * fps; f++) {
+    const t = from + f / fps;
+    let turns = 0, dir = 0, run = 0;
+    for (let i = Math.max(1, at(moves, t - 0.5, (m) => m[0]) + 1); i < moves.length && moves[i][0] <= t; i++) {
+      const dx = moves[i][1] - moves[i - 1][1];
+      if (!dx) continue;
+      const d = Math.sign(dx);
+      if (d === dir) run += Math.abs(dx);
+      else { if (dir && run > 30) turns++; dir = d; run = Math.abs(dx); }
+    }
+    const target = turns >= 3 ? GROW : 1;
+    g += (target - g) * (target > g ? 0.22 : 0.07);
+    out.push(g);
+  }
+  return out;
+};
+
 const Scene = (props: CameraProps) => {
   const frame = useCurrentFrame();
   const { fps, width, height, view, frames, moves, presses, zooms, pointer, from } = props;
@@ -121,6 +146,20 @@ const Scene = (props: CameraProps) => {
   const fi = Math.max(0, at(frames, t, (f) => f[1]));
   const path = useMemo(() => glide(moves, view, from, props.duration, fps), [moves, view, from, props.duration, fps]);
   const [px, py, pvx] = path[Math.min(frame, path.length - 1)] ?? [...rawAt(moves, t, view), 0];
+  const grows = useMemo(() => growth(moves, from, props.duration, fps), [moves, from, props.duration, fps]);
+  const grow = grows[Math.min(frame, grows.length - 1)] ?? 1;
+  // Motion blur on the pointer alone, as Screen Studio's: the cursor is drawn
+  // along the way it travelled during this frame, copies stacked so they add
+  // up to a solid cursor where they overlap and a smear where they spread.
+  // Still, it is one sharp cursor. The camera itself is never blurred.
+  const prev = path[Math.max(0, Math.min(frame, path.length - 1) - 1)] ?? [px, py, 0];
+  const travel = Math.hypot(px - prev[0], py - prev[1]) * k * cam.s;
+  const copies = pointer.blur === false || travel < 4 ? 1 : Math.min(12, Math.ceil(travel / 5));
+  const each = copies === 1 ? 1 : 1 - Math.pow(0.04, 1 / copies);
+  const smear: [number, number, number][] = Array.from({ length: copies }, (_, i) => {
+    const u = copies === 1 ? 1 : i / (copies - 1);
+    return [prev[0] + (px - prev[0]) * u, prev[1] + (py - prev[1]) * u, each];
+  });
   // Screen Studio tilts its cursor with horizontal speed (rotationMode: velocity).
   const tilt = Math.max(-14, Math.min(14, pvx * 0.006));
   // The shape the page showed under the real pointer, a beat behind it, so the
@@ -147,7 +186,13 @@ const Scene = (props: CameraProps) => {
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${cam.s})` }}>
         {frames.length ? <Img src={staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
-        {pointer.show ? <Pointer x={px * k} y={py * k} size={pointer.size * k} squeeze={squeeze} tilt={shape === 'arrow' ? tilt : 0} shape={shape} image={pointer.images?.[shape] ?? pointer.images?.arrow} /> : null}
+        {pointer.show
+          ? smear.map(([sx, sy, o], i) => (
+              <div key={i} style={{ opacity: o }}>
+                <Pointer x={sx * k} y={sy * k} size={pointer.size * k * grow} squeeze={squeeze} tilt={shape === 'arrow' ? tilt : 0} shape={shape} image={pointer.images?.[shape] ?? pointer.images?.arrow} />
+              </div>
+            ))
+          : null}
       </div>
     </AbsoluteFill>
   );

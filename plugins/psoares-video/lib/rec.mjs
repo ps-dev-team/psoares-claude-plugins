@@ -11,6 +11,26 @@ import { playwright } from './project.mjs';
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // A hand's move: quick to start, long to settle (minimum jerk, front-loaded).
 const ease = (t) => { const u = Math.pow(t, 0.75); return u * u * u * (10 - 15 * u + 6 * u * u); };
+const smooth = (t) => t * t * (3 - 2 * t);
+// Smooth random wobble on 0..1, about -1..1: a few slow sines with random
+// pitch and phase, new for every move.
+const wobble = (rand, waves = 3) => {
+  const w = Array.from({ length: waves }, () => [1 + rand() * 4, rand() * 6.3, 0.4 + rand() * 0.6]);
+  const total = w.reduce((a, [, , m]) => a + m, 0);
+  return (u) => w.reduce((a, [f, ph, m]) => a + m * Math.sin(f * 2 * Math.PI * u + ph), 0) / total;
+};
+// A seeded random source, so a re-take of the same video makes the same
+// gestures and a good take can be made again.
+const seeded = (text) => {
+  let a = 0;
+  for (const ch of String(text)) a = (Math.imul(a ^ ch.charCodeAt(0), 2654435761) + 1) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
 
 // Reports every pointer move and press to the recorder.
 const TRACK = `
@@ -135,8 +155,12 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
 
 export class Window {
   constructor(name, context, page, project) {
-    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [] });
+    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], movedAt: 0 });
+    this.rand = seeded(name);
   }
+  // config.pointer.human (default on) lets the hand do small things of its
+  // own: a hook at the end of some moves, a drift while it rests.
+  get human() { return this.project.config.pointer.human !== false; }
   get base() { return this._base ?? this.project.config.app.base; }
   set base(v) { this._base = v; }
   now() { return (Date.now() - this.t0) / 1000; }
@@ -146,6 +170,21 @@ export class Window {
   // Every move and press is logged here, from the recorder's own actions.
   logMove(x, y) {
     if (this.t0) this.moves.push([+this.now().toFixed(4), Math.round(x * 10) / 10, Math.round(y * 10) / 10, this.shape ?? 'arrow']);
+    this.movedAt = Date.now();
+  }
+  // Moves the pointer along a path p(u), u from 0 to 1, over ms.
+  // It follows the clock, so a slow step doesn't stretch the gesture.
+  async trace(p, ms) {
+    const t0 = Date.now();
+    for (;;) {
+      const u = Math.min(1, (Date.now() - t0) / ms);
+      const [x, y] = p(u);
+      await this.page.mouse.move(x, y);
+      this.logMove(x, y);
+      this.cx = x; this.cy = y;
+      if (u >= 1) break;
+      await sleep(12);
+    }
   }
   async press(down) {
     if (down) await this.page.mouse.down(); else await this.page.mouse.up();
@@ -163,20 +202,40 @@ export class Window {
   // The time follows the distance (a short hop is quick, a long one takes a
   // little longer), `ms` is the most it may take, and the path bows slightly,
   // as a wrist does, instead of running on a ruler.
-  async moveTo(x, y, ms = 550) {
+  //
+  // A long move sometimes ends in a hook, as a hand does: it runs a little
+  // past and curls back onto the target. `hook` true or false forces it.
+  async moveTo(x, y, ms = 550, { hook } = {}) {
     const sx = this.cx, sy = this.cy, dx = x - sx, dy = y - sy;
     const dist = Math.hypot(dx, dy);
-    const dur = Math.min(ms, 140 + 0.2 * dist);
-    const n = Math.max(6, Math.round(dur / 16));
-    const bow = Math.min(60, dist * 0.08) * (dx * dy >= 0 ? 1 : -1);
-    const nx = dist ? -dy / dist : 0, ny = dist ? dx / dist : 0;
-    for (let i = 1; i <= n; i++) {
-      const k = ease(i / n), arc = 4 * k * (1 - k) * bow;
-      const mx = sx + dx * k + nx * arc, my = sy + dy * k + ny * arc;
-      await this.page.mouse.move(mx, my);
-      this.logMove(mx, my);
-      await sleep(dur / n);
+    if (hook ?? (this.human && dist > 220 && this.rand() < 0.3)) {
+      const over = Math.min(26, 8 + dist * 0.03), side = (this.rand() < 0.5 ? -1 : 1) * over * 0.6;
+      const ux = dist ? dx / dist : 0, uy = dist ? dy / dist : 0;
+      await this.moveTo(x + ux * over - uy * side, y + uy * over + ux * side, ms, { hook: false });
+      await sleep(40);
+      return this.moveTo(x, y, 260, { hook: false });
     }
+    // No two moves alike: each draws its own length, arc, ease and wobble.
+    // The hand speeds up and settles at the ends, and in between its speed
+    // wavers and the line drifts a little off true, as a wrist's does.
+    const r = this.human ? this.rand : () => 0.5;
+    const dur = Math.min(ms, 140 + 0.2 * dist) * (0.85 + 0.3 * r());
+    const n = Math.max(6, Math.round(dur / 16));
+    const bow = Math.min(60, dist * (0.03 + 0.09 * r())) * (r() < 0.75 === (dx * dy >= 0) ? 1 : -1);
+    const nx = dist ? -dy / dist : 0, ny = dist ? dx / dist : 0;
+    const pace = this.human ? wobble(this.rand) : () => 0, drift = this.human ? wobble(this.rand) : () => 0;
+    const wav = 0.25 + 0.2 * r(), side = Math.min(7, dist * 0.015);
+    // Progress with a wavering speed, normalised so it still ends on the target.
+    const steps = [0];
+    for (let i = 1; i <= n; i++) steps.push(steps[i - 1] + 1 + wav * pace(i / n));
+    const shape = 0.65 + 0.25 * r();
+    const easeOf = (t) => { const u = Math.pow(t, shape); return u * u * u * (10 - 15 * u + 6 * u * u); };
+    const at = (u) => { const f = u * n, i = Math.floor(f), j = Math.min(n, i + 1); return (steps[i] + (steps[j] - steps[i]) * (f - i)) / steps[n]; };
+    await this.trace((u) => {
+      const k = easeOf(at(u)), env = 4 * k * (1 - k);
+      const off = env * bow + env * side * drift(k);
+      return [sx + dx * k + nx * off, sy + dy * k + ny * off];
+    }, dur);
     this.cx = x; this.cy = y;
   }
 
@@ -225,6 +284,71 @@ export class Window {
     if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
     const ax = at?.[0] ?? 0.5, ay = at?.[1] ?? 0.5;
     return this.drag(locator, [b.x + b.width * ax + dx, b.y + b.height * ay + dy], ms, at);
+  }
+  // Gestures: what a hand does to point at something while the voice talks
+  // about it. Each is drawn by the real pointer, so the page sees it too.
+
+  // A loop around an element, as if circling it on paper: a little uneven,
+  // closing slightly inside where it began.
+  async circle(locator, { turns = 0.95 + this.rand() * 0.45, ms = 850 + this.rand() * 350, pad = 12 + this.rand() * 10 } = {}) {
+    const b = await this.box(locator);
+    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    const ox = b.x + b.width / 2, oy = b.y + b.height / 2;
+    const rx = Math.max(30, b.width / 2 + pad), ry = Math.max(24, b.height / 2 + pad);
+    const a0 = Math.atan2((this.cy - oy) / ry, (this.cx - ox) / rx);
+    const dir = this.rand() < 0.5 ? -1 : 1, uneven = wobble(this.rand), close = 0.04 + this.rand() * 0.12;
+    const at = (u) => {
+      const a = a0 + dir * u * turns * 2 * Math.PI;
+      const r = (1 + 0.07 * uneven(u)) * (1 - close * u);
+      return [ox + rx * r * Math.cos(a), oy + ry * r * Math.sin(a)];
+    };
+    const [sx, sy] = at(0);
+    await this.moveTo(sx, sy, 450, { hook: false });
+    await this.trace((u) => at(smooth(u)), ms * turns);
+    return true;
+  }
+  // Back and forth under an element, like underlining it while reading.
+  async underline(locator, { strokes = 2 + Math.floor(this.rand() * 3), ms = 320 + this.rand() * 140, gap = 6 + this.rand() * 6 } = {}) {
+    const b = await this.box(locator);
+    if (!b) { console.log(`[${this.name}] missing`, String(locator)); return false; }
+    const y = b.y + b.height + gap, x0 = b.x + b.width * 0.04, x1 = b.x + b.width * 0.96;
+    await this.moveTo(x0, y, 450, { hook: false });
+    for (let i = 0; i < strokes; i++) {
+      const from = i % 2 ? x1 : x0, to = i % 2 ? x0 : x1, lift = (this.rand() - 0.5) * 6;
+      const shrink = 1 - 0.12 * i;
+      await this.trace((u) => { const k = smooth(u); return [from + (to - from) * k * shrink, y + lift * Math.sin(Math.PI * k)]; }, ms);
+    }
+    return true;
+  }
+  // A quick shake, side to side: the drawn cursor grows while it lasts, as
+  // macOS does when you shake the mouse to find it.
+  async shake({ ms = 700, width = 90 } = {}) {
+    const sx = this.cx, sy = this.cy, turns = 3.5;
+    await this.trace((u) => [sx + width * Math.sin(u * turns * 2 * Math.PI) * Math.sin(Math.PI * u), sy + 6 * Math.sin(u * 9)], ms);
+  }
+  // A hand at rest is never quite still. Each rest is made new: a few slow
+  // circles of random size, pitch and direction added together, faded in and
+  // out so it leaves and comes back to the same point. One comes out a small
+  // loop, the next a drift, a sway, a figure eight, a spiral. record() calls
+  // it in the longer pauses between beats; a beat can call it too.
+  async rest(ms = 1200, size = 7 + this.rand() * 9) {
+    const sx = this.cx, sy = this.cy;
+    const parts = Array.from({ length: 1 + Math.floor(this.rand() * 3) }, () => ({
+      fx: (0.4 + this.rand() * 2) * (this.rand() < 0.5 ? -1 : 1), fy: 0.4 + this.rand() * 2,
+      px: this.rand() * 6.3, py: this.rand() * 6.3, ax: 0.4 + this.rand(), ay: 0.3 + this.rand() * 0.9,
+    }));
+    const sum = parts.reduce((a, p) => a + Math.max(p.ax, p.ay), 0);
+    const pace = wobble(this.rand);
+    await this.trace((u) => {
+      const k = Math.min(1, Math.max(0, u + 0.06 * pace(u) * Math.sin(Math.PI * u))), env = Math.sin(Math.PI * k);
+      let ox = 0, oy = 0;
+      for (const p of parts) {
+        ox += p.ax * (Math.sin(p.fx * 2 * Math.PI * k + p.px) - Math.sin(p.px));
+        oy += p.ay * (Math.sin(p.fy * 2 * Math.PI * k + p.py) - Math.sin(p.py));
+      }
+      return [sx + (size * env * ox) / sum, sy + (size * env * oy) / sum];
+    }, ms);
+    await this.page.mouse.move(sx, sy); this.logMove(sx, sy); this.cx = sx; this.cy = sy;
   }
   async type(text, delay = 85) { await this.page.keyboard.type(text, { delay }); }
   async key(k) { await this.page.keyboard.press(k); }
@@ -277,7 +401,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   }
   const { output, view } = project.config;
   t0 = Date.now();
-  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [] });
+  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
   await Promise.all(shoots.map((s) => s.cdp.send('Page.startScreencast', {
     format: 'jpeg', quality: 90, everyNthFrame: 1,
     maxWidth: Math.round((s.w.page.viewportSize()?.width ?? view.width) * output.width / view.width), maxHeight: output.height,
@@ -289,7 +413,16 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   for (const [at, run, opts = {}] of beats.sort((a, b) => a[0] - b[0])) {
     if (at < start || at > end) continue;
     const go = at - (opts.lead ?? lead);
-    const wait = (go - now()) * 1000;
+    let wait = (go - now()) * 1000;
+    // A long pause: now and then, the hand that moved last drifts a little
+    // instead of standing dead still.
+    const still = shoots.map((s) => s.w).sort((a, b) => b.movedAt - a.movedAt)[0];
+    if (wait > 1800 && still.human && still.rand() < 0.4) {
+      const idle = 300 + still.rand() * 500;
+      await sleep(idle);
+      await still.rest(Math.min(wait - idle - 300, 1100 + still.rand() * 500));
+      wait = (go - now()) * 1000;
+    }
     if (wait > 0) await sleep(wait);
     const late = now() - go;
     if (late > 0.6) console.log(`late ${late.toFixed(2)}s at ${at.toFixed(2)}`);

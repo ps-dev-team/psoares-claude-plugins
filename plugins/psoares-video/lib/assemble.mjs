@@ -67,7 +67,7 @@ function camera(raw, from, len, w, h, out) {
   const props = {
     fps, width: w, height: h, from, duration: len, view: meta.view,
     frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms,
-    pointer: { size: config.pointer.size, show: true, images: cursorImages() }, blur: config.camera.blur,
+    pointer: { size: config.pointer.size, show: true, blur: config.pointer.blur !== false, images: cursorImages() }, blur: config.camera.blur,
   };
   const propsFile = path.join(raw, `camera-${from.toFixed(2)}.json`);
   fs.writeFileSync(propsFile, JSON.stringify(props));
