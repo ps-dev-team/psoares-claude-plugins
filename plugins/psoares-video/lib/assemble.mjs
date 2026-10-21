@@ -146,7 +146,10 @@ if (!L.lines || !fs.existsSync(mp3)) {
       const prev = L.lines[l.i - 1];
       const from = prev.end - prev.shift, to = l.start - l.shift;
       const best = quiet.filter(([qs, qe]) => qe > from - 0.15 && qs < to + 0.15).sort((x, y) => (y[1] - y[0]) - (x[1] - x[0]))[0];
-      return { at: best ? (best[0] + best[1]) / 2 : (from + to) / 2, gap: l.shift - prev.shift };
+      // The voice comes first: a pause goes only into a real silence, never
+      // across a word. No silence there, no pause: stop and say which line.
+      if (!best || best[1] - best[0] < 0.12) throw new Error(`no pause in the voice before line ${l.i} ("${l.text?.slice(0, 40) ?? ''}"): move the gap to another line`);
+      return { at: (best[0] + best[1]) / 2, gap: l.shift - prev.shift };
     });
     const F = 0.012;
     let f = '', prev = 0, n = 0;

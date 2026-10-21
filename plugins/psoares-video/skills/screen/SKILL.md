@@ -171,6 +171,13 @@ How to find them:
    before the line that follows, and record again.
 3. Watch the result: anywhere the pointer leaves before the screen has settled, add a gap there.
 
+**A pause never costs the voice anything.** The voice is fixed and the picture fits around it:
+never speed it up, trim it, stretch it or generate it again to fit the screen. A gap goes only
+between two lines, inside the silence the voice already has there, with a short fade either side.
+If there is no real pause before a line, the assembler stops and says so; move the gap to
+another line, or let the beat start earlier. Listen to every pause in the result: it must sound
+like the speaker taking a breath, never like a cut.
+
 Keep gaps where they help the picture, not everywhere: a lesson that pauses after every line drags.
 A pause of 0.5 to 1.5 s is usual; more than 2 s should show something worth looking at.
 
