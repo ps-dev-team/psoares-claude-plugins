@@ -357,16 +357,24 @@ export class Window {
   // Selects an element's text the way a person does: press at the start of
   // the first line, drag to the end of the last, let go. The cursor is the
   // I-beam throughout, and the selection is the page's own.
-  async select(locator, ms = 700) {
+  // `word` selects only that word (or phrase) inside it.
+  async select(locator, ms = 700, word = null) {
     const l = typeof locator === 'string' ? this.page.locator(locator) : locator;
     await this.box(l);
-    const ends = await l.first().evaluate((el) => {
+    const ends = await l.first().evaluate((el, word) => {
       const r = document.createRange(); r.selectNodeContents(el);
+      if (word) {
+        const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+          const i = n.textContent.indexOf(word);
+          if (i >= 0) { r.setStart(n, i); r.setEnd(n, i + word.length); break; }
+        }
+      }
       const rects = [...r.getClientRects()].filter((q) => q.width > 0);
       if (!rects.length) return null;
       const a = rects[0], b = rects.at(-1);
       return [a.left + 1, a.top + a.height / 2, b.right - 1, b.top + b.height / 2];
-    }).catch(() => null);
+    }, word).catch(() => null);
     if (!ends) { console.log(`[${this.name}] no text to select`, String(locator)); return false; }
     await this.moveTo(ends[0], ends[1], 550);
     await sleep(200);

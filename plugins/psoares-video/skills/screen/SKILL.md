@@ -70,8 +70,10 @@ like a person using the app. Write beats with this in mind; none of it needs cod
   filmed. The cursor lands as the arrow, turns into the pointing hand about 0.15 s before the
   press, dips at the press and springs back with a small bounce, then is the arrow again. It
   does this for any click, whatever is under it.
-- **Selecting text** is `w.select(target)`: a press and drag that starts on text keeps the I-beam,
-  with no hand, and the page shows its real selection.
+- **Selecting text** is `w.select(target, ms, word)`: a press and drag that starts on text keeps
+  the I-beam, with no hand, and the page shows its real selection. Use it only when the voice
+  calls for it: text about to be deleted or replaced, or the one word the voice is naming. It is
+  not a way to point at things in general.
 - **A drag** is `w.drag(handle, [x, y])` or `w.dragBy(handle, dx, dy)`: press, carry, let go.
   The cursor is the open hand up to the press, the closed hand while held, and never the pointing
   hand. The carry takes a steady `ms` (default 1.1 s, no hook), and the drawn cursor follows it
