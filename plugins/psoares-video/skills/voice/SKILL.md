@@ -13,6 +13,12 @@ its start and end, and every word its start. Nothing here knows what will be on 
 Work in a video project folder (see the plugin README). This skill needs:
 
 - `video.config.json` with `voice.id` (and optionally `voice.model`, `voice.settings`).
+  On v4, `voice.settings` takes the website's three: `stability`, `similarity` and
+  `clone_strength` (0 to 1; clone strength only for a professional clone). `tts.py` sends v4
+  through text-to-dialogue, the endpoint the ElevenLabs website uses: text-to-speech drops
+  similarity and clone strength on v4, and the read loses the speaker's accent. Other models go
+  through text-to-speech with `similarity_boost`, `style`, `use_speaker_boost` and `speed`.
+  `voice.language` (ISO 639-1) forces the language.
 - `scripts/<id>.md`, the script.
 - The key in `~/.config/elevenlabs/.env` as `ELEVENLABS_API_KEY=…`. Never ask for the key in
   the chat and never print it. If it is missing, give the user this to run themselves:

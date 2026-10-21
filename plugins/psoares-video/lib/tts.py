@@ -21,9 +21,18 @@ def config(root):
     v = c.get('voice', {})
     if not v.get('id'):
         sys.exit('video.config.json has no voice.id')
-    settings = {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0, 'use_speaker_boost': True, 'speed': 1}
-    settings.update(v.get('settings', {}))
-    return v['id'], v.get('model', 'eleven_v4'), v.get('format', 'mp3_44100_192'), settings
+    model = v.get('model', 'eleven_v4')
+    # v4 reads its settings (stability, similarity, clone_strength) only through
+    # text-to-dialogue, the endpoint the ElevenLabs website uses; text-to-speech
+    # keeps stability alone. Other models take the text-to-speech set.
+    given = v.get('settings', {})
+    if model.startswith('eleven_v4'):
+        settings = {'stability': 0.5, 'similarity': given.get('similarity_boost', 0.75)}
+        settings.update({k: given[k] for k in ('stability', 'similarity', 'clone_strength') if k in given})
+    else:
+        settings = {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0, 'use_speaker_boost': True, 'speed': 1}
+        settings.update(given)
+    return v['id'], model, v.get('format', 'mp3_44100_192'), settings, v.get('language')
 
 def lines_of(align):
     # Lines that start with [ are directions alone; the rest are spoken lines.
@@ -48,12 +57,19 @@ def main():
     if len(sys.argv) < 3:
         sys.exit('usage: python3 tts.py <project> <id>')
     root, vid = os.path.abspath(sys.argv[1]), sys.argv[2]
-    voice, model, fmt, settings = config(root)
+    voice, model, fmt, settings, language = config(root)
     text = open(os.path.join(root, 'scripts', f'{vid}.md')).read().strip()
-    body = json.dumps({'text': text, 'model_id': model, 'voice_settings': settings}).encode()
-    req = urllib.request.Request(
-        f'https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps?output_format={fmt}',
-        data=body, headers={'xi-api-key': key(), 'Content-Type': 'application/json'})
+    if model.startswith('eleven_v4'):
+        url = f'https://api.elevenlabs.io/v1/text-to-dialogue/with-timestamps?output_format={fmt}'
+        payload = {'inputs': [{'text': text, 'voice_id': voice}], 'model_id': model, 'settings': settings}
+    else:
+        url = f'https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps?output_format={fmt}'
+        payload = {'text': text, 'model_id': model, 'voice_settings': settings}
+    if language:
+        # ISO 639-1, e.g. "pt": keeps the read in that language.
+        payload['language_code'] = language
+    body = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=body, headers={'xi-api-key': key(), 'Content-Type': 'application/json'})
     try:
         d = json.load(urllib.request.urlopen(req, timeout=600))
     except urllib.error.HTTPError as e:

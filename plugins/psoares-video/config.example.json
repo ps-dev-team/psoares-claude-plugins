@@ -14,7 +14,7 @@
   "voice": {
     "id": "your-elevenlabs-voice-id",
     "model": "eleven_v4",
-    "settings": { "stability": 0.5, "similarity_boost": 0.75, "style": 0, "use_speaker_boost": true, "speed": 1 }
+    "settings": { "stability": 1, "similarity": 1, "clone_strength": 1 }
   },
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
   "pointer": { "mode": "drawn", "size": 34 },
