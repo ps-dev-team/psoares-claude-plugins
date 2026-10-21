@@ -5,6 +5,7 @@
 // between the zooms the beats asked for with Screen Studio's spring. Motion
 // blur is on only while the camera moves.
 import { CameraMotionBlur } from '@remotion/motion-blur';
+import { useMemo } from 'react';
 import { AbsoluteFill, Img, spring, staticFile, useCurrentFrame } from 'remotion';
 import { Pointer } from './Pointer';
 
@@ -20,8 +21,8 @@ export type CameraProps = {
   view: { width: number; height: number };
   /** [file in the public dir, arrival time in seconds] */
   frames: [string, number][];
-  /** [time, x, y] */
-  moves: [number, number, number][];
+  /** [time, x, y, shape] (shape: arrow | hand | ibeam; older takes have none) */
+  moves: [number, number, number, string?][];
   /** [time, 1 down | 0 up] */
   presses: [number, number][];
   zooms: Zoom[];
@@ -29,7 +30,11 @@ export type CameraProps = {
   blur: { shutter: number; samples: number };
 };
 
-// Screen Studio's spring, measured frame by frame: critically damped.
+// Screen Studio's spring as it plays on screen, measured frame by frame from
+// the user's video 02: critically damped. Its project file says the camera and
+// the mouse share one spring (mass 1.5, stiffness 125, damping 12, clamped),
+// but those numbers are in Screen Studio's own units: taken literally here
+// they bounce, and the clamp cuts the bounce into steps.
 export const SPRING = { mass: 1, stiffness: 169, damping: 26 };
 const SETTLE = 0.6; // seconds until the spring has visibly settled
 
@@ -63,6 +68,44 @@ const cameraAt = (zooms: Zoom[], t: number, fps: number, view: CameraProps['view
 
 const moving = (zooms: Zoom[], t: number) => zooms.some((z) => t > z.t && t < z.t + SETTLE);
 
+// Where the recorded pointer was at time t.
+const rawAt = (moves: CameraProps['moves'], t: number, view: CameraProps['view']): [number, number] => {
+  const mi = at(moves, t, (m) => m[0]);
+  if (mi < 0) return [view.width / 2, view.height / 2];
+  const a = moves[mi], b = moves[mi + 1];
+  if (b && b[0] > a[0] && b[0] - a[0] < 0.1) {
+    const u = (t - a[0]) / (b[0] - a[0]);
+    return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+  }
+  return [a[1], a[2]];
+};
+
+// The drawn pointer follows the recorded one on the same spring as the camera,
+// as Screen Studio's does, and stops on its target instead of swinging past.
+// It returns [x, y, vx] per frame; vx tilts the pointer.
+const glide = (moves: CameraProps['moves'], view: CameraProps['view'], from: number, duration: number, fps: number) => {
+  const { mass, stiffness: k, damping: c } = SPRING;
+  const dt = 1 / 480, start = from - 1, end = from + duration;
+  let [x, y] = rawAt(moves, start, view);
+  let vx = 0, vy = 0;
+  const out: [number, number, number][] = [];
+  let next = from;
+  const step = (p: number, v: number, target: number) => {
+    const before = target - p;
+    v += ((k * before - c * v) / mass) * dt;
+    p += v * dt;
+    if (before !== 0 && Math.sign(target - p) !== Math.sign(before)) return [target, 0];
+    return [p, v];
+  };
+  for (let t = start; t <= end + dt; t += dt) {
+    const [tx, ty] = rawAt(moves, t, view);
+    [x, vx] = step(x, vx, tx);
+    [y, vy] = step(y, vy, ty);
+    while (t >= next && out.length <= duration * fps) { out.push([x, y, vx]); next = from + out.length / fps; }
+  }
+  return out;
+};
+
 const Scene = (props: CameraProps) => {
   const frame = useCurrentFrame();
   const { fps, width, height, view, frames, moves, presses, zooms, pointer, from } = props;
@@ -76,15 +119,14 @@ const Scene = (props: CameraProps) => {
   const tx = width / 2 - cx * k * cam.s, ty = height / 2 - cy * k * cam.s;
 
   const fi = Math.max(0, at(frames, t, (f) => f[1]));
-  const mi = at(moves, t, (m) => m[0]);
-  let px = view.width / 2, py = view.height / 2;
-  if (mi >= 0) {
-    const a = moves[mi], b = moves[mi + 1];
-    if (b && b[0] > a[0] && b[0] - a[0] < 0.1) {
-      const u = (t - a[0]) / (b[0] - a[0]);
-      px = a[1] + (b[1] - a[1]) * u; py = a[2] + (b[2] - a[2]) * u;
-    } else { px = a[1]; py = a[2]; }
-  }
+  const path = useMemo(() => glide(moves, view, from, props.duration, fps), [moves, view, from, props.duration, fps]);
+  const [px, py, pvx] = path[Math.min(frame, path.length - 1)] ?? [...rawAt(moves, t, view), 0];
+  // Screen Studio tilts its cursor with horizontal speed (rotationMode: velocity).
+  const tilt = Math.max(-14, Math.min(14, pvx * 0.006));
+  // The shape the page showed under the real pointer, a beat behind it, so the
+  // hand appears as the drawn pointer arrives (Screen Studio records the same).
+  const si = at(moves, t - 0.05, (m) => m[0]);
+  const shape = (si >= 0 && moves[si][3]) || 'arrow';
   const pi = at(presses, t, (p) => p[0]);
   const since = pi >= 0 ? t - presses[pi][0] : 99;
   const down = pi >= 0 && presses[pi][1] === 1;
@@ -95,7 +137,7 @@ const Scene = (props: CameraProps) => {
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${cam.s})` }}>
         {frames.length ? <Img src={staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
-        {pointer.show ? <Pointer x={px * k} y={py * k} size={pointer.size * k} squeeze={squeeze} /> : null}
+        {pointer.show ? <Pointer x={px * k} y={py * k} size={pointer.size * k} squeeze={squeeze} tilt={shape === 'arrow' ? tilt : 0} shape={shape} /> : null}
       </div>
     </AbsoluteFill>
   );

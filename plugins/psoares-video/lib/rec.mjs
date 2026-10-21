@@ -9,12 +9,26 @@ import path from 'node:path';
 import { playwright } from './project.mjs';
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+// A hand's move: quick to start, long to settle (minimum jerk, front-loaded).
+const ease = (t) => { const u = Math.pow(t, 0.75); return u * u * u * (10 - 15 * u + 6 * u * u); };
 
 // Reports every pointer move and press to the recorder.
 const TRACK = `
 (() => {
-  const send = (type, e) => { try { window.__track(type, e.clientX, e.clientY); } catch {} };
+  // Only the real pointer, in the page itself: apps and iframes fire their own
+  // mouse events (untrusted, or in a frame's own coordinates), and one of those
+  // in the path sends the drawn pointer off and back.
+  if (window !== window.top) return;
+  // The cursor the page shows under the pointer, as Screen Studio records the
+  // system's: a hand over what can be clicked, an I-beam over text.
+  const shape = (e) => {
+    const c = e.target instanceof Element ? getComputedStyle(e.target).cursor : 'auto';
+    if (c === 'pointer') return 'hand';
+    if (c === 'text') return 'ibeam';
+    if (c === 'auto' && e.target instanceof Element && e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable=true]')) return 'ibeam';
+    return 'arrow';
+  };
+  const send = (type, e) => { if (!e.isTrusted) return; try { window.__track(type, e.clientX, e.clientY, type === 'move' ? shape(e) : ''); } catch {} };
   document.addEventListener('mousemove', (e) => send('move', e), true);
   document.addEventListener('mousedown', (e) => send('down', e), true);
   document.addEventListener('mouseup', (e) => send('up', e), true);
@@ -91,7 +105,7 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
   });
   const w = new Window(account ?? 'anon', context, null, project);
   w.base = base;
-  await context.exposeBinding('__track', (_src, type, px, py) => w.onTrack(type, px, py));
+  await context.exposeBinding('__track', (_src, type, px, py, kind) => w.onTrack(type, px, py, kind));
   await context.addInitScript(TRACK);
   if (config.pointer.mode === 'page') await context.addInitScript(PAGE_POINTER);
   if (acct?.cookies) {
@@ -122,10 +136,10 @@ export class Window {
   get base() { return this._base ?? this.project.config.app.base; }
   set base(v) { this._base = v; }
   now() { return (Date.now() - this.t0) / 1000; }
-  onTrack(type, x, y) {
+  onTrack(type, x, y, kind) {
     if (!this.t0) return;
     const t = this.now();
-    if (type === 'move') this.moves.push([+t.toFixed(4), Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+    if (type === 'move') this.moves.push([+t.toFixed(4), Math.round(x * 10) / 10, Math.round(y * 10) / 10, kind || 'arrow']);
     else this.presses.push([+t.toFixed(4), type === 'down' ? 1 : 0]);
   }
   async go(url) {
@@ -137,15 +151,24 @@ export class Window {
     }
     await this.page.mouse.move(this.cx, this.cy);
   }
+  // The time follows the distance (a short hop is quick, a long one takes a
+  // little longer), `ms` is the most it may take, and the path bows slightly,
+  // as a wrist does, instead of running on a ruler.
   async moveTo(x, y, ms = 550) {
-    const sx = this.cx, sy = this.cy, n = Math.max(8, Math.round(ms / 16));
+    const sx = this.cx, sy = this.cy, dx = x - sx, dy = y - sy;
+    const dist = Math.hypot(dx, dy);
+    const dur = Math.min(ms, 140 + 0.2 * dist);
+    const n = Math.max(6, Math.round(dur / 16));
+    const bow = Math.min(60, dist * 0.08) * (dx * dy >= 0 ? 1 : -1);
+    const nx = dist ? -dy / dist : 0, ny = dist ? dx / dist : 0;
     for (let i = 1; i <= n; i++) {
-      const k = ease(i / n);
-      await this.page.mouse.move(sx + (x - sx) * k, sy + (y - sy) * k);
-      await sleep(ms / n);
+      const k = ease(i / n), arc = 4 * k * (1 - k) * bow;
+      await this.page.mouse.move(sx + dx * k + nx * arc, sy + dy * k + ny * arc);
+      await sleep(dur / n);
     }
     this.cx = x; this.cy = y;
   }
+
   async box(locator) {
     const l = typeof locator === 'string' ? this.page.locator(locator) : locator;
     await l.first().scrollIntoViewIfNeeded({ timeout: 4000 }).catch(() => {});
@@ -160,7 +183,8 @@ export class Window {
   }
   async click(locator, ms = 550, at) {
     if (!(await this.hover(locator, ms, at))) return false;
-    await sleep(90);
+    // The drawn pointer trails on its spring: let it land before the press.
+    await sleep(200);
     await this.page.mouse.down(); await sleep(80); await this.page.mouse.up();
     await sleep(120);
     return true;
@@ -216,7 +240,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   }
   const { output, view } = project.config;
   t0 = Date.now();
-  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy]], presses: [], zooms: [] });
+  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [] });
   await Promise.all(shoots.map((s) => s.cdp.send('Page.startScreencast', {
     format: 'jpeg', quality: 90, everyNthFrame: 1,
     maxWidth: Math.round((s.w.page.viewportSize()?.width ?? view.width) * output.width / view.width), maxHeight: output.height,
