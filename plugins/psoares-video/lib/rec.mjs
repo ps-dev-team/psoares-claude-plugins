@@ -189,7 +189,8 @@ export class Window {
     this.rand = seeded(name);
   }
   // config.pointer.human (default on) lets the hand do small things of its
-  // own: a hook at the end of some moves, a drift while it rests.
+  // own: a hook at the end of some moves (and, with pointer.rests, a drift
+  // while it rests).
   get human() { return this.project.config.pointer.human !== false; }
   get base() { return this._base ?? this.project.config.app.base; }
   set base(v) { this._base = v; }
@@ -523,8 +524,9 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     // A long pause: now and then, the hand that moved last drifts a little
     // instead of standing dead still.
     const still = shoots.map((s) => s.w).sort((a, b) => b.movedAt - a.movedAt)[0];
-    // config.pointer.rests: false turns these off (the hooks stay).
-    if (wait > 1800 && still.human && still.project.config.pointer.rests !== false && still.rand() < 0.4) {
+    // Off unless config.pointer.rests is true: a small drift in place reads
+    // as a glitch to most viewers.
+    if (wait > 1800 && still.human && still.project.config.pointer.rests === true && still.rand() < 0.4) {
       const idle = 300 + still.rand() * 500;
       await sleep(idle);
       await still.rest(Math.min(wait - idle - 300, 1100 + still.rand() * 500));
