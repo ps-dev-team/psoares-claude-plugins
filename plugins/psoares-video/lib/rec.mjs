@@ -107,6 +107,15 @@ function hookExit() {
   for (const ev of ['uncaughtException', 'unhandledRejection']) process.on(ev, async (e) => { console.error(e); await closeAll(); process.exit(1); });
 }
 
+// An account with `media` ({ video: 'x.y4m', audio: 'x.wav' }, paths in the
+// project) gets a fake camera and microphone that play those files (looped),
+// with no permission prompt: a video call can be recorded with real faces.
+function fakeMedia(project, acct) {
+  if (!acct?.media) return [];
+  const f = (k, flag) => (acct.media[k] ? [`--${flag}=${project.p(acct.media[k])}`] : []);
+  return ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', ...f('video', 'use-file-for-fake-video-capture'), ...f('audio', 'use-file-for-fake-audio-capture')];
+}
+
 // Opens a headed window for an account (a key of config.accounts, or null for
 // a window with no sign-in). `view` overrides the window's CSS size.
 export async function openWindow(project, account, { url = null, x = 0, view } = {}) {
@@ -125,13 +134,34 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
     channel: 'chrome', headless: false, viewport: v, deviceScaleFactor: scale, locale: config.app.locale,
     ...(config.app.timezone ? { timezoneId: config.app.timezone } : {}),
     // Off to the side of the screen, so a stray click can't land in it.
-    args: [`--window-position=${config.app.windowX + x},40`, '--mute-audio', '--autoplay-policy=no-user-gesture-required'],
+    args: [`--window-position=${config.app.windowX + x},40`, '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...fakeMedia(project, acct)],
+    ...(acct?.media ? { permissions: ['camera', 'microphone'] } : {}),
   });
   const w = new Window(account ?? 'anon', context, null, project);
   w.base = base;
   await context.exposeBinding('__track', (_src, type, px, py, kind) => w.onTrack(type, px, py, kind));
   await context.addInitScript(TRACK);
   if (config.pointer.mode === 'page') await context.addInitScript(PAGE_POINTER);
+  // Fake devices are named after their files ("/Volumes/…/x.y4m", "Fake Default
+  // Audio Input"): show one device of each kind under a plain name instead.
+  if (acct?.media) {
+    const labels = { videoinput: 'FaceTime HD Camera', audioinput: 'MacBook Pro Microphone', audiooutput: 'MacBook Pro Speakers', ...acct.media.labels };
+    await context.addInitScript((labels) => {
+      const md = navigator.mediaDevices;
+      if (!md) return;
+      const list = md.enumerateDevices.bind(md);
+      md.enumerateDevices = async () => {
+        const seen = new Set();
+        return (await list()).filter((d) => !seen.has(d.kind) && seen.add(d.kind)).map((d) => {
+          const o = { deviceId: d.deviceId, groupId: d.groupId, kind: d.kind, label: d.label ? labels[d.kind] ?? d.label : '' };
+          return Object.assign(Object.create(Object.getPrototypeOf(d), { deviceId: { get: () => o.deviceId }, groupId: { get: () => o.groupId }, kind: { get: () => o.kind }, label: { get: () => o.label } }), { toJSON: () => o });
+        });
+      };
+      const kind = { video: 'videoinput', audio: 'audioinput' };
+      const desc = Object.getOwnPropertyDescriptor(MediaStreamTrack.prototype, 'label');
+      Object.defineProperty(MediaStreamTrack.prototype, 'label', { get() { const l = desc.get.call(this); return l ? labels[kind[this.kind]] ?? l : l; } });
+    }, labels);
+  }
   if (acct?.cookies) {
     const domain = acct.domain ?? new URL(base).hostname;
     const raw = fs.readFileSync(acct.cookies, 'utf8').trim().replace(/^['"]|['"]$/g, '');
