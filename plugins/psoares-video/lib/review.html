@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Review</title>
 <style>
-  :root { --bg: #f5f6f8; --card: #fff; --line: #e3e5ea; --text: #1d1f24; --muted: #6b7080; --accent: #0a84ff; --warn: #e08a00; --pin: #e5484d; }
+  :root { color-scheme: dark; --bg: #141518; --card: #1c1d22; --line: #2c2e36; --text: #e6e8ee; --muted: #8b90a0; --accent: #3d9bff; --warn: #f0a020; --pin: #ff5a5f; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr) auto; }
   main { padding: 16px 16px 8px; display: flex; flex-direction: column; min-height: 0; }
@@ -64,25 +64,31 @@
   .compose textarea { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; resize: vertical; }
   .compose .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; color: var(--muted); font-size: 11px; }
   .empty { padding: 16px; color: var(--muted); }
-  /* The timeline is dark, like an editor's. */
-  footer { background: #17181c; padding-top: 12px; }
-  footer .tl { background: #1f2026; border-color: #2c2e36; }
-  footer .row { border-bottom-color: #2c2e36; }
-  footer .labels { background: #1f2026; border-color: #2c2e36; }
-  footer .label { color: #8b90a0; border-bottom-color: #2c2e36; }
-  footer .scene { background: #2c2e36; color: #b4b8c4; }
-  footer .line { background: #1d3557; color: #cfe0ff; }
-  footer .line.on { background: #2f5fa3; color: #fff; }
-  footer .gap { background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 4px, #5c4818 4px, #5c4818 8px); color: #ffd37a; }
-  footer .zoom { background: #3d2a63; color: #d9c3ff; }
-  footer .tick span { color: #a3a8b6; }
-  footer .click { background: #6b7080; }
-  footer .event { background: #3d9bff; }
-  footer .note { background: #f0a020; }
-  footer .head { background: #ff5a5f; }
-  footer .zoomctl { color: #8b90a0; }
-  footer kbd { background: #2c2e36; border-color: #3a3c46; color: #d0d3dc; }
-  footer input[type=range] { accent-color: #3d9bff; }
+  /* Dark throughout: only the video keeps its own colours. */
+  { padding-top: 12px; }
+  .tl { background: #1f2026; border-color: #2c2e36; }
+  .row { border-bottom-color: #2c2e36; }
+  .labels { background: #1f2026; border-color: #2c2e36; }
+  .label { color: #8b90a0; border-bottom-color: #2c2e36; }
+  .scene { background: #2c2e36; color: #b4b8c4; }
+  .line { background: #1d3557; color: #cfe0ff; }
+  .line.on { background: #2f5fa3; color: #fff; }
+  .gap { background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 4px, #5c4818 4px, #5c4818 8px); color: #ffd37a; }
+  .zoom { background: #3d2a63; color: #d9c3ff; }
+  .tick span { color: #a3a8b6; }
+  .click { background: #6b7080; }
+  .event { background: #3d9bff; }
+  .note { background: #f0a020; }
+  .head { background: #ff5a5f; }
+  .zoomctl { color: #8b90a0; }
+  kbd { background: #2c2e36; border-color: #3a3c46; color: #d0d3dc; }
+  input[type=range] { accent-color: #3d9bff; }
+  .c:hover { background: #22242a; }
+  .c .reply { background: #1d2f22; color: #cfe8d4; }
+  .compose textarea { background: #141518; color: var(--text); }
+  button { color: var(--text); }
+  button.primary { color: #fff; }
+  video { box-shadow: 0 2px 16px rgba(0,0,0,.5); }
 </style>
 </head>
 <body>
