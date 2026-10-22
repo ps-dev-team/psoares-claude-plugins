@@ -63,7 +63,7 @@ Each window `w` has:
 | `w.shake()` | A quick shake side to side; the drawn cursor grows while it lasts (macOS shake-to-find). |
 | `w.rest(ms)` | A small generated drift that comes back to the same point. `record()` adds these in long pauses on its own. |
 | `w.scroll(dy, ms)` | Smooth wheel scroll. |
-| `w.zoom(locator \| [x, y], scale)` | The camera zooms there from now (default `camera.zoom`, 2). Only to stay on one place for a while; zoom out before the pointer leaves it (see "Keep it plain"). |
+| `w.zoom(locator \| [x, y], scale)` | The camera zooms there from now (default `camera.zoom`, 2). Only to read a small, dense area (a side panel with a timeline, a small menu); never to frame a form or an editor. Zoom out before the pointer leaves it (see "Keep it plain"). |
 | `w.unzoom()` | The camera eases back to the whole window. |
 | `w.role(...)`, `w.text(...)` | `page.getByRole`, `page.getByText`. |
 | `w.page` | The Playwright page, for anything else. |

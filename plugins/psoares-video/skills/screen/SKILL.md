@@ -48,8 +48,7 @@ Read the script line by line and decide what is on screen during each one.
 - **A line with nothing to show still has a place to look:** hover the thing it talks about.
 - **Mark irreversible steps** (deleting, closing, sending) before recording, and plan how the take
   undoes what it adds. Ask the user before anything that cannot be undone or reaches real people.
-- **Zoom where the eye needs help:** a small control, typing, a detail worth reading. Zoom out
-  before the pointer travels far. Not on every click.
+- **Zoom only to read something small and dense** (see "Keep it plain"). Most beats have no zoom.
 - **Cut into segments** wherever the account or the scene changes; the assembler puts a fade
   there.
 
@@ -105,13 +104,18 @@ The video is a person using the app calmly. Plain moves, hovers and clicks carry
 and the voice does the explaining. Zooms, gestures and pauses are specials: each one is a choice
 made for one moment, and a video full of them looks restless and buggy. When unsure, leave it out.
 
-- **Zoom: only to stay on one place.** Zoom in when the voice stays on one small part of the
-  screen for a while (roughly 10 to 30 s: a menu that opens and is gone through item by item, a
-  panel being filled in). Zoom in on that one place, do the moves there, and **zoom out before the
-  pointer leaves for somewhere else**. Never move a zoom from one place to another, and never zoom
-  in again within a few seconds of zooming out: the camera swinging across the screen reads as a
-  glitch. Most lessons need one or two zooms; many need none. Nothing on a normal-size page needs
-  a zoom just because it is small.
+- **Zoom: only to read something small and dense.** A zoom is for a narrow, packed area whose
+  details the viewer must read and cannot at full size: a side panel with a timeline, a small menu
+  gone through item by item, a row of small labels or numbers. Never to frame a large area (a whole
+  form, an editor, a panel being filled in, a page), never to follow work being done, never for
+  emphasis. If the thing is readable in the full frame, no zoom. Zoom in on that one place, do
+  the moves there, and **zoom out before the pointer leaves for somewhere else**. Never move a zoom
+  from one place to another, and never zoom in again within a few seconds of zooming out: the
+  camera swinging across the screen reads as a glitch. Most lessons need one zoom or none.
+- **Move only when the voice gives a reason.** The pointer goes to a thing when the voice names it
+  or the action needs it, then stays still. No hovers to fill time, no tour of nearby controls, no
+  extra trips between beats. A still pointer while the voice talks about what is on screen is
+  right.
 - **Gestures: one at a time, only for a reason.** A loop around an area when the voice introduces
   that area and the eye would not find it on its own. An underline or a selection only for the
   exact words the voice is about (text being edited, deleted, replaced). The selection box only
