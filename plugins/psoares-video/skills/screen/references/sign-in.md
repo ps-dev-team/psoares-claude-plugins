@@ -12,10 +12,11 @@ node "${CLAUDE_PLUGIN_ROOT}/lib/login.mjs" <project> <account>
 
 It opens that account's profile in **plain Chrome**, with no automation, on `config.app.base` +
 `config.app.login`, and prints the email and password from `config.accounts.<account>` for the
-user to type. The user signs in (and ticks the captcha, if there is one), then closes the window.
-Chrome keeps running after its last window on a Mac: stop the process login.mjs started (its
-PID, never by name) so the session is written, then probe the account to confirm it opens
-signed in.
+user to type. The user signs in (and ticks the captcha, if there is one), waits for the app's first page,
+and tells you, **leaving the window open**. Then stop the Chrome login.mjs started (the main
+process of that profile, by its PID, never by name), wait until it has exited, so the session
+is written to the profile, and probe the account to confirm it opens signed in. A window closed
+by hand, or a Chrome stopped before it exits, can lose the session: then sign in again.
 
 Why plain Chrome: captchas such as Turnstile refuse a window Playwright drives ("the security
 check did not pass"). The profile uses the same keychain flags Playwright does
