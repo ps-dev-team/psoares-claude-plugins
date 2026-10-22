@@ -328,7 +328,7 @@ function playhead() {
     }
     const bs = data.planBeats ?? [], i = bs.findLastIndex((b) => b.t <= t);
     const show = bs.slice(Math.max(0, i - 1), Math.max(0, i - 1) + 5);
-    $('pvbeats').innerHTML = show.map((b) => `<div class="pv-beat${b === bs[i] && t - b.t < 1.5 ? ' now' : ''}"><span class="mono">${fmt(b.t)}</span><span></span></div>`).join('');
+    $('pvbeats').innerHTML = show.map((b) => `<div class="pv-beat${b === bs[i] ? ' now' : ''}"><span class="mono">${fmt(b.t)}</span><span></span></div>`).join('');
     [...$('pvbeats').children].forEach((el, k) => { el.lastChild.textContent = show[k].what; });
   }
   document.querySelectorAll('.line').forEach((e) => e.classList.toggle('on', !!line && +e.dataset.i === line.i));
