@@ -17,13 +17,13 @@
   body {
     margin: 0; background: var(--background); color: var(--fg); overflow: hidden;
     font: 11.5px/1.45 "Geist", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
-    display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: 38px minmax(0, 1fr) auto;
+    display: grid; grid-template-columns: 232px minmax(0, 1fr) 320px; grid-template-rows: 38px minmax(0, 1fr) auto;
   }
   .mono { font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
   svg.i { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
   /* Header */
-  header { grid-column: 1; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+  header { grid-column: 2; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--border); }
   header .title { font-weight: 600; font-size: 12px; letter-spacing: -0.01em; }
   header .sep { color: var(--border); }
   header .help { margin-left: auto; display: flex; gap: 12px; color: var(--subtle); font-size: 11px; }
@@ -49,7 +49,7 @@
   .b-done, .b-answered { background: rgb(var(--emerald) / .12); color: rgb(52 211 153); border-color: rgb(var(--emerald) / .25); }
 
   /* Stage */
-  main { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; min-height: 0; padding: 16px 16px 10px; }
+  main { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; min-height: 0; padding: 16px 16px 10px; }
   .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
   video { max-width: 100%; max-height: 100%; border-radius: var(--radius); background: #000; box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,.6); }
   .transport { display: flex; align-items: center; gap: 10px; padding-top: 12px; }
@@ -81,7 +81,7 @@
   .compose .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; color: var(--subtle); font-size: 11px; align-items: center; }
 
   /* Timeline */
-  footer { grid-column: 1; grid-row: 3; min-width: 0; padding: 0 16px 14px; }
+  footer { grid-column: 2; grid-row: 3; min-width: 0; padding: 0 16px 14px; }
   .tlbox { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
   .tlwrap { display: flex; max-height: 32vh; overflow-x: hidden; overflow-y: auto; }
   .labels { width: 92px; flex: none; border-right: 1px solid var(--border); background: var(--card); }
@@ -120,7 +120,28 @@
   .tlbar input[type=range] { width: 120px; accent-color: #d4d4d8; }
 
   /* Sidebar */
-  aside { grid-column: 2; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  aside { grid-column: 3; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  /* The project's videos, on the left */
+  nav.videos { grid-column: 1; grid-row: 1 / 4; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  nav.videos .top { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
+  nav.videos .top h2 { font-size: 12px; font-weight: 600; margin: 0; }
+  nav.videos .top span { color: var(--subtle); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
+  .vl { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .vl .group { padding: 10px 8px 4px; color: var(--subtle); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .vl a { display: block; padding: 6px 8px; border-radius: 6px; color: var(--muted-fg); text-decoration: none; }
+  .vl a:hover { background: var(--muted); color: var(--fg); }
+  .vl a.on { background: var(--muted); color: var(--fg); box-shadow: inset 2px 0 0 var(--fg); }
+  .vl a.test { opacity: .6; }
+  .vl .row1 { display: flex; gap: 8px; align-items: baseline; }
+  .vl .vid { color: var(--subtle); flex: none; }
+  .vl .vt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .vl .row2 { display: flex; gap: 6px; align-items: center; margin-top: 3px; color: var(--subtle); font-size: 10.5px; }
+  .vl .st { padding: 0 5px; border-radius: 4px; border: 1px solid var(--border); line-height: 15px; }
+  .vl .st.draft { color: rgb(var(--blue)); border-color: rgb(var(--blue) / .35); }
+  .vl .st.final { color: rgb(var(--emerald)); border-color: rgb(var(--emerald) / .35); }
+  .vl .cm { margin-left: auto; display: inline-flex; gap: 6px; }
+  .vl .cm .open { color: rgb(var(--rose)); }
+  .vl .cm .sent { color: rgb(var(--amber)); }
   aside .top { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
   aside .top h2 { font-size: 12px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: center; }
   .tabs { display: inline-flex; padding: 2px; background: var(--muted); border: 1px solid var(--border); border-radius: 6px; }
@@ -160,6 +181,11 @@
   <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></symbol>
 </svg>
+
+<nav class="videos">
+  <div class="top"><h2>Videos</h2><span id="proj"></span></div>
+  <div class="vl" id="vlist"></div>
+</nav>
 
 <header>
   <svg class="i" style="color:var(--muted-fg)"><use href="#i-film"/></svg>
@@ -228,11 +254,46 @@ const LABELS = { dragBy: 'drag', key: 'key', circle: 'loop', marquee: 'selection
 const ROWS = { Pointer: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
 const STATUS = { open: 'New', sent: 'Sent', done: 'Done', answered: 'Answered' };
 
+// The video in the address (?v=03); the list on the left switches it.
+let V = new URLSearchParams(location.search).get('v');
+const q = (path) => path + (path.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(V);
+let listKey = '';
+async function loadList() {
+  const { project, videos } = await (await fetch('/list')).json();
+  if (!V) {
+    V = (videos.find((x) => x.has.draft) ?? videos.find((x) => x.has.final || x.has.voice) ?? videos[0])?.id ?? null;
+    if (V) history.replaceState(null, '', '?v=' + encodeURIComponent(V));
+  }
+  const key = JSON.stringify([V, videos]);
+  if (key === listKey) return;
+  listKey = key;
+  $('proj').textContent = project;
+  const len = (t) => (t == null ? '' : `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')}`);
+  const item = (x) => {
+    const st = x.has.final ? '<span class="st final">final</span>' : x.has.draft ? '<span class="st draft">draft</span>' : x.has.plan ? '<span class="st">plan</span>' : x.has.voice ? '<span class="st">voice</span>' : '<span class="st">beats</span>';
+    const cm = [x.comments.open && `<span class="open" title="new comments">${x.comments.open} new</span>`, x.comments.sent && `<span class="sent" title="sent, not answered yet">${x.comments.sent} sent</span>`, x.comments.done && `<span title="answered">${x.comments.done} done</span>`].filter(Boolean).join('');
+    return `<a href="?v=${encodeURIComponent(x.id)}" data-v="${x.id}" class="${x.id === V ? 'on' : ''}${x.test ? ' test' : ''}">
+      <div class="row1"><span class="vid mono">${x.id}</span><span class="vt">${x.title ?? ''}</span></div>
+      <div class="row2">${st}<span class="mono">${len(x.length)}</span><span class="cm">${cm}</span></div></a>`;
+  };
+  const main = videos.filter((x) => !x.test), tests = videos.filter((x) => x.test);
+  $('vlist').innerHTML = main.map(item).join('') + (tests.length ? '<div class="group">Tests</div>' + tests.map(item).join('') : '');
+  for (const a of $('vlist').querySelectorAll('a')) a.onclick = (e) => { e.preventDefault(); show(a.dataset.v, true); };
+}
+function show(id, push) {
+  if (!id || id === V && !push) return;
+  V = id; mtime = null; listKey = ''; last = '';
+  if (push) history.pushState(null, '', '?v=' + encodeURIComponent(V));
+  loadList(); load(true);
+}
+addEventListener('popstate', () => show(new URLSearchParams(location.search).get('v')));
+
 async function load(first) {
-  const d = await (await fetch('/data')).json();
+  if (!V) return;
+  const d = await (await fetch(q('/data'))).json();
   if (first || d.mtime !== mtime) {
     const t = v.currentTime; mtime = d.mtime;
-    v.src = '/video?' + d.mtime;
+    v.src = q('/video?' + d.mtime);
     if (!first) v.currentTime = t;
   }
   // Voice only (nothing recorded yet): the plan's lines and beats, on the
@@ -262,7 +323,8 @@ async function load(first) {
   if (!first && key === last) return;
   last = key;
   data = d;
-  $('title').textContent = `Lesson ${d.id}`;
+  $('title').textContent = d.title ? `${d.id} · ${d.title}` : d.id;
+  document.title = `${d.id} · Review`;
   document.body.classList.toggle('voice', !!d.voiceOnly);
   $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : (d.video ?? 'no video yet');
   draw(); comments();
@@ -341,9 +403,9 @@ function comments() {
     if (c.reply) e.querySelector('.reply span').textContent = c.reply;
     e.onclick = () => seek(c.t);
     const del = e.querySelector('.del');
-    if (del) del.onclick = async (ev) => { ev.stopPropagation(); await fetch('/comment', { method: 'DELETE', body: JSON.stringify({ n: c.n }) }); load(); };
+    if (del) del.onclick = async (ev) => { ev.stopPropagation(); await fetch(q('/comment'), { method: 'DELETE', body: JSON.stringify({ n: c.n }) }); load(); };
     const re = e.querySelector('.reopen');
-    if (re) re.onclick = async (ev) => { ev.stopPropagation(); await fetch('/reopen', { method: 'POST', body: JSON.stringify({ n: c.n }) }); tab = 'open'; setTab(); load(); };
+    if (re) re.onclick = async (ev) => { ev.stopPropagation(); await fetch(q('/reopen'), { method: 'POST', body: JSON.stringify({ n: c.n }) }); tab = 'open'; setTab(); load(); };
     list.append(e);
   }
 }
@@ -388,7 +450,7 @@ $('tl').addEventListener('mousedown', (e) => {
 });
 function setTab() { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab)); }
 document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; setTab(); comments(); }; });
-$('send').onclick = async () => { await fetch('/send', { method: 'POST' }); load(); };
+$('send').onclick = async () => { await fetch(q('/send'), { method: 'POST' }); load(); };
 $('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
 // A mouse wheel scrolls the timeline sideways, unless the rows need it.
 $('tl').addEventListener('wheel', (e) => {
@@ -422,7 +484,7 @@ async function save() {
   const text = $('text').value.trim();
   $('compose').classList.remove('on');
   if (!text) return;
-  await fetch('/comment', { method: 'POST', body: JSON.stringify({ t: pinned, text, still: still() }) });
+  await fetch(q('/comment'), { method: 'POST', body: JSON.stringify({ t: pinned, text, still: still() }) });
   load();
 }
 $('add').onclick = compose;
@@ -437,8 +499,9 @@ addEventListener('keydown', (e) => {
   if (e.key === 'c' || e.key === 'C') { e.preventDefault(); compose(); }
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); v.pause(); seek(v.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 60)); }
 });
-load(true);
+loadList().then(() => load(true));
 setInterval(load, 3000);
+setInterval(loadList, 5000);
 </script>
 </body>
 </html>

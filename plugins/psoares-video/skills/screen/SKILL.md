@@ -233,10 +233,11 @@ the voice before line N` when one does not (the assembler would refuse it later)
 that gap before recording. After a new voice, run the plan again: the pauses move with it.
 
 The plan also goes to `build/<id>.plan.json`. Before anything is recorded, the review page (see
-the assemble skill) plays the voice alone with the plan: the current line, the list of actions
+the assemble skill, `/?v=<id>`) plays the voice alone with the plan: the current line, the list of actions
 with the current one lit, and each planned beat on its track (clicks, hovers, zooms, specials,
 pauses, scene starts). The user can comment there as on a draft. Offer it when the plan changed a
-lot or the user asked to see the beats; never as a required step.
+lot or the user asked to see the beats; never as a required step. Stop the server when that
+review is done, as the assemble skill says.
 
 ## 5. Record
 

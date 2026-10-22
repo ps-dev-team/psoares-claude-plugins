@@ -80,15 +80,23 @@ no, or ask for the final, render it directly.
    browser):
 
    ```sh
-   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id>          # the page
-   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id> --wait   # exits on the next Send
+   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> [id]   # the page, opened on <id>
+   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> --wait # exits on the next Send, any video
    ```
 
-   The user plays the draft over the timeline, pauses where something should change and presses
-   C. Each comment is pinned to its moment and saved to `review/<id>.json`, with a still of the
-   frame in `review/<id>-<n>.jpg`. **Send to Claude** marks the open comments `sent`; the waiter
-   prints them and exits, which wakes you. Restart the waiter after each send. The page itself
-   needs a restart only when `review.mjs` changes; the HTML and the data reload on their own.
+   One server serves the whole project. The list on the left holds every video (beats file or
+   voice) with its state (beats, voice, plan, draft, final), its length and its comments;
+   `/?v=<id>` opens one, so a link to a video can be given. The user plays the draft over the
+   timeline, pauses where something should change and presses C. Each comment is pinned to its
+   moment and saved to `review/<id>.json`, with a still of the frame in `review/<id>-<n>.jpg`.
+   **Send to Claude** marks the open comments `sent`; the waiter prints them and exits, which
+   wakes you. Restart the waiter after each send. The page itself needs a restart only when
+   `review.mjs` changes; the HTML and the data reload on their own.
+
+   **Stop the server and the waiter when the review is done** (the user approves, or moves on
+   to something else): stop the background tasks you started, by their id or PID, never by name.
+   Never leave one running at the end of the work. As a safety net the server stops itself
+   after 30 minutes with no page open (`IDLE_MIN`).
 3. Read the comments sent and look at each still. For each `sent` comment, change the beats (or
    say why not), then set its `status` to `done` (or `answered` when the answer is words only)
    and write a short `reply`. Never delete a comment. Re-record what changed, render a new
