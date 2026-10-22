@@ -75,21 +75,25 @@ no, or ask for the final, render it directly.
 1. Render the draft (`--draft`): a third of the size, no motion blur, a fast encode, with the same
    pointer, zooms, pauses and voice. It also writes `build/<id>.draft.timeline.json` (scenes,
    script lines, pauses, zooms, gestures, clicks and warnings, in video seconds).
-2. Open the review page for the user, in the background (it serves on 127.0.0.1 only, and opens
-   the browser):
+2. Open the review page for the user, and a waiter beside it, both in the background (127.0.0.1
+   only; `PORT=<n>` keeps the same address across restarts, `NO_OPEN=1` skips opening the
+   browser):
 
    ```sh
-   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id>
+   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id>          # the page
+   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id> --wait   # exits on the next Send
    ```
 
    The user plays the draft over the timeline, pauses where something should change and presses
    C. Each comment is pinned to its moment and saved to `review/<id>.json`, with a still of the
-   frame in `review/<id>-<n>.jpg`.
-3. When the user says the review is done, read `review/<id>.json` and look at each still. For
-   each `open` comment, change the beats (or say why not), then set its `status` to `done` (or
-   `answered` when the answer is words only) and write a short `reply`. Never delete a comment.
-   Re-record what changed, render a new draft: the page reloads it and shows the replies beside
-   the comments.
+   frame in `review/<id>-<n>.jpg`. **Send to Claude** marks the open comments `sent`; the waiter
+   prints them and exits, which wakes you. Restart the waiter after each send. The page itself
+   needs a restart only when `review.mjs` changes; the HTML and the data reload on their own.
+3. Read the comments sent and look at each still. For each `sent` comment, change the beats (or
+   say why not), then set its `status` to `done` (or `answered` when the answer is words only)
+   and write a short `reply`. Never delete a comment. Re-record what changed, render a new
+   draft: the page reloads it. Answered comments leave the Open tab and the timeline and sit
+   under Done with their reply; the user can Reopen one.
 4. When the user is happy with the draft, render the full video and hand it over (below).
 
 A re-render keeps the report's Decisions; only the facts above them are rewritten.

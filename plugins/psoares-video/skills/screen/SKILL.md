@@ -59,6 +59,9 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 
 - **Moves** take time by distance (a short hop is quick), bow slightly, start fast and settle.
   `ms` on `hover`, `click`, `moveTo` is the most a move may take, not its length.
+- **A click waits for the hand to stop.** Before pressing, the pointer rests in proportion to
+  how far it travelled (about 120 ms in place, up to about 380 ms after a long move), so a click
+  never lands mid-move. Budget for it when beats are tight.
 - **The cursor shape** is the page's own, recorded at every move from the CSS cursor under the
   pointer (as Screen Studio records the system's): arrow, open hand where the page offers to grab, not-allowed, resize arrows. A shape shows only once it has held for about a
   quarter of a second, so crossing text on the way somewhere stays the arrow. The I-beam shows only while the hand works with text (clicking into a field,
@@ -223,8 +226,17 @@ It writes `build/<id>.plan.md`: each voice line with its time, each scene's star
 account, the screen, what runs off camera before it), and every beat in plain words. Read it
 yourself: a line with no reason to move should say "(still)". Give each window a `screen` label
 (`{ account, url, screen: 'Today' }`) and each account a `label` in the config, so the plan names
-them in words. The review page shows the plan on the voice alone before anything is recorded;
-offer that to the user when it helps, never as a required step.
+them in words.
+
+It also checks that every `gap` falls in a real silence of the voice and prints `no silence in
+the voice before line N` when one does not (the assembler would refuse it later). Move or drop
+that gap before recording. After a new voice, run the plan again: the pauses move with it.
+
+The plan also goes to `build/<id>.plan.json`. Before anything is recorded, the review page (see
+the assemble skill) plays the voice alone with the plan: the current line, the list of actions
+with the current one lit, and each planned beat on its track (clicks, hovers, zooms, specials,
+pauses, scene starts). The user can comment there as on a draft. Offer it when the plan changed a
+lot or the user asked to see the beats; never as a required step.
 
 ## 5. Record
 
