@@ -264,10 +264,12 @@ export class Window {
     return true;
   }
   async click(locator, ms = 550, at) {
+    const x0 = this.cx, y0 = this.cy;
     if (!(await this.hover(locator, ms, at))) return false;
     // A hand stops, then clicks: the drawn pointer trails on its spring, so
-    // let it come fully to rest before the press.
-    await sleep(380);
+    // let it come to rest before the press. The rest grows with the distance
+    // travelled: a click where the pointer already is needs almost none.
+    await sleep(Math.round(120 + Math.min(260, Math.hypot(this.cx - x0, this.cy - y0) * 0.6)));
     await this.press(true); await sleep(80); await this.press(false);
     await sleep(120);
     return true;
