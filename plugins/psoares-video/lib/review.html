@@ -26,6 +26,8 @@
   header { grid-column: 2; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--border); }
   header .title { font-weight: 600; font-size: 12px; letter-spacing: -0.01em; }
   header .sep { color: var(--border); }
+  .btn.approve.on { color: rgb(var(--emerald)); border-color: rgb(var(--emerald) / .45); background: rgb(var(--emerald) / .1); }
+  .btn.approve.older { color: rgb(var(--amber)); border-color: rgb(var(--amber) / .4); }
   header .help { margin-left: auto; display: flex; gap: 12px; color: var(--subtle); font-size: 11px; }
   header .help span { display: inline-flex; gap: 4px; align-items: center; }
 
@@ -146,6 +148,9 @@
   .vl .row2 { display: flex; gap: 6px; align-items: center; margin-top: 3px; color: var(--subtle); font-size: 10.5px; }
   .vl .st { padding: 0 5px; border-radius: 4px; border: 1px solid var(--border); line-height: 15px; }
   .vl .st.draft { color: rgb(var(--blue)); border-color: rgb(var(--blue) / .35); }
+  .vl .ok { color: rgb(var(--emerald)); display: inline-flex; align-items: center; gap: 3px; }
+  .vl .ok.older { color: rgb(var(--amber)); }
+  .vl .ok svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; }
   .vl .st.final { color: rgb(var(--emerald)); border-color: rgb(var(--emerald) / .35); }
   .vl .cm { margin-left: auto; display: inline-flex; gap: 6px; }
   .vl .cm .open { color: rgb(var(--rose)); }
@@ -200,6 +205,7 @@
   <svg class="i" style="color:var(--muted-fg)"><use href="#i-film"/></svg>
   <span class="title" id="title">Review</span>
   <span class="badge outline mono" id="file"></span>
+  <button class="btn approve" id="approve" title="Approve this version"><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span id="approvetext">Approve</span></button>
   <div class="help">
     <span><kbd>Space</kbd> play</span>
     <span><kbd>←</kbd><kbd>→</kbd> frame</span>
@@ -284,7 +290,7 @@ async function loadList() {
     const cm = [x.comments.open && `<span class="open" title="new comments">${x.comments.open} new</span>`, x.comments.sent && `<span class="sent" title="sent, not answered yet">${x.comments.sent} sent</span>`, x.comments.done && `<span title="answered">${x.comments.done} done</span>`].filter(Boolean).join('');
     return `<a href="?v=${encodeURIComponent(x.id)}" data-v="${x.id}" class="${x.id === V ? 'on' : ''}${x.test ? ' test' : ''}">
       <div class="row1"><span class="vid mono">${x.id}</span><span class="vt">${x.title ?? ''}</span></div>
-      <div class="row2">${st}<span class="mono">${len(x.length)}</span><span class="cm">${cm}</span></div></a>`;
+      <div class="row2">${st}<span class="mono">${len(x.length)}</span>${x.approved ? `<span class="ok ${x.approved === 'older' ? 'older' : ''}" title="${x.approved === 'older' ? 'approved on an older render' : 'approved'}"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>${x.approved === 'older' ? 'older' : 'approved'}</span>` : ''}<span class="cm">${cm}</span></div></a>`;
   };
   const main = videos.filter((x) => !x.test), tests = videos.filter((x) => x.test);
   $('vlist').innerHTML = main.map(item).join('') + (tests.length ? '<div class="group">Tests</div>' + tests.map(item).join('') : '');
@@ -334,6 +340,7 @@ async function load(first) {
   last = key;
   data = d;
   $('title').textContent = d.title ? `${d.id} · ${d.title}` : d.id;
+  approval = d.approved; showApproval(d.voiceOnly);
   document.title = `${d.id} · Review`;
   document.body.classList.toggle('voice', !!d.voiceOnly);
   $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : (d.video ?? 'no video yet');
@@ -460,6 +467,20 @@ $('tl').addEventListener('mousedown', (e) => {
 });
 function setTab() { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab)); }
 document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; setTab(); comments(); }; });
+// The approval of the version on screen. A newer render after it shows as
+// approved on an older one, to approve again.
+let approval = null;
+function showApproval(voiceOnly) {
+  const b = $('approve');
+  b.style.display = voiceOnly ? 'none' : '';
+  b.classList.toggle('on', approval === 'yes'); b.classList.toggle('older', approval === 'older');
+  $('approvetext').textContent = approval === 'yes' ? 'Approved' : approval === 'older' ? 'Approved an older version' : 'Approve';
+  b.title = approval === 'yes' ? 'Approved. Click to withdraw.' : 'Approve this version';
+}
+$('approve').onclick = async () => {
+  const r = await (await fetch(q('/approve'), { method: 'POST', body: JSON.stringify({ approved: approval !== 'yes' }) })).json();
+  approval = r.approved; showApproval(false); listKey = ''; loadList();
+};
 $('send').onclick = async () => { await fetch(q('/send'), { method: 'POST' }); load(); };
 $('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
 // A mouse wheel scrolls the timeline sideways, unless the rows need it.

@@ -102,7 +102,12 @@ no, or ask for the final, render it directly.
    and write a short `reply`. Never delete a comment. Re-record what changed, render a new
    draft: the page reloads it. Answered comments leave the Open tab and the timeline and sit
    under Done with their reply; the user can Reopen one.
-4. When the user is happy with the draft, render the full video and hand it over (below).
+4. **Approve** in the page's header records the user's approval of the version on screen
+   (`approved` in `review/<id>.json`, every change in `approvals`) and wakes the waiter
+   (`review <id>: APPROVED`). An approval belongs to that render: after a newer one the list shows
+   it as given to an older version. An approved draft is the order to render the full video and
+   hand it over (below). An approval said in the chat counts the same: record it with
+   `POST /approve?v=<id>` so the list shows it.
 
 A re-render keeps the report's Decisions; only the facts above them are rewritten.
 

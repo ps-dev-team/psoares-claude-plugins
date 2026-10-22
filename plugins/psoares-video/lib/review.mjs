@@ -14,7 +14,11 @@
 // page open, so a forgotten one does not stay up. Stop it yourself when the
 // review is done.
 //
-// --wait starts no page: it waits for the next send (of <id>, or of any video
+// The ✓ Approve button records the user's approval of the video on screen in
+// review/<id>.json (`approved`, and every change in `approvals`). It belongs to
+// that render: a newer one shows it as given to an older version.
+//
+// --wait starts no page: it waits for the next send or approval (of <id>, or of any video
 // when no id is given), prints the comments sent, and exits. Run it in the
 // background beside the page, so the send wakes whoever is waiting.
 import fs from 'node:fs';
@@ -67,6 +71,13 @@ const titleOf = (id) => {
   const first = fs.readFileSync(f, 'utf8').split('\n')[0];
   return first.replace(/^\/\/\s*/, '').replace(new RegExp(`^${id}\\s+`), '').split(/[:.(]/)[0].trim() || null;
 };
+// The user's approval, against the video it was given on: 'yes', 'older'
+// (a newer render came after it), or null.
+const approvalOf = (id) => {
+  const a = read(id).approved, v = video(id);
+  if (!a) return null;
+  return v && Math.round(fs.statSync(v).mtimeMs) === a.mtime ? 'yes' : 'older';
+};
 const list = () => ids().map((id) => {
   const draft = pick(`${id}.draft.mp4`), final = pick(`${id}.mp4`), cs = read(id).comments;
   const count = (...st) => cs.filter((c) => st.includes(c.status)).length;
@@ -77,15 +88,23 @@ const list = () => ids().map((id) => {
     length: shown ? lengthOf(shown) : null,
     updated: shown ? fs.statSync(shown).mtimeMs : null,
     comments: { open: count('open'), sent: count('sent'), done: count('done', 'answered') },
+    approved: approvalOf(id),
   };
 });
 
 if (waiting) {
   const watched = only ? [only] : ids();
   const seen = Object.fromEntries(watched.map((id) => [id, (read(id).sends ?? []).length]));
+  const approvals = Object.fromEntries(watched.map((id) => [id, (read(id).approvals ?? []).length]));
   for (;;) {
     for (const id of watched) {
       const d = read(id), sends = d.sends ?? [];
+      const ap = d.approvals ?? [];
+      if (ap.length > approvals[id]) {
+        const a = ap.at(-1);
+        console.log(`review ${id}: ${a.approved ? 'APPROVED' : 'approval withdrawn'} at ${a.at} (${a.video})`);
+        process.exit(0);
+      }
       if (sends.length <= seen[id]) continue;
       const send = sends.at(-1);
       console.log(`review ${id}: ${send.comments.length} comment(s) sent at ${send.at}`);
@@ -130,7 +149,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/video') { const f = video(id) ?? voice(id); if (!f) { none(res); return; } stream(req, res, f); return; }
     if (url.pathname === '/data') {
       const f = timeline(id), v = video(id) ?? voice(id), pl = plan(id);
-      json(res, { id, title: titleOf(id), video: v && path.basename(v), voiceOnly: !video(id), mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
+      json(res, { id, title: titleOf(id), approved: approvalOf(id), video: v && path.basename(v), voiceOnly: !video(id), mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
       return;
     }
     if (url.pathname === '/comment' && req.method === 'POST') {
@@ -148,6 +167,17 @@ const server = http.createServer(async (req, res) => {
       if (open.length) { (d.sends ??= []).push({ at: new Date().toISOString(), comments: open.map((c) => c.n) }); write(id, d); }
       console.log(`${id}: sent ${open.length} comment(s)`);
       json(res, { sent: open.length }); return;
+    }
+    if (url.pathname === '/approve' && req.method === 'POST') {
+      const { approved } = await body(req);
+      const d = read(id), v = video(id);
+      const entry = { at: new Date().toISOString(), approved: !!approved, video: v ? path.basename(v) : null };
+      if (approved && v) d.approved = { at: entry.at, video: entry.video, mtime: Math.round(fs.statSync(v).mtimeMs) };
+      else delete d.approved;
+      (d.approvals ??= []).push(entry);
+      write(id, d);
+      console.log(`${id}: ${approved ? 'approved' : 'approval withdrawn'}`);
+      json(res, { approved: approvalOf(id) }); return;
     }
     if (url.pathname === '/reopen' && req.method === 'POST') {
       const { n } = await body(req);
