@@ -482,7 +482,10 @@ let pinned = 0;
 function compose() {
   v.pause(); pinned = v.currentTime;
   $('at').textContent = fmt(pinned);
-  $('compose').classList.add('on'); $('text').value = ''; setTimeout(() => $('text').focus(), 20);
+  $('compose').classList.add('on'); $('text').value = '';
+  // Focus at once, and again on the next frame in case the click or key that
+  // opened the box takes focus back.
+  $('text').focus(); requestAnimationFrame(() => $('text').focus());
 }
 function still() {
   const c = document.createElement('canvas'), w = 960;
@@ -503,7 +506,17 @@ $('text').addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { $('compose').classList.remove('on'); }
   e.stopPropagation();
 });
+// While the box is open, whatever is typed or pasted belongs to it, wherever
+// the focus happens to be: no keystroke goes to the shortcuts below.
+const composing = () => $('compose').classList.contains('on');
+addEventListener('paste', (e) => {
+  if (!composing() || e.target === $('text')) return;
+  e.preventDefault();
+  const t = $('text'), add = e.clipboardData.getData('text');
+  t.focus(); t.setRangeText(add, t.selectionStart, t.selectionEnd, 'end');
+}, true);
 addEventListener('keydown', (e) => {
+  if (composing() && e.target !== $('text')) { if (e.key === 'Escape') $('compose').classList.remove('on'); else $('text').focus(); return; }
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if (e.key === ' ') { e.preventDefault(); toggle(); }
   if (e.key === 'c' || e.key === 'C') { e.preventDefault(); compose(); }
