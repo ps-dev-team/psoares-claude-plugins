@@ -523,7 +523,8 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     // A long pause: now and then, the hand that moved last drifts a little
     // instead of standing dead still.
     const still = shoots.map((s) => s.w).sort((a, b) => b.movedAt - a.movedAt)[0];
-    if (wait > 1800 && still.human && still.rand() < 0.4) {
+    // config.pointer.rests: false turns these off (the hooks stay).
+    if (wait > 1800 && still.human && still.project.config.pointer.rests !== false && still.rand() < 0.4) {
       const idle = 300 + still.rand() * 500;
       await sleep(idle);
       await still.rest(Math.min(wait - idle - 300, 1100 + still.rand() * 500));

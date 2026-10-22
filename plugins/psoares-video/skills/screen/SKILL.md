@@ -88,7 +88,8 @@ like a person using the app. Write beats with this in mind; none of it needs cod
 - **The hand rests like a hand.** In a pause of about two seconds or more between beats, the
   hand that moved last sometimes drifts: a small loop, a sway, a figure eight. Each rest is
   generated new (random circles added together), never picked from a fixed list.
-  `pointer.human: false` turns hooks and rests off.
+  `pointer.human: false` turns hooks and rests off; `pointer.rests: false` turns off only the
+  rests (some viewers read a small drift in place as a glitch).
 - **Gestures and the selection box** (`w.circle`, `w.underline`, `w.select`, `w.marquee`,
   `w.shake`) are specials, used rarely. Read "Keep it plain" below before using any of them.
   `w.circle(target)` is a quick loop around an area; `w.underline(target)` goes back and forth
