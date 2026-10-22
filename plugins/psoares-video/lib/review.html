@@ -6,7 +6,7 @@
 <style>
   :root { --bg: #f5f6f8; --card: #fff; --line: #e3e5ea; --text: #1d1f24; --muted: #6b7080; --accent: #0a84ff; --warn: #e08a00; --pin: #e5484d; }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: grid; grid-template-columns: 1fr 360px; grid-template-rows: minmax(0, 1fr) auto; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr) auto; }
   main { padding: 16px 16px 8px; display: flex; flex-direction: column; min-height: 0; }
   .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
   video { max-width: 100%; max-height: 100%; border-radius: 8px; background: #000; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
@@ -16,14 +16,14 @@
   button { font: inherit; border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; background: var(--card); }
-  footer { grid-column: 1 / 2; padding: 0 16px 14px; }
+  footer { grid-column: 1 / 2; min-width: 0; padding: 0 16px 14px; }
   .tl { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; overflow-y: hidden; position: relative; user-select: none; }
   .tl-inner { position: relative; }
   .row { position: relative; height: 26px; border-bottom: 1px solid var(--line); }
   .row:last-child, .label:last-child { border-bottom: 0; }
   .row.script { height: 40px; }
   .tlwrap { display: flex; border-radius: 8px; max-height: 34vh; overflow-x: hidden; overflow-y: auto; }
-  .tlwrap .tl { flex: 1; border-radius: 0 8px 8px 0; }
+  .tlwrap .tl { flex: 1; min-width: 0; border-radius: 0 8px 8px 0; }
   .labels { width: 78px; flex: none; border: 1px solid var(--line); border-right: 0; border-radius: 8px 0 0 8px; }
   .label { height: 26px; display: flex; align-items: center; padding-left: 8px; color: var(--muted); font-size: 11px; border-bottom: 1px solid var(--line); }
   .label:last-child { border-bottom: 0; }
@@ -213,7 +213,11 @@ $('tl').addEventListener('mousedown', (e) => {
 });
 $('send').onclick = async () => { await fetch('/send', { method: 'POST' }); load(); };
 $('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
-$('tl').addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { $('tl').scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+// A mouse wheel scrolls the timeline sideways, unless the rows need it.
+$('tl').addEventListener('wheel', (e) => {
+  const wrap = document.querySelector('.tlwrap');
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && wrap.scrollHeight <= wrap.clientHeight) { $('tl').scrollLeft += e.deltaY; e.preventDefault(); }
+}, { passive: false });
 $('play').onclick = () => (v.paused ? v.play() : v.pause());
 v.onplay = () => { $('play').textContent = 'Pause'; };
 v.onpause = () => { $('play').textContent = 'Play'; };

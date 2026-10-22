@@ -73,7 +73,8 @@ const moving = (zooms: Zoom[], t: number) => zooms.some((z) => t > z.t && t < z.
 // Where the recorded pointer was at time t.
 const rawAt = (moves: CameraProps['moves'], t: number, view: CameraProps['view']): [number, number] => {
   const mi = at(moves, t, (m) => m[0]);
-  if (mi < 0) return [view.width / 2, view.height / 2];
+  // Before the first move the pointer is already where the take starts it.
+  if (mi < 0) return moves.length ? [moves[0][1], moves[0][2]] : [view.width / 2, view.height / 2];
   const a = moves[mi], b = moves[mi + 1];
   if (b && b[0] > a[0] && b[0] - a[0] < 0.1) {
     const u = (t - a[0]) / (b[0] - a[0]);
