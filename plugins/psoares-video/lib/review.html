@@ -63,7 +63,9 @@
   body.voice .planview { display: block; }
   .pv-line { font-size: 22px; line-height: 1.35; letter-spacing: -0.01em; color: var(--fg); min-height: 90px; }
   .pv-line small { display: block; font: 500 10.5px/1 "Geist Mono", ui-monospace, monospace; color: var(--subtle); margin-bottom: 10px; }
-  .pv-beats { margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+  .pv-beats { margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); max-height: 38vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .pv-beat { cursor: pointer; }
+  .pv-beat:hover { background: #141418; }
   .pv-beat { display: flex; gap: 12px; padding: 7px 12px; border-bottom: 1px solid #1c1c20; color: var(--muted-fg); }
   .pv-beat:last-child { border-bottom: 0; }
   .pv-beat .mono { color: var(--subtle); min-width: 52px; }
@@ -105,7 +107,8 @@
   .tick span { position: absolute; left: 5px; top: -2px; font-size: 9.5px; white-space: nowrap; color: var(--muted-fg); }
   .click { background: rgb(var(--zinc) / .45); }
   .event { background: rgb(var(--blue)); }
-  .event.plan { background: rgb(var(--violet)); }
+  .planitem { background: rgb(var(--violet) / .14); border-color: rgb(var(--violet) / .3); color: rgb(221 214 254); }
+  .row.plan, .label.plan { height: 24px; }
   .note { background: rgb(var(--amber)); }
   .pin { top: 3px; bottom: 3px; width: 3px; background: rgb(var(--rose)); cursor: pointer; }
   .pin span { color: rgb(251 113 133); font-weight: 600; }
@@ -264,8 +267,9 @@ function draw() {
   const step = pxs >= 40 ? 1 : pxs >= 10 ? 5 : 10;
   for (let t = 0; t <= len; t += step) { const m = document.createElement('div'); m.className = 'mark mono'; m.style.left = X(t) + 'px'; m.innerHTML = `<span>${short(t)}</span>`; ru.append(m); }
   if (data.planBeats) {
-    const pl = row('Plan');
-    data.planBeats.forEach((b) => tick(pl, b.t, 'event plan', b.what, `${fmt(b.t)} ${b.what}`));
+    const pl = row('Plan', 'plan');
+    const pb = data.planBeats;
+    pb.forEach((b, k) => span(pl, b.t, Math.min(pb[k + 1]?.t ?? len, b.t + 6), 'planitem', b.what, `${fmt(b.t)} ${b.what}`));
   }
   if (tl) {
     const sc = row('Scenes');
@@ -326,10 +330,17 @@ function playhead() {
       $('pvline').innerHTML = line ? `<small>line ${line.i}</small>` : '<small>before the first line</small>';
       $('pvline').append(line ? line.text : '');
     }
-    const bs = data.planBeats ?? [], i = bs.findLastIndex((b) => b.t <= t);
-    const show = bs.slice(Math.max(0, i - 1), Math.max(0, i - 1) + 5);
-    $('pvbeats').innerHTML = show.map((b) => `<div class="pv-beat${b === bs[i] ? ' now' : ''}"><span class="mono">${fmt(b.t)}</span><span></span></div>`).join('');
-    [...$('pvbeats').children].forEach((el, k) => { el.lastChild.textContent = show[k].what; });
+    const bs = data.planBeats ?? [], i = bs.findLastIndex((b) => b.t <= t), box = $('pvbeats');
+    if (box.children.length !== bs.length) {
+      box.innerHTML = bs.map((b) => `<div class="pv-beat"><span class="mono">${fmt(b.t)}</span><span></span></div>`).join('');
+      [...box.children].forEach((el, k) => { el.lastChild.textContent = bs[k].what; el.onclick = () => seek(bs[k].t); });
+    }
+    if (box.dataset.i !== String(i)) {
+      box.dataset.i = i;
+      [...box.children].forEach((el, k) => el.classList.toggle('now', k === i));
+      const el = box.children[i];
+      if (el) box.scrollTop = el.offsetTop - box.clientHeight / 3;
+    }
   }
   document.querySelectorAll('.line').forEach((e) => e.classList.toggle('on', !!line && +e.dataset.i === line.i));
   if (!v.paused) { const tl = $('tl'), x = 6 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 60 || x < tl.scrollLeft) tl.scrollLeft = x - 120; }

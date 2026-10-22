@@ -211,6 +211,21 @@ like the speaker taking a breath, never like a cut.
 Keep gaps rare: a lesson that stops after every click drags and feels broken. A pause of 0.5 to
 1 s is usual; more than 1.5 s needs something on screen worth looking at.
 
+### The plan
+
+The beats file is code. Before recording, turn it into a plan anyone can read:
+
+```sh
+node "${CLAUDE_PLUGIN_ROOT}/lib/plan.mjs" <project> <id>
+```
+
+It writes `build/<id>.plan.md`: each voice line with its time, each scene's starting point (the
+account, the screen, what runs off camera before it), and every beat in plain words. Read it
+yourself: a line with no reason to move should say "(still)". Give each window a `screen` label
+(`{ account, url, screen: 'Today' }`) and each account a `label` in the config, so the plan names
+them in words. The review page shows the plan on the voice alone before anything is recorded;
+offer that to the user when it helps, never as a required step.
+
 ## 5. Record
 
 ```sh
@@ -237,5 +252,6 @@ sh "${CLAUDE_PLUGIN_ROOT}/lib/sheet.sh" <project>/build/<id>.draft.mp4 <project>
 Check that each step really happened (the dialog opened, the value changed, the right item is
 selected), not only that the screen looks plausible.
 
-Then the user reviews a draft before the full render: the assemble skill, "Draft and review".
-Their comments come back pinned to moments in `review/<id>.json`; answer every one there.
+Offer the user a draft review before the full render (the assemble skill, "Draft and review").
+It is optional. When they review, their comments come back pinned to moments in
+`review/<id>.json`; answer every one there.

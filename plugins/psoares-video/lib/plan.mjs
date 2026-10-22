@@ -63,13 +63,16 @@ const tc = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}
 const lines = L.lines ?? [];
 const lineAt = (t) => lines.findLast((l) => l.start <= t + 0.05) ?? lines[0] ?? null;
 const beats = [];
-// Where a screen is, in words: "/pt/tools/d1…" -> "tools / d1…".
+// Where a screen is, in words: the window's `screen` label, or its address.
 const where = (url) => (url ?? '').replace(/^https?:\/\/[^/]+/, '').replace(/^\/[a-z]{2}(\/|$)/, '/').replace(/^\//, '') || 'home';
 for (const [k, s] of segments.entries()) {
   const w = stub();
-  const who = s.windows.map((x) => `${x.account ?? 'signed out'} on ${named(where(x.url.replace(/\$\{?(\w+)\}?/g, '$1')))}`).join(' + ');
+  // An account by its label (config accounts.<key>.label) or its key, with
+  // the email, so "vazia" reads as the account it is.
+  const acct = (k) => { const a = project.config.accounts[k]; return k ? `${a?.label ?? `account "${k}"`}${a?.email ? ` (${a.email})` : ''}` : 'signed out'; };
+  const who = s.windows.map((x) => `${acct(x.account)} on ${x.screen ?? named(where(x.url))}`).join(' + ');
   const before = s.setup ? describe(s.setup) : '';
-  beats.push({ t: k === 0 ? 0 : s.start, scene: s.name, what: named(`starts: ${who}${before && before !== 'step' ? ` (before it, off camera: ${before})` : ''}`), shift: lineAt(s.start)?.shift ?? 0, start: true });
+  beats.push({ t: k === 0 ? 0 : s.start, scene: s.name, what: named(`${k === 0 ? 'starts' : 'new scene (fade)'}: ${who}${before && before !== 'step' ? ` (before it, off camera: ${before})` : ''}`), shift: lineAt(s.start)?.shift ?? 0, start: true });
   for (const [t, fn, opts] of s.beats(w)) beats.push({ t, scene: s.name, what: named(describe(fn)), lead: opts?.lead, shift: lineAt(t)?.shift ?? 0 });
 }
 beats.sort((a, b) => a.t - b.t);

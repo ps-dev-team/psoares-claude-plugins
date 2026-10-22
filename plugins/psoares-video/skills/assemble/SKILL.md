@@ -5,12 +5,12 @@ description: Turn screen recordings (and an optional voice) into the finished vi
 
 # Assemble
 
-Recordings in, `build/<id>.mp4` out. **Draft first, then the full render**: see "Draft and
-review".
+Recordings in, `build/<id>.mp4` out. Offer the user a draft review before the full render (see
+"Draft and review"); it is optional.
 
 ```sh
 node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id> --draft   # build/<id>.draft.mp4
-node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id>           # build/<id>.mp4, after approval
+node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id>           # build/<id>.mp4
 ```
 
 Run it in the background; a voiced two-window lesson takes several minutes per window. It is a
@@ -68,7 +68,9 @@ frames Remotion renders at once; keep it modest on a laptop.
 
 ## Draft and review
 
-The user reviews a draft before the full render, so a change costs a minute, not a 4K render.
+A draft lets the user comment before the full render, so a change costs a minute, not a 4K
+render. It is an offer, never a gate: ask whether they want to review a draft first. If they say
+no, or ask for the final, render it directly.
 
 1. Render the draft (`--draft`): a third of the size, no motion blur, a fast encode, with the same
    pointer, zooms, pauses and voice. It also writes `build/<id>.draft.timeline.json` (scenes,
@@ -88,7 +90,7 @@ The user reviews a draft before the full render, so a change costs a minute, not
    `answered` when the answer is words only) and write a short `reply`. Never delete a comment.
    Re-record what changed, render a new draft: the page reloads it and shows the replies beside
    the comments.
-4. When the user approves the draft, render the full video and hand it over (below).
+4. When the user is happy with the draft, render the full video and hand it over (below).
 
 A re-render keeps the report's Decisions; only the facts above them are rewritten.
 
