@@ -29,15 +29,21 @@ const VERBS = {
 function describe(fn) {
   const src = fn.toString();
   const out = [];
-  for (const m of src.matchAll(/w\.(\w+)\(/g)) {
-    const verb = VERBS[m[1]];
+  for (const m of src.matchAll(/\b(w\.)?(\w+)\(/g)) {
+    // A helper of the beats file called with the window: "deleteTool(w, NEW)".
+    const helper = !m[1] && src.startsWith('w,', m.index + m[0].length) || (!m[1] && src.startsWith('w)', m.index + m[0].length));
+    if (!m[1] && !helper) continue;
+    const verb = m[1] ? VERBS[m[2]] : m[2];
     if (!verb) continue;
+    m[1] = m[2];
     let depth = 1, i = m.index + m[0].length;
     while (i < src.length && depth) { if (src[i] === '(') depth++; else if (src[i] === ')') depth--; i++; }
     const args = src.slice(m.index + m[0].length, i - 1);
-    const names = quoted(args).filter((x) => !ROLES.has(x) && !/^(ControlOrMeta|Space)$/.test(x));
+    const names = helper ? args.split(',').slice(1).map((x) => x.trim().replace(/^['"`]|['"`]$/g, '')).filter(Boolean) : quoted(args).filter((x) => !ROLES.has(x) && !/^(ControlOrMeta|Space)$/.test(x));
     const what = m[1] === 'type' ? (names[0] ? `"${names[0]}"` : 'text') : m[1] === 'key' ? (names[0] ?? args.split(',')[0]) : names.length ? names.map((x) => `'${x}'`).join(' › ') : (args.match(/name:\s*(\w+)/)?.[1] ?? args.split(/[,(]/)[0].trim() ?? '');
-    out.push(`${verb}${what ? ' ' + what : ''}`);
+    // A link goes somewhere: say so.
+    const goes = m[1] === 'click' && /'link'|getByRole\('link'/.test(args) ? ', goes to that page' : '';
+    out.push(`${verb}${what ? ' ' + what : ''}${goes}`);
   }
   if (src.includes("keyboard.down('Space')") && out.length) out[0] = `hold Space and ${out[0]}`;
   if (!out.length) {
@@ -49,13 +55,22 @@ function describe(fn) {
   return out.join(', ');
 }
 
+// The beats file's named strings (const NEW = 'Roda da Liderança'), so the
+// plan shows the value, not the name.
+const consts = Object.fromEntries([...fs.readFileSync(project.p('videos', `${id}.mjs`), 'utf8').matchAll(/const (\w+) = '([^']+)'/g)].map((m) => [m[1], m[2]]));
+const named = (text) => text.replace(/\b([A-Z][A-Z0-9_]+)\b/g, (m) => consts[m] ?? m);
 const tc = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 const lines = L.lines ?? [];
-const lineAt = (t) => lines.findLast((l) => l.start <= t + 0.05) ?? null;
+const lineAt = (t) => lines.findLast((l) => l.start <= t + 0.05) ?? lines[0] ?? null;
 const beats = [];
-for (const s of segments) {
+// Where a screen is, in words: "/pt/tools/d1…" -> "tools / d1…".
+const where = (url) => (url ?? '').replace(/^https?:\/\/[^/]+/, '').replace(/^\/[a-z]{2}(\/|$)/, '/').replace(/^\//, '') || 'home';
+for (const [k, s] of segments.entries()) {
   const w = stub();
-  for (const [t, fn, opts] of s.beats(w)) beats.push({ t, scene: s.name, what: describe(fn), lead: opts?.lead, shift: lineAt(t)?.shift ?? 0 });
+  const who = s.windows.map((x) => `${x.account ?? 'signed out'} on ${named(where(x.url.replace(/\$\{?(\w+)\}?/g, '$1')))}`).join(' + ');
+  const before = s.setup ? describe(s.setup) : '';
+  beats.push({ t: k === 0 ? 0 : s.start, scene: s.name, what: named(`starts: ${who}${before && before !== 'step' ? ` (before it, off camera: ${before})` : ''}`), shift: lineAt(s.start)?.shift ?? 0, start: true });
+  for (const [t, fn, opts] of s.beats(w)) beats.push({ t, scene: s.name, what: named(describe(fn)), lead: opts?.lead, shift: lineAt(t)?.shift ?? 0 });
 }
 beats.sort((a, b) => a.t - b.t);
 
