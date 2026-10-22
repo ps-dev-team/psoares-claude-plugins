@@ -224,7 +224,7 @@ const v = $('v');
 let data = null, pxs = 14, mtime = 0, last = '';
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
 const short = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
-const LABELS = { loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
+const LABELS = { dragBy: 'drag', key: 'key', circle: 'loop', marquee: 'selection box', loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
 const ROWS = { Pointer: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
 const STATUS = { open: 'New', sent: 'Sent', done: 'Done', answered: 'Answered' };
 
