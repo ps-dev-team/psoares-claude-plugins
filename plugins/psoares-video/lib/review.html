@@ -17,7 +17,7 @@
   body {
     margin: 0; background: var(--background); color: var(--fg); overflow: hidden;
     font: 11.5px/1.45 "Geist", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
-    display: grid; grid-template-columns: 232px minmax(0, 1fr) 320px; grid-template-rows: 38px minmax(0, 1fr) auto;
+    display: grid; grid-template-columns: var(--left, 232px) minmax(0, 1fr) var(--right, 320px); grid-template-rows: 38px minmax(0, 1fr) auto;
   }
   .mono { font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
   svg.i { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -120,9 +120,17 @@
   .tlbar input[type=range] { width: 120px; accent-color: #d4d4d8; }
 
   /* Sidebar */
-  aside { grid-column: 3; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  aside { position: relative; grid-column: 3; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
   /* The project's videos, on the left */
-  nav.videos { grid-column: 1; grid-row: 1 / 4; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  /* Drag a panel's inner edge to resize it; double-click to reset. */
+  .grip { position: absolute; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 5; }
+  .grip::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: transparent; transition: background .15s; }
+  .grip:hover::after, .grip.on::after { background: var(--ring); }
+  nav.videos .grip { right: -4px; }
+  aside .grip { left: -4px; }
+  body.resizing { cursor: col-resize; user-select: none; }
+  body.resizing video { pointer-events: none; }
+  nav.videos { position: relative; grid-column: 1; grid-row: 1 / 4; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
   nav.videos .top { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
   nav.videos .top h2 { font-size: 12px; font-weight: 600; margin: 0; }
   nav.videos .top span { color: var(--subtle); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
@@ -183,6 +191,7 @@
 </svg>
 
 <nav class="videos">
+  <div class="grip" data-side="left" title="Drag to resize, double-click to reset"></div>
   <div class="top"><h2>Videos</h2><span id="proj"></span></div>
   <div class="vl" id="vlist"></div>
 </nav>
@@ -234,6 +243,7 @@
 </footer>
 
 <aside>
+  <div class="grip" data-side="right" title="Drag to resize, double-click to reset"></div>
   <div class="top"><h2>Comments</h2>
     <div class="tabs"><button class="tab on" data-tab="open">Open <span id="nopen">0</span></button><button class="tab" data-tab="done">Done <span id="ndone">0</span></button></div>
   </div>
@@ -499,6 +509,26 @@ addEventListener('keydown', (e) => {
   if (e.key === 'c' || e.key === 'C') { e.preventDefault(); compose(); }
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); v.pause(); seek(v.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 60)); }
 });
+// Panel widths: dragged, kept in the browser, double-click resets.
+const WIDTH = { left: [232, 160, 420], right: [320, 240, 640] };
+const setWidth = (side, px) => {
+  const [, min, max] = WIDTH[side];
+  const w = Math.round(Math.min(max, Math.max(min, px)));
+  document.body.style.setProperty('--' + side, w + 'px');
+  localStorage.setItem('review.' + side, w);
+};
+for (const side of ['left', 'right']) { const kept = +localStorage.getItem('review.' + side); if (kept) setWidth(side, kept); }
+for (const g of document.querySelectorAll('.grip')) {
+  const side = g.dataset.side;
+  g.addEventListener('dblclick', () => { setWidth(side, WIDTH[side][0]); });
+  g.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); g.setPointerCapture(e.pointerId); g.classList.add('on'); document.body.classList.add('resizing');
+    const move = (ev) => setWidth(side, side === 'left' ? ev.clientX : innerWidth - ev.clientX);
+    const up = () => { g.classList.remove('on'); document.body.classList.remove('resizing'); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); dispatchEvent(new Event('resize')); };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+  });
+}
+
 loadList().then(() => load(true));
 setInterval(load, 3000);
 setInterval(loadList, 5000);
