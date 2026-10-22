@@ -6,7 +6,7 @@
 <style>
   :root { --bg: #f5f6f8; --card: #fff; --line: #e3e5ea; --text: #1d1f24; --muted: #6b7080; --accent: #0a84ff; --warn: #e08a00; --pin: #e5484d; }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: grid; grid-template-columns: 1fr 360px; grid-template-rows: 1fr auto; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: grid; grid-template-columns: 1fr 360px; grid-template-rows: minmax(0, 1fr) auto; }
   main { padding: 16px 16px 8px; display: flex; flex-direction: column; min-height: 0; }
   .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
   video { max-width: 100%; max-height: 100%; border-radius: 8px; background: #000; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
@@ -20,9 +20,14 @@
   .tl { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; overflow-y: hidden; position: relative; user-select: none; }
   .tl-inner { position: relative; }
   .row { position: relative; height: 26px; border-bottom: 1px solid var(--line); }
-  .row:last-child { border-bottom: 0; }
+  .row:last-child, .label:last-child { border-bottom: 0; }
   .row.script { height: 40px; }
-  .label { position: sticky; left: 0; z-index: 3; width: 74px; height: 100%; display: flex; align-items: center; padding-left: 8px; background: var(--card); color: var(--muted); font-size: 11px; border-right: 1px solid var(--line); }
+  .tlwrap { display: flex; border-radius: 8px; max-height: 34vh; overflow-x: hidden; overflow-y: auto; }
+  .tlwrap .tl { flex: 1; border-radius: 0 8px 8px 0; }
+  .labels { width: 78px; flex: none; border: 1px solid var(--line); border-right: 0; border-radius: 8px 0 0 8px; }
+  .label { height: 26px; display: flex; align-items: center; padding-left: 8px; color: var(--muted); font-size: 11px; border-bottom: 1px solid var(--line); }
+  .label:last-child { border-bottom: 0; }
+  .label.script { height: 40px; }
   .item { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; font-size: 11px; padding: 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: flex; align-items: center; }
   .scene { background: #eef0f4; color: var(--muted); }
   .line { background: #e8f1ff; color: #24476e; line-height: 1.2; white-space: normal; align-items: flex-start; padding-top: 2px; }
@@ -36,11 +41,15 @@
   .note { background: var(--warn); }
   .pin { background: var(--pin); width: 3px; cursor: pointer; }
   .pin.done { background: #2ea44f; }
+  .pin.sent { background: var(--warn); }
   .head { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--pin); z-index: 4; pointer-events: none; }
   .zoomctl { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; padding: 6px 2px 0; }
-  aside { grid-row: 1 / 3; grid-column: 2; background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  aside { grid-row: 1 / 3; grid-column: 2; height: 100vh; overflow: hidden; background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   aside h2 { font-size: 13px; margin: 0; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
   .list { overflow-y: auto; flex: 1; }
+  .send { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; }
+  .send button:disabled { opacity: .45; cursor: default; }
+  .status.sent { color: var(--warn); }
   .c { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .c:hover { background: #fafbfc; }
   .c .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 6px; }
@@ -59,7 +68,8 @@
   footer { background: #17181c; padding-top: 12px; }
   footer .tl { background: #1f2026; border-color: #2c2e36; }
   footer .row { border-bottom-color: #2c2e36; }
-  footer .label { background: #1f2026; color: #8b90a0; border-right-color: #2c2e36; }
+  footer .labels { background: #1f2026; border-color: #2c2e36; }
+  footer .label { color: #8b90a0; border-bottom-color: #2c2e36; }
   footer .scene { background: #2c2e36; color: #b4b8c4; }
   footer .line { background: #1d3557; color: #cfe0ff; }
   footer .line.on { background: #2f5fa3; color: #fff; }
@@ -92,7 +102,7 @@
   </div>
 </main>
 <footer>
-  <div class="tl" id="tl"><div class="tl-inner" id="inner"></div></div>
+  <div class="tlwrap"><div class="labels" id="labels"></div><div class="tl" id="tl"><div class="tl-inner" id="inner"></div></div></div>
   <div class="zoomctl">
     <span>Timeline zoom</span><input type="range" id="scale" min="4" max="80" value="14">
     <span><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> one frame · <kbd>Shift</kbd> one second · <kbd>C</kbd> comment</span>
@@ -100,12 +110,13 @@
 </footer>
 <aside>
   <h2><span id="title">Review</span><span id="count"></span></h2>
+  <div class="send"><button class="primary" id="send">Send to Claude</button><span id="sent"></span></div>
   <div class="list" id="list"></div>
 </aside>
 <script>
 const $ = (id) => document.getElementById(id);
 const v = $('v');
-let data = null, pxs = 14, mtime = 0;
+let data = null, pxs = 14, mtime = 0, last = '';
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
 const LABELS = { loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
 
@@ -116,6 +127,9 @@ async function load(first) {
     v.src = '/video?' + d.mtime;
     if (!first) v.currentTime = t;
   }
+  const key = JSON.stringify([d.mtime, d.timeline, d.review]);
+  if (!first && key === last) return;
+  last = key;
   data = d;
   $('title').textContent = `${d.id} · ${d.video ?? 'no video yet'}`;
   draw(); comments();
@@ -124,10 +138,13 @@ async function load(first) {
 function draw() {
   const tl = data.timeline, inner = $('inner');
   const len = tl?.length ?? v.duration ?? 0;
-  const X = (t) => 74 + t * pxs;
+  const X = (t) => 4 + t * pxs;
   inner.style.width = X(len) + 20 + 'px';
-  inner.innerHTML = '';
-  const row = (name, cls = '') => { const r = document.createElement('div'); r.className = 'row ' + cls; r.innerHTML = `<div class="label">${name}</div>`; inner.append(r); return r; };
+  inner.innerHTML = ''; $('labels').innerHTML = '';
+  const row = (name, cls = '') => {
+    const l = document.createElement('div'); l.className = 'label ' + cls; l.textContent = name; $('labels').append(l);
+    const r = document.createElement('div'); r.className = 'row ' + cls; inner.append(r); return r;
+  };
   const span = (r, a, b, cls, text, title) => { const e = document.createElement('div'); e.className = 'item ' + cls; e.style.left = X(a) + 'px'; e.style.width = Math.max(3, (b - a) * pxs - 2) + 'px'; e.textContent = text ?? ''; e.title = title ?? text ?? ''; r.append(e); return e; };
   const tick = (r, t, cls, text, title) => { const e = document.createElement('div'); e.className = 'tick ' + cls; e.style.left = X(t) + 'px'; if (text) e.innerHTML = `<span>${text}</span>`; e.title = title ?? text ?? ''; r.append(e); return e; };
   if (tl) {
@@ -147,14 +164,19 @@ function draw() {
     tl.notes.forEach(([t, m]) => tick(nr, t, 'note', '', `${fmt(t)} ${m}`));
   }
   const pr = row('Comments');
-  data.review.comments.forEach((c) => { const e = tick(pr, c.t, 'pin ' + (c.status === 'open' ? '' : 'done'), `#${c.n}`, c.text); e.onclick = (ev) => { ev.stopPropagation(); seek(c.t); }; });
+  data.review.comments.forEach((c) => { const e = tick(pr, c.t, 'pin ' + ({ open: '', sent: 'sent' }[c.status] ?? 'done'), `#${c.n}`, c.text); e.onclick = (ev) => { ev.stopPropagation(); seek(c.t); }; });
   const head = document.createElement('div'); head.className = 'head'; head.id = 'head'; inner.append(head);
   playhead();
 }
 
 function comments() {
   const list = $('list'), cs = data.review.comments;
-  $('count').textContent = cs.length ? `${cs.filter((c) => c.status === 'open').length} open / ${cs.length}` : '';
+  const open = cs.filter((c) => c.status === 'open').length;
+  $('count').textContent = cs.length ? `${open} new / ${cs.length}` : '';
+  $('send').disabled = !open;
+  $('send').textContent = open ? `Send ${open} to Claude` : 'Send to Claude';
+  const sends = data.review.sends ?? [];
+  $('sent').textContent = sends.length ? `Last sent ${new Date(sends.at(-1).at).toLocaleTimeString()}` : '';
   list.innerHTML = cs.length ? '' : '<div class="empty">No comments yet. Pause where something should change and press C.</div>';
   for (const c of [...cs].sort((a, b) => a.t - b.t)) {
     const e = document.createElement('div'); e.className = 'c';
@@ -173,23 +195,25 @@ function comments() {
 
 function playhead() {
   const t = v.currentTime || 0, head = $('head');
-  if (head) head.style.left = 74 + t * pxs + 'px';
+  if (head) head.style.left = 4 + t * pxs + 'px';
   $('time').textContent = fmt(t);
   const line = data?.timeline?.lines.find((l) => t >= l.start && t <= l.end);
   $('now').textContent = line ? line.text : '';
   document.querySelectorAll('.line').forEach((e) => e.classList.toggle('on', line && +e.dataset.i === line.i));
-  if (!v.paused) { const tl = $('tl'), x = 74 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 80 || x < tl.scrollLeft + 74) tl.scrollLeft = x - 200; }
+  if (!v.paused) { const tl = $('tl'), x = 4 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 60 || x < tl.scrollLeft) tl.scrollLeft = x - 120; }
 }
 
 const seek = (t) => { v.currentTime = Math.max(0, Math.min(t, v.duration || t)); playhead(); };
 $('tl').addEventListener('mousedown', (e) => {
   const r = $('inner').getBoundingClientRect();
-  const at = (ev) => seek((ev.clientX - r.left - 74) / pxs);
+  const at = (ev) => seek((ev.clientX - r.left - 4) / pxs);
   at(e);
   const move = (ev) => at(ev), up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
   addEventListener('mousemove', move); addEventListener('mouseup', up);
 });
+$('send').onclick = async () => { await fetch('/send', { method: 'POST' }); load(); };
 $('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
+$('tl').addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { $('tl').scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
 $('play').onclick = () => (v.paused ? v.play() : v.pause());
 v.onplay = () => { $('play').textContent = 'Pause'; };
 v.onpause = () => { $('play').textContent = 'Play'; };

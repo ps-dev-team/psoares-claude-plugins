@@ -1,10 +1,16 @@
-// node review.mjs <project> <id>: opens the review page for a video, local
+// node review.mjs <project> <id> [--wait]: opens the review page for a video, local
 // only (127.0.0.1). The page plays build/<id>.draft.mp4 (or build/<id>.mp4)
 // over a timeline of the script lines, the scenes, and the specials (zooms,
 // gestures, drags, typing, clicks, pauses). A comment is pinned to a moment
 // and saved, with a still of that frame, to review/<id>.json and
-// review/<id>-<n>.jpg. Whoever makes the video reads the file, answers each
-// comment there, and the page shows the answers. Ctrl+C stops it.
+// review/<id>-<n>.jpg. "Send to Claude" marks the new comments `sent`.
+// Whoever makes the video reads the file, answers each comment there
+// (`done` or `answered`, with a `reply`), and the page shows the answers.
+// Ctrl+C stops it.
+//
+// --wait starts no page: it waits for the next send, prints the comments
+// sent, and exits. Run it in the background beside the page, so the send
+// wakes whoever is waiting.
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -24,6 +30,23 @@ const timeline = () => pick(`${id}.draft.timeline.json`, `${id}.timeline.json`);
 const store = p('review', `${id}.json`);
 const read = () => (fs.existsSync(store) ? JSON.parse(fs.readFileSync(store, 'utf8')) : { id, comments: [] });
 const write = (d) => fs.writeFileSync(store, JSON.stringify(d, null, 2) + '\n');
+
+if (process.argv[4] === '--wait') {
+  const seen = (read().sends ?? []).length;
+  for (;;) {
+    const d = read(), sends = d.sends ?? [];
+    if (sends.length > seen) {
+      const send = sends.at(-1);
+      console.log(`review ${id}: ${send.comments.length} comment(s) sent at ${send.at}`);
+      for (const n of send.comments) {
+        const c = d.comments.find((x) => x.n === n);
+        if (c) console.log(`#${c.n} ${Math.floor(c.t / 60)}:${(c.t % 60).toFixed(1).padStart(4, '0')} ${c.text.replace(/\n/g, ' / ')}${c.still ? `  [${c.still}]` : ''}`);
+      }
+      process.exit(0);
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+}
 
 const body = (req) => new Promise((ok) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => ok(b ? JSON.parse(b) : {})); });
 const json = (res, d) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(d)); };
@@ -61,6 +84,14 @@ const server = http.createServer(async (req, res) => {
       if (still) { const f = `${id}-${n}.jpg`; fs.writeFileSync(p('review', f), Buffer.from(still.split(',')[1], 'base64')); c.still = `review/${f}`; }
       d.comments.push(c); write(d); json(res, c); return;
     }
+    if (url.pathname === '/send' && req.method === 'POST') {
+      const d = read();
+      const open = d.comments.filter((c) => c.status === 'open');
+      for (const c of open) c.status = 'sent';
+      if (open.length) { (d.sends ??= []).push({ at: new Date().toISOString(), comments: open.map((c) => c.n) }); write(d); }
+      console.log(`sent ${open.length} comment(s)`);
+      json(res, { sent: open.length }); return;
+    }
     if (url.pathname === '/comment' && req.method === 'DELETE') {
       const { n } = await body(req);
       const d = read(); d.comments = d.comments.filter((c) => c.n !== n); write(d); json(res, { ok: true }); return;
@@ -69,7 +100,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { res.writeHead(500); res.end(String(e)); }
 });
 
-server.listen(0, '127.0.0.1', () => {
+server.listen(+(process.env.PORT ?? 0), '127.0.0.1', () => {
   const u = `http://127.0.0.1:${server.address().port}/`;
   console.log(`review ${id}: ${u}  (comments in review/${id}.json; Ctrl+C to stop)`);
   if (!process.env.NO_OPEN) execFile('open', [u]);
