@@ -55,6 +55,24 @@
   .compose textarea { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; resize: vertical; }
   .compose .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; color: var(--muted); font-size: 11px; }
   .empty { padding: 16px; color: var(--muted); }
+  /* The timeline is dark, like an editor's. */
+  footer { background: #17181c; padding-top: 12px; }
+  footer .tl { background: #1f2026; border-color: #2c2e36; }
+  footer .row { border-bottom-color: #2c2e36; }
+  footer .label { background: #1f2026; color: #8b90a0; border-right-color: #2c2e36; }
+  footer .scene { background: #2c2e36; color: #b4b8c4; }
+  footer .line { background: #1d3557; color: #cfe0ff; }
+  footer .line.on { background: #2f5fa3; color: #fff; }
+  footer .gap { background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 4px, #5c4818 4px, #5c4818 8px); color: #ffd37a; }
+  footer .zoom { background: #3d2a63; color: #d9c3ff; }
+  footer .tick span { color: #a3a8b6; }
+  footer .click { background: #6b7080; }
+  footer .event { background: #3d9bff; }
+  footer .note { background: #f0a020; }
+  footer .head { background: #ff5a5f; }
+  footer .zoomctl { color: #8b90a0; }
+  footer kbd { background: #2c2e36; border-color: #3a3c46; color: #d0d3dc; }
+  footer input[type=range] { accent-color: #3d9bff; }
 </style>
 </head>
 <body>
