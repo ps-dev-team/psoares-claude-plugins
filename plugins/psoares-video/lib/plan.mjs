@@ -98,6 +98,24 @@ for (const l of lines.length ? lines : [{ i: '', start: 0, text: '' }]) {
 // `shift` is the pause added before that point: the review page subtracts
 // it when it plays the plain voice, before any recording exists.
 for (const b of beats) json.beats.push({ t: +b.t.toFixed(2), shift: b.shift, scene: b.scene, what: b.what, kinds: b.kinds ?? (b.start ? ['scene'] : []) });
+// A pause only goes into a real silence of the voice (the assembler refuses
+// otherwise): check each one now, before anything is recorded.
+const mp3 = project.p('audio', `${id}.mp3`);
+const unfit = [];
+if (gaps.length && fs.existsSync(mp3)) {
+  const { execFileSync } = await import('node:child_process');
+  const det = execFileSync('sh', ['-c', `ffmpeg -hide_banner -i "${mp3}" -af silencedetect=noise=-42dB:d=0.08 -f null - 2>&1`]).toString();
+  const quiet = [...det.matchAll(/silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+  for (const [i] of gaps) {
+    const l = lines[+i], prev = lines[+i - 1];
+    if (!l || !prev) continue;
+    const from = prev.end - prev.shift, to = l.start - l.shift;
+    const best = quiet.filter(([qs, qe]) => qe > from - 0.15 && qs < to + 0.15).sort((x, y) => (y[1] - y[0]) - (x[1] - x[0]))[0];
+    if (!best || best[1] - best[0] < 0.12) unfit.push(+i);
+  }
+}
+for (const i of unfit) console.log(`no silence in the voice before line ${i}: that pause cannot go there; move it or drop it`);
+if (unfit.length) md.splice(5, 0, `**Pauses that cannot go where they are** (no silence in the voice there): before line ${unfit.join(', ')}.`, '');
 // The pauses, where they fall in the video (just before their line).
 json.gaps = gaps.map(([i, g]) => { const l = lines[+i]; return l ? { line: +i, seconds: g, t: +(l.start - g / 2 - 0.1).toFixed(2), shift: l.shift - g / 2 } : null; }).filter(Boolean);
 json.lines = lines.map((l) => ({ i: l.i, text: l.text, start: l.start, end: l.end, shift: l.shift }));
