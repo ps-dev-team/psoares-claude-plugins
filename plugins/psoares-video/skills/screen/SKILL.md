@@ -231,8 +231,11 @@ Never hand over a take you have not looked at. After assembling, make a contact 
 moments that matter and look at it:
 
 ```sh
-sh "${CLAUDE_PLUGIN_ROOT}/lib/sheet.sh" <project>/build/<id>.mp4 <project>/build/<id>-sheet.jpg 5 12 30 41
+sh "${CLAUDE_PLUGIN_ROOT}/lib/sheet.sh" <project>/build/<id>.draft.mp4 <project>/build/<id>-sheet.jpg 5 12 30 41
 ```
 
 Check that each step really happened (the dialog opened, the value changed, the right item is
 selected), not only that the screen looks plausible.
+
+Then the user reviews a draft before the full render: the assemble skill, "Draft and review".
+Their comments come back pinned to moments in `review/<id>.json`; answer every one there.

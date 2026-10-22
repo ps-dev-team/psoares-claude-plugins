@@ -1,4 +1,7 @@
-// node assemble.mjs <project> <id>: the recorded segments -> build/<id>.mp4.
+// node assemble.mjs <project> <id> [--draft]: the recorded segments ->
+// build/<id>.mp4. --draft makes build/<id>.draft.mp4 instead: a third of the
+// size, no motion blur, a few times faster, for the review page (review.mjs)
+// before the full render.
 //
 // Each window's clip is redrawn by the camera (Remotion: the large pointer and
 // the spring zoom), or, with pointer.mode "page", taken from its frames as
@@ -13,12 +16,18 @@ import { fileURLToPath } from 'node:url';
 import { loadProject, loadVideo } from './project.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const [dir, id] = process.argv.slice(2);
-if (!dir || !id) { console.error('usage: node assemble.mjs <project> <id>'); process.exit(2); }
+const [dir, id, flag] = process.argv.slice(2);
+if (!dir || !id) { console.error('usage: node assemble.mjs <project> <id> [--draft]'); process.exit(2); }
+const DRAFT = flag === '--draft';
+const D = DRAFT ? 1 / 3 : 1; // the draft's scale
+const even = (n) => Math.round(n * D / 2) * 2;
+const tag = DRAFT ? '.draft' : '';
 const project = loadProject(dir);
 const { config, p } = project;
 const { L, segments, length } = await loadVideo(project, id);
-const { width: W, height: H, fps, crf } = config.output;
+const W = even(config.output.width), H = even(config.output.height);
+const { fps } = config.output;
+const crf = DRAFT ? 26 : config.output.crf;
 const T = config.transition.seconds;
 const drawn = config.pointer.mode !== 'page';
 
@@ -67,7 +76,8 @@ function camera(raw, from, len, w, h, out) {
   const props = {
     fps, width: w, height: h, from, duration: len, view: meta.view,
     frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms, marks: ptr.marks ?? [],
-    pointer: { size: config.pointer.size, show: true, blur: config.pointer.blur !== false, marquee: config.pointer.marquee ?? '#0a84ff', images: cursorImages() }, blur: config.camera.blur,
+    pointer: { size: config.pointer.size, show: true, blur: !DRAFT && config.pointer.blur !== false, marquee: config.pointer.marquee ?? '#0a84ff', images: cursorImages() },
+    blur: DRAFT ? { ...config.camera.blur, samples: 0 } : config.camera.blur,
   };
   const propsFile = path.join(raw, `camera-${from.toFixed(2)}.json`);
   fs.writeFileSync(propsFile, JSON.stringify(props));
@@ -81,6 +91,8 @@ const parts = [];
 // The report: what was done to the voice and what went wrong on the take,
 // with the time in the finished video, so the user knows where to look.
 const report = { notes: [], gaps: [] };
+// The timeline for the review page: everything in finished-video seconds.
+const timeline = { id, length, segments: [], lines: [], gaps: [], zooms: [], clicks: [], events: [], notes: [] };
 const tc = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 for (const [k, s] of segments.entries()) {
   const raws = s.windows.map((spec) => p('raw', `${id}-${s.name}-${spec.account ?? 'anon'}`));
@@ -93,19 +105,29 @@ for (const [k, s] of segments.entries()) {
   const a = k === 0 ? 0 : s.start - T / 2;
   const b = k === segments.length - 1 ? length : segments[k + 1].start + T / 2;
   const from = a - meta.start, len = b - a;
-  const out = p('build', `${id}-${k}.mp4`);
+  timeline.segments.push({ name: s.name, start: k === 0 ? 0 : s.start });
+  for (const raw of raws) {
+    const ptr = JSON.parse(fs.readFileSync(path.join(raw, 'pointer.json'), 'utf8'));
+    const m = JSON.parse(fs.readFileSync(path.join(raw, 'meta.json'), 'utf8'));
+    const at = (t) => t + m.start, inside = (t) => t >= a && t < b;
+    for (const z of ptr.zooms ?? []) if (inside(at(z.t))) timeline.zooms.push({ t: +at(z.t).toFixed(2), scale: z.scale });
+    for (const [t, down] of ptr.presses ?? []) if (down && inside(at(t))) timeline.clicks.push(+at(t).toFixed(2));
+    for (const [t, kind] of ptr.events ?? []) if (inside(at(t))) timeline.events.push([+at(t).toFixed(2), kind]);
+    for (const mk of ptr.marks ?? []) if (inside(at(mk.t0))) timeline.events.push([+at(mk.t0).toFixed(2), 'box']);
+  }
+  const out = p('build', `${id}-${k}${tag}.mp4`);
   const framed = raws.length === 2 || config.frame.single;
   let boxes = null;
   if (framed) {
     const n = raws.length;
     const bf = p('frame', `boxes-${n}.json`);
     if (!fs.existsSync(bf)) execFileSync('python3', [path.join(HERE, 'frame_layers.py'), project.root, String(n)], { stdio: 'inherit' });
-    boxes = JSON.parse(fs.readFileSync(bf, 'utf8'));
+    boxes = JSON.parse(fs.readFileSync(bf, 'utf8')).map((bx) => ({ x: Math.round(bx.x * D), y: Math.round(bx.y * D), w: even(bx.w), h: even(bx.h) }));
   }
   const size = (i) => (boxes ? [boxes[i].w, boxes[i].h] : [W, H]);
   // Each window's clip, already at the size it is shown at.
   const clips = raws.map((raw, i) => {
-    const clip = p('build', `${id}-${k}-w${i}.mp4`);
+    const clip = p('build', `${id}-${k}-w${i}${tag}.mp4`);
     const [w, h] = size(i);
     if (drawn) camera(raw, from, len, w, h, clip);
     else ff(['-f', 'concat', '-safe', '0', '-i', path.join(raw, 'list.txt'), '-vf',
@@ -117,9 +139,9 @@ for (const [k, s] of segments.entries()) {
   } else {
     const n = raws.length;
     const inputs = [...clips.flatMap((c) => ['-i', c]), '-loop', '1', '-i', p('frame', `back-${n}.png`), '-loop', '1', '-i', p('frame', `front-${n}.png`)];
-    let f = `[${n}:v]fps=${fps}[s0]`;
+    let f = `[${n}:v]fps=${fps},scale=${W}:${H}[s0];[${n + 1}:v]scale=${W}:${H}[fr]`;
     clips.forEach((_, i) => { f += `;[s${i}][${i}:v]overlay=${boxes[i].x}:${boxes[i].y}[s${i + 1}]`; });
-    f += `;[s${n}][${n + 1}:v]overlay=0:0,format=yuv420p[v]`;
+    f += `;[s${n}][fr]overlay=0:0,format=yuv420p[v]`;
     ff([...inputs, '-filter_complex', f, '-map', '[v]', '-c:v', 'libx264', '-crf', String(crf), '-t', String(len), out]);
   }
   parts.push({ out, len });
@@ -132,10 +154,10 @@ parts.slice(1).forEach((part, i) => {
   chain += `${chain ? ';' : ''}[${last}][${i + 1}:v]xfade=transition=${config.transition.kind}:duration=${T}:offset=${(acc - T).toFixed(3)}[${tag}]`;
   acc += part.len - T; last = tag;
 });
-const final = p('build', `${id}.mp4`);
+const final = p('build', `${id}${tag}.mp4`);
 const video = [...parts.flatMap((part) => ['-i', part.out])];
 const vmap = parts.length > 1 ? ['-filter_complex', chain, '-map', `[${last}]`] : ['-map', '0:v'];
-const enc = ['-c:v', 'libx264', '-crf', String(crf), '-preset', 'medium', '-pix_fmt', 'yuv420p', '-t', String(length), '-movflags', '+faststart'];
+const enc = ['-c:v', 'libx264', '-crf', String(crf), '-preset', DRAFT ? 'veryfast' : 'medium', '-pix_fmt', 'yuv420p', '-t', String(length), '-movflags', '+faststart'];
 
 const mp3 = p('audio', `${id}.mp3`);
 if (!L.lines || !fs.existsSync(mp3)) {
@@ -168,12 +190,13 @@ if (!L.lines || !fs.existsSync(mp3)) {
     }
     f += `[0:a]atrim=${prev},asetpts=PTS-STARTPTS,afade=t=in:d=${F}[p${n}];`;
     f += cuts.map((_, i) => `[p${i}][s${i}]`).join('') + `[p${n}]concat=n=${2 * n + 1}:v=0:a=1[a]`;
-    voice = p('build', `${id}-voice.wav`);
+    voice = p('build', `${id}-voice${tag}.wav`);
     ff(['-i', mp3, '-filter_complex', f, '-map', '[a]', voice]);
     console.log('gaps cut at', cuts.map((c) => c.at.toFixed(2)).join(' '));
     let added = 0;
     cuts.forEach((c, i) => {
       const line = gapLines[i];
+      timeline.gaps.push({ t: +(c.at + added).toFixed(2), seconds: c.gap, line: line.i });
       report.gaps.push(`${tc(c.at + added)}: ${c.gap.toFixed(1)} s of pause before line ${line.i} ("${(line.text ?? '').slice(0, 60)}"), in the voice's own silence there`);
       added += c.gap;
     });
@@ -190,8 +213,18 @@ if (!L.lines || !fs.existsSync(mp3)) {
   lines.push('', '## Needs a look', '');
   const notes = report.notes.sort((x, y) => x[0] - y[0]);
   lines.push(...(notes.length ? notes.map(([t, m]) => `- ${tc(t)}: ${m}`) : ['Nothing went wrong on the take.']));
-  lines.push('', '## Decisions', '', '(Added by whoever made the video: what they chose that the script did not say.)', '');
+  // The Decisions are written by hand: a re-render keeps them.
+  const old = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const kept = old.includes('\n## Decisions\n') ? old.slice(old.indexOf('\n## Decisions\n') + 1).trimEnd() : '';
+  lines.push('', kept && !kept.includes('(Added by whoever made the video') ? kept : '## Decisions\n\n(Added by whoever made the video: what they chose that the script did not say.)', '');
   fs.writeFileSync(file, lines.join('\n'));
   console.log('report', file);
+}
+// The timeline beside the video, read by the review page.
+{
+  timeline.video = path.basename(final);
+  timeline.lines = (L.lines ?? []).map((l) => ({ i: l.i, text: l.text, start: l.start, end: l.end }));
+  timeline.notes = report.notes;
+  fs.writeFileSync(p('build', `${id}${tag}.timeline.json`), JSON.stringify(timeline));
 }
 console.log(final, execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', final]).toString().trim());

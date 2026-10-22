@@ -155,7 +155,7 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
 
 export class Window {
   constructor(name, context, page, project) {
-    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], marks: [], notes: [], movedAt: 0 });
+    Object.assign(this, { name, context, page, project, t0: 0, moves: [], presses: [], zooms: [], marks: [], notes: [], events: [], movedAt: 0 });
     this.rand = seeded(name);
   }
   // config.pointer.human (default on) lets the hand do small things of its
@@ -168,6 +168,10 @@ export class Window {
   note(msg) {
     console.log(`[${this.name}] ${msg}`);
     if (this.t0) this.notes.push([+this.now().toFixed(2), msg]);
+  }
+  // The specials (gestures, drags, selections, typing), for the review timeline.
+  event(kind) {
+    if (this.t0) this.events.push([+this.now().toFixed(2), kind]);
   }
   onTrack(type, x, y, kind) {
     if (type === 'shape' && kind) this.shape = kind;
@@ -271,6 +275,7 @@ export class Window {
   // drawn pointer is a closed hand while the button is held.
   async drag(locator, to, ms = 1100, at) {
     if (!(await this.hover(locator, 450, at))) return false;
+    this.event('drag');
     await sleep(200);
     await this.press(true);
     await sleep(150);
@@ -294,6 +299,7 @@ export class Window {
   async circle(locator, { turns = 0.95 + this.rand() * 0.45, ms = 560 + this.rand() * 220, pad = 12 + this.rand() * 10 } = {}) {
     const b = await this.box(locator);
     if (!b) { this.note(`missing ${String(locator)}`); return false; }
+    this.event('loop');
     const ox = b.x + b.width / 2, oy = b.y + b.height / 2;
     const rx = Math.max(30, b.width / 2 + pad), ry = Math.max(24, b.height / 2 + pad);
     const a0 = Math.atan2((this.cy - oy) / ry, (this.cx - ox) / rx);
@@ -312,6 +318,7 @@ export class Window {
   async underline(locator, { strokes = 2 + Math.floor(this.rand() * 3), ms = 320 + this.rand() * 140, gap = 6 + this.rand() * 6 } = {}) {
     const b = await this.box(locator);
     if (!b) { this.note(`missing ${String(locator)}`); return false; }
+    this.event('underline');
     const y = b.y + b.height + gap, x0 = b.x + b.width * 0.04, x1 = b.x + b.width * 0.96;
     await this.moveTo(x0, y, 450, { hook: false });
     for (let i = 0; i < strokes; i++) {
@@ -324,6 +331,7 @@ export class Window {
   // A quick shake, side to side: the drawn cursor grows while it lasts, as
   // macOS does when you shake the mouse to find it.
   async shake({ ms = 700, width = 90 } = {}) {
+    this.event('shake');
     const sx = this.cx, sy = this.cy, turns = 3.5;
     await this.trace((u) => [sx + width * Math.sin(u * turns * 2 * Math.PI) * Math.sin(Math.PI * u), sy + 6 * Math.sin(u * 9)], ms);
   }
@@ -359,6 +367,7 @@ export class Window {
   async marquee(target, { hold = 1800, pad = 10, ms = 650 } = {}) {
     let b = Array.isArray(target) ? { x: target[0], y: target[1], width: target[2], height: target[3] } : await this.box(target);
     if (!b) { this.note(`missing ${String(target)}`); return false; }
+    this.event('box');
     const x0 = b.x - pad, y0 = b.y - pad, x1 = b.x + b.width + pad, y1 = b.y + b.height + pad;
     await this.moveTo(x0, y0, 550);
     await sleep(180);
@@ -374,6 +383,7 @@ export class Window {
   // I-beam throughout, and the selection is the page's own.
   // `word` selects only that word (or phrase) inside it.
   async select(locator, ms = 700, word = null) {
+    this.event('select');
     const l = typeof locator === 'string' ? this.page.locator(locator) : locator;
     await this.box(l);
     const ends = await l.first().evaluate((el, word) => {
@@ -401,7 +411,7 @@ export class Window {
     await sleep(150);
     return true;
   }
-  async type(text, delay = 85) { await this.page.keyboard.type(text, { delay }); }
+  async type(text, delay = 85) { this.event('type'); await this.page.keyboard.type(text, { delay }); }
   async key(k) { await this.page.keyboard.press(k); }
   async scroll(dy, ms = 700) {
     const n = Math.max(6, Math.round(ms / 30));
@@ -423,7 +433,12 @@ export class Window {
       const b = await this.box(target);
       if (!b) { this.note(`zoom target missing: ${String(target)}`); return; }
       x = b.x + b.width / 2; y = b.y + b.height / 2;
+      // A zoom is for reading something small and dense. A big target (a
+      // form, an editor, a panel) reads fine in the full frame.
+      const v = this.page.viewportSize();
+      if (b.width > v.width * 0.4 || b.height > v.height * 0.5) this.note(`zoom on a large area (${Math.round(b.width)}x${Math.round(b.height)}): a zoom is only for something small and dense`);
     }
+    if (this.zooms.filter((z) => z.scale > 1).length >= 1) this.note('a second zoom in this take: most lessons need one zoom or none');
     this.zooms.push({ t: this.now(), scale, x, y });
   }
   unzoom() { return this.zoom(null); }
@@ -457,7 +472,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   }
   const { output, view } = project.config;
   t0 = Date.now();
-  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], marks: [], notes: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
+  for (const s of shoots) Object.assign(s.w, { t0, moves: [[0, s.w.cx, s.w.cy, 'arrow']], presses: [], zooms: [], marks: [], notes: [], events: [], rand: seeded(`${id}-${seg}-${s.w.name}`) });
   await Promise.all(shoots.map((s) => s.cdp.send('Page.startScreencast', {
     format: 'jpeg', quality: 90, everyNthFrame: 1,
     maxWidth: Math.round((s.w.page.viewportSize()?.width ?? view.width) * output.width / view.width), maxHeight: output.height,
@@ -512,7 +527,7 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
     fs.writeFileSync(path.join(s.dir, 'list.txt'), lines.join('\n'));
     const vp = s.w.page.viewportSize();
     fs.writeFileSync(path.join(s.dir, 'meta.json'), JSON.stringify({ id, seg, start, end, total, view: vp, notes: [...notes, ...s.w.notes.map(([t, m]) => [+(t + start).toFixed(2), `${s.w.name}: ${m}`])], frames: s.frames.map(([f, t]) => [path.basename(f), +t.toFixed(4)]) }));
-    fs.writeFileSync(path.join(s.dir, 'pointer.json'), JSON.stringify({ view: vp, moves: s.w.moves, presses: s.w.presses, zooms: s.w.zooms, marks: s.w.marks }));
+    fs.writeFileSync(path.join(s.dir, 'pointer.json'), JSON.stringify({ view: vp, moves: s.w.moves, presses: s.w.presses, zooms: s.w.zooms, marks: s.w.marks, events: s.w.events }));
     s.w.t0 = 0;
     console.log(`${id}-${seg}-${s.w.name}: ${s.frames.length} frames, ${total.toFixed(2)}s (voice ${start.toFixed(2)}-${end.toFixed(2)})`);
   }

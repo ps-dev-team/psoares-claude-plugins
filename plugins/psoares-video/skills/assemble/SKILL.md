@@ -5,10 +5,12 @@ description: Turn screen recordings (and an optional voice) into the finished vi
 
 # Assemble
 
-Recordings in, `build/<id>.mp4` out.
+Recordings in, `build/<id>.mp4` out. **Draft first, then the full render**: see "Draft and
+review".
 
 ```sh
-node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id>
+node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id> --draft   # build/<id>.draft.mp4
+node "${CLAUDE_PLUGIN_ROOT}/lib/assemble.mjs" <project> <id>           # build/<id>.mp4, after approval
 ```
 
 Run it in the background; a voiced two-window lesson takes several minutes per window. It is a
@@ -64,6 +66,32 @@ heavy job: nothing else heavy at the same time.
 `frame.single: true` puts a single window in the frame too. `camera.concurrency` is how many
 frames Remotion renders at once; keep it modest on a laptop.
 
+## Draft and review
+
+The user reviews a draft before the full render, so a change costs a minute, not a 4K render.
+
+1. Render the draft (`--draft`): a third of the size, no motion blur, a fast encode, with the same
+   pointer, zooms, pauses and voice. It also writes `build/<id>.draft.timeline.json` (scenes,
+   script lines, pauses, zooms, gestures, clicks and warnings, in video seconds).
+2. Open the review page for the user, in the background (it serves on 127.0.0.1 only, and opens
+   the browser):
+
+   ```sh
+   node "${CLAUDE_PLUGIN_ROOT}/lib/review.mjs" <project> <id>
+   ```
+
+   The user plays the draft over the timeline, pauses where something should change and presses
+   C. Each comment is pinned to its moment and saved to `review/<id>.json`, with a still of the
+   frame in `review/<id>-<n>.jpg`.
+3. When the user says the review is done, read `review/<id>.json` and look at each still. For
+   each `open` comment, change the beats (or say why not), then set its `status` to `done` (or
+   `answered` when the answer is words only) and write a short `reply`. Never delete a comment.
+   Re-record what changed, render a new draft: the page reloads it and shows the replies beside
+   the comments.
+4. When the user approves the draft, render the full video and hand it over (below).
+
+A re-render keeps the report's Decisions; only the facts above them are rewritten.
+
 ## Check, then hand over
 
 Make a contact sheet and look at it before saying it is done:
@@ -88,7 +116,8 @@ The assembler writes the facts:
 - **The voice:** every pause added (where, how long, before which line) and nothing else; or that
   the voice is untouched.
 - **Needs a look:** what went wrong on the take: beats that ran late or slow, an element that was
-  missing, a beat that failed.
+  missing, a beat that failed, and the zoom warnings (a zoom on a large area, a second zoom, a
+  zoom moved or repeated). Fix those, or give the reason in the Decisions.
 
 Before handing over, add the **Decisions** by hand: what you chose that the script did not say,
 and anything the user may not like. For example:
