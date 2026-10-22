@@ -95,6 +95,12 @@ const server = http.createServer(async (req, res) => {
       console.log(`sent ${open.length} comment(s)`);
       json(res, { sent: open.length }); return;
     }
+    if (url.pathname === '/reopen' && req.method === 'POST') {
+      const { n } = await body(req);
+      const d = read(); const c = d.comments.find((x) => x.n === n);
+      if (c) { c.status = 'open'; c.reopened = new Date().toISOString(); write(d); }
+      json(res, { ok: !!c }); return;
+    }
     if (url.pathname === '/comment' && req.method === 'DELETE') {
       const { n } = await body(req);
       const d = read(); d.comments = d.comments.filter((c) => c.n !== n); write(d); json(res, { ok: true }); return;

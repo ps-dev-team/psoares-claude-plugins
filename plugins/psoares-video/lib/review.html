@@ -123,6 +123,10 @@
   aside { grid-column: 2; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
   aside .top { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
   aside .top h2 { font-size: 12px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: center; }
+  .tabs { display: inline-flex; padding: 2px; background: var(--muted); border: 1px solid var(--border); border-radius: 6px; }
+  .tab { font: inherit; font-size: 11px; font-weight: 500; height: 22px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--muted-fg); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+  .tab span { color: var(--subtle); font-family: "Geist Mono", ui-monospace, monospace; font-size: 10px; }
+  .tab.on { background: var(--background); color: var(--fg); box-shadow: 0 0 0 1px var(--border); }
   .send { padding: 12px 14px; border-bottom: 1px solid var(--border); display: grid; gap: 6px; }
   .send .btn { width: 100%; }
   .send .hint { color: var(--subtle); font-size: 11px; text-align: center; min-height: 16px; }
@@ -204,7 +208,9 @@
 </footer>
 
 <aside>
-  <div class="top"><h2>Comments <span class="badge outline" id="count">0</span></h2></div>
+  <div class="top"><h2>Comments</h2>
+    <div class="tabs"><button class="tab on" data-tab="open">Open <span id="nopen">0</span></button><button class="tab" data-tab="done">Done <span id="ndone">0</span></button></div>
+  </div>
   <div class="send">
     <button class="btn primary" id="send"><svg class="i"><use href="#i-send"/></svg><span id="sendlabel">Send to Claude</span></button>
     <div class="hint" id="sent"></div>
@@ -219,7 +225,7 @@ let data = null, pxs = 14, mtime = 0, last = '';
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
 const short = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const LABELS = { loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
-const ROWS = { Plan: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
+const ROWS = { Pointer: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
 const STATUS = { open: 'New', sent: 'Sent', done: 'Done', answered: 'Answered' };
 
 async function load(first) {
@@ -231,19 +237,34 @@ async function load(first) {
   }
   // Voice only (nothing recorded yet): the plan's lines and beats, on the
   // plain voice, so without the pauses the beats file adds.
+  // Each planned beat goes on the track it will have in the take: clicks,
+  // specials, zoom, pauses, scenes; hovers and moves on the pointer track.
   if (!d.timeline && d.plan) {
-    const off = (x) => (d.voiceOnly ? x.t - (x.shift ?? 0) : x.t);
-    d.timeline = { length: null, segments: d.plan.segments.map((s) => ({ ...s, start: s.start - (d.plan.lines.findLast((l) => l.start <= s.start + 0.05)?.shift ?? 0) })),
-      lines: d.plan.lines.map((l) => ({ ...l, start: l.start - l.shift, end: l.end - l.shift })), gaps: [], zooms: [], clicks: [], events: [], notes: [] };
-    d.planBeats = d.plan.beats.map((b) => ({ t: off(b), what: b.what }));
-  } else if (d.plan) d.planBeats = d.plan.beats.map((b) => ({ t: b.t, what: b.what }));
+    const off = (x) => +(x.t - (x.shift ?? 0)).toFixed(2);
+    const bs = d.plan.beats.map((b) => ({ ...b, t: off(b) }));
+    const tl = { length: null, planned: true, clicks: [], events: [], zooms: [], notes: [], pointer: [],
+      segments: bs.filter((b) => b.kinds.includes('scene')).map((b) => ({ name: b.scene, start: b.t })),
+      lines: d.plan.lines.map((l) => ({ ...l, start: l.start - l.shift, end: l.end - l.shift })),
+      gaps: (d.plan.gaps ?? []).map((g) => ({ ...g, t: off(g) })) };
+    const SPECIAL = new Set(['drag', 'dragBy', 'type', 'key', 'select', 'circle', 'underline', 'shake', 'marquee', 'rest', 'scroll', 'step']);
+    for (const b of bs) {
+      if (b.kinds.includes('click')) tl.clicks.push(b.t);
+      if (b.kinds.includes('zoom')) tl.zooms.push({ t: b.t, scale: 2 });
+      if (b.kinds.includes('unzoom')) tl.zooms.push({ t: b.t, scale: 1 });
+      const sp = b.kinds.find((k) => SPECIAL.has(k));
+      if (sp) tl.events.push([b.t, sp === 'step' ? b.what : sp, b.what]);
+      if (b.kinds.some((k) => k === 'hover' || k === 'moveTo' || k === 'click')) tl.pointer.push({ t: b.t, what: b.what });
+    }
+    d.timeline = tl;
+    d.planBeats = bs.map((b) => ({ t: b.t, what: b.what }));
+  }
   const key = JSON.stringify([d.mtime, d.timeline, d.review, d.planBeats]);
   if (!first && key === last) return;
   last = key;
   data = d;
   $('title').textContent = `Lesson ${d.id}`;
   document.body.classList.toggle('voice', !!d.voiceOnly);
-  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · voice only, nothing recorded yet` : (d.video ?? 'no video yet');
+  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : (d.video ?? 'no video yet');
   draw(); comments();
 }
 
@@ -266,11 +287,6 @@ function draw() {
   const ru = row('', 'ruler');
   const step = pxs >= 40 ? 1 : pxs >= 10 ? 5 : 10;
   for (let t = 0; t <= len; t += step) { const m = document.createElement('div'); m.className = 'mark mono'; m.style.left = X(t) + 'px'; m.innerHTML = `<span>${short(t)}</span>`; ru.append(m); }
-  if (data.planBeats) {
-    const pl = row('Plan', 'plan');
-    const pb = data.planBeats;
-    pb.forEach((b, k) => span(pl, b.t, Math.min(pb[k + 1]?.t ?? len, b.t + 6), 'planitem', b.what, `${fmt(b.t)} ${b.what}`));
-  }
   if (tl) {
     const sc = row('Scenes');
     tl.segments.forEach((s, i) => span(sc, s.start, tl.segments[i + 1]?.start ?? len, 'scene', s.name));
@@ -280,39 +296,54 @@ function draw() {
     tl.gaps.forEach((g) => span(gr, g.t - g.seconds / 2, g.t + g.seconds / 2, 'gap', `${g.seconds}s`, `${g.seconds}s pause before line ${g.line}`));
     const zr = row('Zoom');
     tl.zooms.forEach((z, i) => { if (z.scale > 1) { const end = tl.zooms.slice(i + 1).find((n) => n.scale <= 1)?.t ?? len; span(zr, z.t, end, 'zoom', `${z.scale}×`); } });
+    if (tl.pointer) {
+      const po = row('Pointer', 'plan');
+      tl.pointer.forEach((b, k) => span(po, b.t, Math.min(tl.pointer[k + 1]?.t ?? len, b.t + 4), 'planitem', b.what, `${fmt(b.t)} ${b.what}`));
+    }
     const er = row('Specials');
-    tl.events.forEach(([t, k]) => tick(er, t, 'event', LABELS[k] ?? k));
+    tl.events.forEach(([t, k, full]) => tick(er, t, 'event', LABELS[k] ?? k, full ? `${fmt(t)} ${full}` : undefined));
     const cr = row('Clicks');
     tl.clicks.forEach((t) => tick(cr, t, 'click', '', fmt(t)));
     const nr = row('Warnings');
     tl.notes.forEach(([t, m]) => tick(nr, t, 'note', '', `${fmt(t)} ${m}`));
   }
   const pr = row('Comments');
-  data.review.comments.forEach((c) => { const e = tick(pr, c.t, 'pin ' + ({ open: '', sent: 'sent' }[c.status] ?? 'done'), `#${c.n}`, c.text); e.onclick = (ev) => { ev.stopPropagation(); seek(c.t); }; e.onmousedown = (ev) => ev.stopPropagation(); });
+  data.review.comments.filter(isOpen).forEach((c) => { const e = tick(pr, c.t, 'pin ' + ({ open: '', sent: 'sent' }[c.status] ?? 'done'), `#${c.n}`, c.text); e.onclick = (ev) => { ev.stopPropagation(); seek(c.t); }; e.onmousedown = (ev) => ev.stopPropagation(); });
   const head = document.createElement('div'); head.className = 'playhead'; head.id = 'head'; inner.append(head);
   playhead();
 }
 
+// Open: new and with Claude. Done: answered; kept, never deleted, and
+// reopened with a click if the answer is not right.
+let tab = 'open';
+const isOpen = (c) => c.status === 'open' || c.status === 'sent';
 function comments() {
-  const list = $('list'), cs = data.review.comments;
-  const open = cs.filter((c) => c.status === 'open').length;
-  $('count').textContent = cs.length;
+  const list = $('list'), all = data.review.comments;
+  const open = all.filter((c) => c.status === 'open').length;
+  $('nopen').textContent = all.filter(isOpen).length;
+  $('ndone').textContent = all.filter((c) => !isOpen(c)).length;
+  const cs = all.filter((c) => (tab === 'open' ? isOpen(c) : !isOpen(c)));
   $('send').disabled = !open;
   $('sendlabel').textContent = open ? `Send ${open} comment${open > 1 ? 's' : ''} to Claude` : 'Send to Claude';
   const sends = data.review.sends ?? [];
   $('sent').textContent = open ? 'New comments stay here until you send them.' : sends.length ? `Last sent at ${new Date(sends.at(-1).at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '';
-  list.innerHTML = cs.length ? '' : '<div class="empty"><b>No comments yet</b>Pause where something should change and press C.</div>';
+  list.innerHTML = cs.length ? '' : tab === 'open'
+    ? `<div class="empty"><b>No open comments</b>Pause where something should change and press C.</div>`
+    : `<div class="empty"><b>Nothing done yet</b>Answered comments move here.</div>`;
   for (const c of [...cs].sort((a, b) => a.t - b.t)) {
     const e = document.createElement('div'); e.className = 'c'; e.dataset.t = c.t;
     e.innerHTML = `<div class="meta"><span class="n">#${c.n}</span><span class="t mono">${fmt(c.t)}</span><span class="badge b-${c.status}"><span class="dot"></span>${STATUS[c.status] ?? c.status}</span></div>`
       + (c.still ? `<img src="/still/${c.still.split('/').pop()}" loading="lazy">` : '')
       + `<div class="text"></div>` + (c.reply ? `<div class="reply"><b>Claude</b><span></span></div>` : '')
-      + (c.status === 'open' ? `<button class="btn ghost sm del"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Delete</button>` : '');
+      + (c.status === 'open' ? `<button class="btn ghost sm del"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Delete</button>` : '')
+      + (!isOpen(c) ? `<button class="btn ghost sm reopen">Reopen</button>` : '');
     e.querySelector('.text').textContent = c.text;
     if (c.reply) e.querySelector('.reply span').textContent = c.reply;
     e.onclick = () => seek(c.t);
     const del = e.querySelector('.del');
     if (del) del.onclick = async (ev) => { ev.stopPropagation(); await fetch('/comment', { method: 'DELETE', body: JSON.stringify({ n: c.n }) }); load(); };
+    const re = e.querySelector('.reopen');
+    if (re) re.onclick = async (ev) => { ev.stopPropagation(); await fetch('/reopen', { method: 'POST', body: JSON.stringify({ n: c.n }) }); tab = 'open'; setTab(); load(); };
     list.append(e);
   }
 }
@@ -355,6 +386,8 @@ $('tl').addEventListener('mousedown', (e) => {
   const move = (ev) => at(ev), up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
   addEventListener('mousemove', move); addEventListener('mouseup', up);
 });
+function setTab() { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab)); }
+document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; setTab(); comments(); }; });
 $('send').onclick = async () => { await fetch('/send', { method: 'POST' }); load(); };
 $('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
 // A mouse wheel scrolls the timeline sideways, unless the rows need it.

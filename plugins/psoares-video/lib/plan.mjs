@@ -26,9 +26,12 @@ const VERBS = {
   select: 'select the text of', marquee: 'selection box around', scroll: 'scroll', go: 'open',
 };
 // "w.click(card('Roda da Vida'), 800)" -> "click 'Roda da Vida'".
+// Also sets describe.kinds: the recorder calls in order ('click', 'hover',
+// 'type'…, 'step' for a helper), so the review page can put each on its track.
 function describe(fn) {
   const src = fn.toString();
   const out = [];
+  describe.kinds = [];
   for (const m of src.matchAll(/\b(w\.)?(\w+)\(/g)) {
     // A helper of the beats file called with the window: "deleteTool(w, NEW)".
     const helper = !m[1] && src.startsWith('w,', m.index + m[0].length) || (!m[1] && src.startsWith('w)', m.index + m[0].length));
@@ -36,6 +39,7 @@ function describe(fn) {
     const verb = m[1] ? VERBS[m[2]] : m[2];
     if (!verb) continue;
     m[1] = m[2];
+    describe.kinds.push(helper ? 'step' : m[2]);
     let depth = 1, i = m.index + m[0].length;
     while (i < src.length && depth) { if (src[i] === '(') depth++; else if (src[i] === ')') depth--; i++; }
     const args = src.slice(m.index + m[0].length, i - 1);
@@ -47,6 +51,7 @@ function describe(fn) {
   }
   if (src.includes("keyboard.down('Space')") && out.length) out[0] = `hold Space and ${out[0]}`;
   if (!out.length) {
+    describe.kinds = ['step'];
     // A helper of the beats file: name it and what it is given.
     const call = src.match(/=>\s*(?:\{\s*)?(?:await\s+)?(\w+)\(/)?.[1];
     const names = quoted(src).filter((x) => !ROLES.has(x));
@@ -73,7 +78,7 @@ for (const [k, s] of segments.entries()) {
   const who = s.windows.map((x) => `${acct(x.account)} on ${x.screen ?? named(where(x.url))}`).join(' + ');
   const before = s.setup ? describe(s.setup) : '';
   beats.push({ t: k === 0 ? 0 : s.start, scene: s.name, what: named(`${k === 0 ? 'starts' : 'new scene (fade)'}: ${who}${before && before !== 'step' ? ` (before it, off camera: ${before})` : ''}`), shift: lineAt(s.start)?.shift ?? 0, start: true });
-  for (const [t, fn, opts] of s.beats(w)) beats.push({ t, scene: s.name, what: named(describe(fn)), lead: opts?.lead, shift: lineAt(t)?.shift ?? 0 });
+  for (const [t, fn, opts] of s.beats(w)) { const what = named(describe(fn)); beats.push({ t, scene: s.name, what, kinds: describe.kinds, lead: opts?.lead, shift: lineAt(t)?.shift ?? 0 }); }
 }
 beats.sort((a, b) => a.t - b.t);
 
@@ -92,7 +97,9 @@ for (const l of lines.length ? lines : [{ i: '', start: 0, text: '' }]) {
 }
 // `shift` is the pause added before that point: the review page subtracts
 // it when it plays the plain voice, before any recording exists.
-for (const b of beats) json.beats.push({ t: +b.t.toFixed(2), shift: b.shift, scene: b.scene, what: b.what });
+for (const b of beats) json.beats.push({ t: +b.t.toFixed(2), shift: b.shift, scene: b.scene, what: b.what, kinds: b.kinds ?? (b.start ? ['scene'] : []) });
+// The pauses, where they fall in the video (just before their line).
+json.gaps = gaps.map(([i, g]) => { const l = lines[+i]; return l ? { line: +i, seconds: g, t: +(l.start - g / 2 - 0.1).toFixed(2), shift: l.shift - g / 2 } : null; }).filter(Boolean);
 json.lines = lines.map((l) => ({ i: l.i, text: l.text, start: l.start, end: l.end, shift: l.shift }));
 fs.writeFileSync(project.p('build', `${id}.plan.md`), md.join('\n') + '\n');
 fs.writeFileSync(project.p('build', `${id}.plan.json`), JSON.stringify(json));
