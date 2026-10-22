@@ -26,6 +26,9 @@ fs.mkdirSync(p('review'), { recursive: true });
 
 const pick = (...names) => names.map((n) => p('build', n)).find((f) => fs.existsSync(f));
 const video = () => pick(`${id}.draft.mp4`, `${id}.mp4`);
+// Before any recording: the plain voice, so the plan can be heard.
+const voice = () => [p('audio', `${id}.mp3`)].find((f) => fs.existsSync(f));
+const plan = () => pick(`${id}.plan.json`);
 const timeline = () => pick(`${id}.draft.timeline.json`, `${id}.timeline.json`);
 const store = p('review', `${id}.json`);
 const read = () => (fs.existsSync(store) ? JSON.parse(fs.readFileSync(store, 'utf8')) : { id, comments: [] });
@@ -53,11 +56,11 @@ const json = (res, d) => { res.writeHead(200, { 'content-type': 'application/jso
 
 // The video with Range support, so the player can seek.
 function stream(req, res, file) {
-  const size = fs.statSync(file).size;
+  const size = fs.statSync(file).size, type = file.endsWith('.mp3') ? 'audio/mpeg' : 'video/mp4';
   const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range ?? '');
-  if (!m) { res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': size, 'accept-ranges': 'bytes' }); fs.createReadStream(file).pipe(res); return; }
+  if (!m) { res.writeHead(200, { 'content-type': type, 'content-length': size, 'accept-ranges': 'bytes' }); fs.createReadStream(file).pipe(res); return; }
   const start = m[1] ? +m[1] : 0, end = m[2] ? +m[2] : size - 1;
-  res.writeHead(206, { 'content-type': 'video/mp4', 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': end - start + 1, 'accept-ranges': 'bytes' });
+  res.writeHead(206, { 'content-type': type, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': end - start + 1, 'accept-ranges': 'bytes' });
   fs.createReadStream(file, { start, end }).pipe(res);
 }
 
@@ -65,10 +68,10 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   try {
     if (url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(fs.readFileSync(path.join(HERE, 'review.html'))); return; }
-    if (url.pathname === '/video') { const f = video(); if (!f) { res.writeHead(404); res.end(); return; } stream(req, res, f); return; }
+    if (url.pathname === '/video') { const f = video() ?? voice(); if (!f) { res.writeHead(404); res.end(); return; } stream(req, res, f); return; }
     if (url.pathname === '/data') {
-      const f = timeline(), v = video();
-      json(res, { id, video: v && path.basename(v), mtime: v && fs.statSync(v).mtimeMs, timeline: f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, review: read() });
+      const f = timeline(), v = video() ?? voice(), pl = plan();
+      json(res, { id, video: v && path.basename(v), voiceOnly: !video(), mtime: v && fs.statSync(v).mtimeMs, timeline: video() && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read() });
       return;
     }
     if (url.pathname.startsWith('/still/')) {

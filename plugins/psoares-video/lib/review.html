@@ -92,6 +92,7 @@
   .tick span { position: absolute; left: 5px; top: -2px; font-size: 9.5px; white-space: nowrap; color: var(--muted-fg); }
   .click { background: rgb(var(--zinc) / .45); }
   .event { background: rgb(var(--blue)); }
+  .event.plan { background: rgb(var(--violet)); }
   .note { background: rgb(var(--amber)); }
   .pin { top: 3px; bottom: 3px; width: 3px; background: rgb(var(--rose)); cursor: pointer; }
   .pin span { color: rgb(251 113 133); font-weight: 600; }
@@ -198,7 +199,7 @@ let data = null, pxs = 14, mtime = 0, last = '';
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
 const short = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const LABELS = { loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
-const ROWS = { Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
+const ROWS = { Plan: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
 const STATUS = { open: 'New', sent: 'Sent', done: 'Done', answered: 'Answered' };
 
 async function load(first) {
@@ -208,18 +209,26 @@ async function load(first) {
     v.src = '/video?' + d.mtime;
     if (!first) v.currentTime = t;
   }
-  const key = JSON.stringify([d.mtime, d.timeline, d.review]);
+  // Voice only (nothing recorded yet): the plan's lines and beats, on the
+  // plain voice, so without the pauses the beats file adds.
+  if (!d.timeline && d.plan) {
+    const off = (x) => (d.voiceOnly ? x.t - (x.shift ?? 0) : x.t);
+    d.timeline = { length: null, segments: d.plan.segments.map((s) => ({ ...s, start: s.start - (d.plan.lines.findLast((l) => l.start <= s.start + 0.05)?.shift ?? 0) })),
+      lines: d.plan.lines.map((l) => ({ ...l, start: l.start - l.shift, end: l.end - l.shift })), gaps: [], zooms: [], clicks: [], events: [], notes: [] };
+    d.planBeats = d.plan.beats.map((b) => ({ t: off(b), what: b.what }));
+  } else if (d.plan) d.planBeats = d.plan.beats.map((b) => ({ t: b.t, what: b.what }));
+  const key = JSON.stringify([d.mtime, d.timeline, d.review, d.planBeats]);
   if (!first && key === last) return;
   last = key;
   data = d;
   $('title').textContent = `Lesson ${d.id}`;
-  $('file').textContent = d.video ?? 'no video yet';
+  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · voice only, nothing recorded yet` : (d.video ?? 'no video yet');
   draw(); comments();
 }
 
 function draw() {
   const tl = data.timeline, inner = $('inner');
-  const len = tl?.length ?? v.duration ?? 0;
+  const len = tl?.length || v.duration || (tl?.lines.at(-1)?.end ?? 0) + 1;
   $('len').textContent = len ? `/ ${fmt(len)}` : '';
   const X = (t) => 6 + t * pxs;
   inner.style.width = X(len) + 24 + 'px';
@@ -236,6 +245,10 @@ function draw() {
   const ru = row('', 'ruler');
   const step = pxs >= 40 ? 1 : pxs >= 10 ? 5 : 10;
   for (let t = 0; t <= len; t += step) { const m = document.createElement('div'); m.className = 'mark mono'; m.style.left = X(t) + 'px'; m.innerHTML = `<span>${short(t)}</span>`; ru.append(m); }
+  if (data.planBeats) {
+    const pl = row('Plan');
+    data.planBeats.forEach((b) => tick(pl, b.t, 'event plan', b.what, `${fmt(b.t)} ${b.what}`));
+  }
   if (tl) {
     const sc = row('Scenes');
     tl.segments.forEach((s, i) => span(sc, s.start, tl.segments[i + 1]?.start ?? len, 'scene', s.name));
@@ -316,7 +329,7 @@ v.onclick = toggle;
 v.onplay = () => { $('playicon').innerHTML = '<use href="#i-pause"/>'; };
 v.onpause = () => { $('playicon').innerHTML = '<use href="#i-play"/>'; };
 v.ontimeupdate = playhead;
-v.onloadedmetadata = () => { if (!data?.timeline) draw(); };
+v.onloadedmetadata = () => { if (data) draw(); };
 (function loop() { if (!v.paused) playhead(); requestAnimationFrame(loop); })();
 
 let pinned = 0;

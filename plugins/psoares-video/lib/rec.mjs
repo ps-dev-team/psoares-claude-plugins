@@ -265,8 +265,9 @@ export class Window {
   }
   async click(locator, ms = 550, at) {
     if (!(await this.hover(locator, ms, at))) return false;
-    // The drawn pointer trails on its spring: let it land before the press.
-    await sleep(200);
+    // A hand stops, then clicks: the drawn pointer trails on its spring, so
+    // let it come fully to rest before the press.
+    await sleep(380);
     await this.press(true); await sleep(80); await this.press(false);
     await sleep(120);
     return true;
@@ -276,7 +277,7 @@ export class Window {
   async drag(locator, to, ms = 1100, at) {
     if (!(await this.hover(locator, 450, at))) return false;
     this.event('drag');
-    await sleep(200);
+    await sleep(380);
     await this.press(true);
     await sleep(150);
     await this.moveTo(to[0], to[1], ms, { hook: false, exact: true });
