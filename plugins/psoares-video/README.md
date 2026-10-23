@@ -1,13 +1,14 @@
 # psoares-video
 
 Voiced screen demos and B-roll, made from a script: course lessons, product walkthroughs, demo
-clips. Three skills that work alone or in a row.
+clips. Four skills that work alone or in a row.
 
 | Need | Skills |
 |---|---|
 | A voiced demo of an app | `voice` → `screen` → `assemble` |
 | B-roll of a website or app | `screen` → `assemble` |
 | A voice-over only | `voice` |
+| B-roll of people (Higgsfield): clips, loops, fake cameras for a call | `broll` |
 
 ## Install
 
@@ -17,7 +18,7 @@ clips. Three skills that work alone or in a row.
 ```
 
 Needs: Node 22+, pnpm, Python 3 with Pillow, ffmpeg, Google Chrome, Playwright (in the project,
-or at `config.playwright`), and an ElevenLabs key in `~/.config/elevenlabs/.env` for the voice.
+or at `config.playwright`), and an ElevenLabs key in `~/.config/elevenlabs/.env` for the voice. B-roll needs the Higgsfield CLI (`npm i -g @higgsfield/cli`, signed in) and macOS (Vision finds the faces).
 
 ## Skills
 
@@ -35,6 +36,13 @@ cookies), running **beats**: small steps timed to the words of the voice, or to 
 B-roll. It probes each page first, so every click targets a real button name. It shows what
 the script talks about (the print preview, the email, the dialog) without being told to open
 it. The pointer's path and the zooms are saved as data.
+
+### `broll`
+
+Makes B-roll of people with the Higgsfield CLI: enlarges their photos, places each person in a
+real-life setting, generates short talking and listening clips, and turns them into loops,
+overlays or fake-camera feeds that talk when the person speaks in a call. Prices every step
+first and logs the credits. Never a talking-head presenter.
 
 ### `assemble`
 
