@@ -35,6 +35,10 @@ words said: no stage directions in the text.
 
 ## 2a. Generate it with ElevenLabs
 
+For the full ElevenLabs craft (tags and punctuation, pronunciation fixes, a pause cap per
+language, website takes, misread checks with Scribe), load the `elevenlabs:voice-generation`
+skill if it is installed. This section covers what demo-studio needs.
+
 Needs an ElevenLabs account and a voice: `voice.id` in `video.config.json`, and optionally
 `voice.model` (default `eleven_v4`), `voice.settings` and `voice.language` (ISO 639-1).
 
