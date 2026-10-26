@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Review</title>
+<style>
+  /* shadcn/ui dark (zinc). Only the video keeps its own colours. */
+  :root {
+    color-scheme: dark;
+    --background: #09090b; --card: #0f0f12; --popover: #18181b; --muted: #18181b; --muted-fg: #a1a1aa; --subtle: #71717a;
+    --border: #27272a; --input: #27272a; --ring: #52525b; --fg: #fafafa; --primary: #fafafa; --primary-fg: #18181b;
+    --blue: 59 130 246; --amber: 245 158 11; --violet: 139 92 246; --emerald: 16 185 129; --rose: 244 63 94; --zinc: 161 161 170;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--background); color: var(--fg); overflow: hidden;
+    font: 11.5px/1.45 "Geist", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+    display: grid; grid-template-columns: var(--left, 232px) minmax(0, 1fr) var(--right, 320px); grid-template-rows: 38px minmax(0, 1fr) auto;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+  svg.i { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* Header */
+  header { grid-column: 2; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+  header .title { font-weight: 600; font-size: 12px; letter-spacing: -0.01em; }
+  header .sep { color: var(--border); }
+  .btn.approve.on { color: rgb(var(--emerald)); border-color: rgb(var(--emerald) / .45); background: rgb(var(--emerald) / .1); }
+  .btn.approve.older { color: rgb(var(--amber)); border-color: rgb(var(--amber) / .4); }
+  header .help { margin-left: auto; display: flex; gap: 12px; color: var(--subtle); font-size: 11px; }
+  header .help span { display: inline-flex; gap: 4px; align-items: center; }
+
+  /* Buttons, badges, kbd */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--fg); font: inherit; font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s, opacity .15s; white-space: nowrap; }
+  .btn:hover { background: var(--muted); }
+  .btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .btn.primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+  .btn.primary:hover { background: #e4e4e7; }
+  .btn:disabled { opacity: .4; pointer-events: none; }
+  .btn.icon { width: 26px; padding: 0; }
+  .btn.ghost { border-color: transparent; }
+  .btn.sm { height: 24px; padding: 0 8px; font-size: 11px; }
+  kbd { font: 500 10px/1 "Geist Mono", ui-monospace, monospace; color: var(--muted-fg); background: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 5px; }
+  .btn.primary kbd { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.15); color: #3f3f46; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 500; border: 1px solid transparent; }
+  .badge.outline { border-color: var(--border); color: var(--muted-fg); }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .b-open { background: rgb(var(--rose) / .12); color: rgb(251 113 133); border-color: rgb(var(--rose) / .25); }
+  .b-sent { background: rgb(var(--amber) / .12); color: rgb(251 191 36); border-color: rgb(var(--amber) / .25); }
+  .b-done, .b-answered { background: rgb(var(--emerald) / .12); color: rgb(52 211 153); border-color: rgb(var(--emerald) / .25); }
+
+  /* Stage */
+  main { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; min-height: 0; padding: 16px 16px 10px; }
+  .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+  video { max-width: 100%; max-height: 100%; border-radius: var(--radius); background: #000; box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,.6); }
+  /* The live preview: the recordings put together in the browser, no render. */
+  .live { display: none; max-width: 100%; max-height: 100%; width: 100%; border-radius: var(--radius); overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,.6); }
+  body.liveplay .live { display: block; }
+  body.liveplay video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .livemsg { display: none; position: absolute; color: var(--muted-fg); }
+  body.liveplay .livemsg.on { display: block; }
+  .badge.mode { color: var(--fg); border-color: var(--ring); }
+  .badge.mode.is-live { color: rgb(196 181 253); border-color: rgb(var(--violet) / .45); background: rgb(var(--violet) / .1); }
+  .modes { display: none; } .modes.on { display: inline-flex; }
+  .transport { display: flex; align-items: center; gap: 10px; padding-top: 12px; }
+  .transport .time { font-size: 12px; font-weight: 500; color: var(--fg); min-width: 128px; }
+  .transport .time .len { color: var(--subtle); }
+  .transport .now { flex: 1; min-width: 0; color: var(--muted-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Voice only: the plan in words where the video will be */
+  .planview { display: none; width: min(760px, 92%); }
+  body.voice video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  body.voice .planview { display: block; }
+  .pv-line { font-size: 22px; line-height: 1.35; letter-spacing: -0.01em; color: var(--fg); min-height: 90px; }
+  .pv-line small { display: block; font: 500 10.5px/1 "Geist Mono", ui-monospace, monospace; color: var(--subtle); margin-bottom: 10px; }
+  .pv-beats { position: relative; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); max-height: 38vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .pv-beat { cursor: pointer; }
+  .pv-beat:hover { background: #141418; }
+  .pv-beat { display: flex; gap: 12px; padding: 7px 12px; border-bottom: 1px solid #1c1c20; color: var(--muted-fg); }
+  .pv-beat:last-child { border-bottom: 0; }
+  .pv-beat .mono { color: var(--subtle); min-width: 52px; }
+  .pv-beat.now { color: var(--fg); background: rgb(var(--violet) / .1); }
+  .pv-beat.now .mono { color: rgb(196 181 253); }
+
+  /* Compose (a popover over the video) */
+  .compose { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(6px); width: min(520px, 92%); background: var(--popover); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.6); padding: 12px; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 10; }
+  .compose.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+  .compose .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--muted-fg); }
+  .compose textarea { width: 100%; min-height: 76px; background: var(--background); color: var(--fg); border: 1px solid var(--input); border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 12.5px; resize: vertical; outline: none; }
+  .compose textarea:focus { border-color: var(--ring); box-shadow: 0 0 0 3px rgba(82,82,91,.35); }
+  .compose .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; color: var(--subtle); font-size: 11px; align-items: center; }
+
+  /* Timeline */
+  footer { grid-column: 2; grid-row: 3; min-width: 0; padding: 0 16px 14px; }
+  .tlbox { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+  .tlwrap { display: flex; max-height: 32vh; overflow-x: hidden; overflow-y: auto; }
+  .labels { width: 92px; flex: none; border-right: 1px solid var(--border); background: var(--card); }
+  .tl { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; position: relative; user-select: none; cursor: text; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .tl-inner { position: relative; }
+  .row, .label { height: 20px; border-bottom: 1px solid #1c1c20; }
+  .row { position: relative; }
+  .row.script, .label.script { height: 32px; }
+  .row.ruler, .label.ruler { height: 18px; border-bottom-color: var(--border); }
+  .row:last-child, .label:last-child { border-bottom: 0; }
+  .label { display: flex; align-items: center; gap: 6px; padding: 0 8px; color: var(--subtle); font: 500 10px/1 "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+  .label .trk { color: #52525b; }
+  .label .sw { width: 6px; height: 6px; border-radius: 2px; }
+  .mark { position: absolute; top: 0; bottom: 0; border-left: 1px solid #27272a; }
+  .mark span { position: absolute; left: 4px; top: 3px; font-size: 9.5px; color: var(--subtle); }
+  .item { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; font-size: 10px; padding: 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: flex; align-items: center; border: 1px solid transparent; }
+  .scene { background: rgb(var(--zinc) / .08); border-color: rgb(var(--zinc) / .14); color: var(--muted-fg); }
+  .line { background: rgb(var(--blue) / .10); border-color: rgb(var(--blue) / .18); color: rgb(147 197 253); white-space: normal; align-items: flex-start; line-height: 1.25; padding-top: 3px; transition: background .12s; }
+  .line.on { background: rgb(var(--blue) / .28); border-color: rgb(var(--blue) / .5); color: #eff6ff; }
+  .gap { background: repeating-linear-gradient(135deg, rgb(var(--amber) / .14) 0 4px, rgb(var(--amber) / .06) 4px 8px); border-color: rgb(var(--amber) / .3); color: rgb(252 211 77); justify-content: center; }
+  .zoom { background: rgb(var(--violet) / .14); border-color: rgb(var(--violet) / .3); color: rgb(196 181 253); }
+  .tick { position: absolute; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; }
+  .tick span { position: absolute; left: 5px; top: -2px; font-size: 9.5px; white-space: nowrap; color: var(--muted-fg); }
+  .click { background: rgb(var(--zinc) / .45); }
+  .event { background: rgb(var(--blue)); }
+  .planitem { background: rgb(var(--violet) / .14); border-color: rgb(var(--violet) / .3); color: rgb(221 214 254); }
+  .row.plan, .label.plan { height: 24px; }
+  .note { background: rgb(var(--amber)); }
+  .pin { top: 3px; bottom: 3px; width: 3px; background: rgb(var(--rose)); cursor: pointer; }
+  .pin span { color: rgb(251 113 133); font-weight: 600; }
+  .pin.sent { background: rgb(var(--amber)); } .pin.sent span { color: rgb(251 191 36); }
+  .pin.done { background: rgb(var(--emerald)); } .pin.done span { color: rgb(52 211 153); }
+  .playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--fg); z-index: 4; pointer-events: none; }
+  .playhead::before { content: ""; position: absolute; top: 0; left: -5px; width: 11px; height: 9px; background: var(--fg); clip-path: polygon(0 0, 100% 0, 100% 45%, 50% 100%, 0 45%); }
+  .tlbar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-top: 1px solid var(--border); color: var(--subtle); font-size: 11px; }
+  .tlbar input[type=range] { width: 120px; accent-color: #d4d4d8; }
+
+  /* Sidebar */
+  aside { position: relative; grid-column: 3; grid-row: 1 / 4; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  /* The project's videos, on the left */
+  /* Drag a panel's inner edge to resize it; double-click to reset. */
+  .grip { position: absolute; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 5; }
+  .grip::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: transparent; transition: background .15s; }
+  .grip:hover::after, .grip.on::after { background: var(--ring); }
+  nav.videos .grip { right: -4px; }
+  aside .grip { left: -4px; }
+  body.resizing { cursor: col-resize; user-select: none; }
+  body.resizing video { pointer-events: none; }
+  nav.videos { position: relative; grid-column: 1; grid-row: 1 / 4; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; min-height: 0; height: 100vh; }
+  nav.videos .top { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
+  nav.videos .top h2 { font-size: 12px; font-weight: 600; margin: 0; }
+  nav.videos .top span { color: var(--subtle); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
+  .vl { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .vl .group { padding: 10px 8px 4px; color: var(--subtle); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .vl a { display: block; padding: 6px 8px; border-radius: 6px; color: var(--muted-fg); text-decoration: none; }
+  .vl a:hover { background: var(--muted); color: var(--fg); }
+  .vl a.on { background: var(--muted); color: var(--fg); box-shadow: inset 2px 0 0 var(--fg); }
+  .vl a.test { opacity: .6; }
+  .vl .row1 { display: flex; gap: 8px; align-items: baseline; }
+  .vl .vid { color: var(--subtle); flex: none; }
+  .vl .vt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .vl .row2 { display: flex; gap: 6px; align-items: center; margin-top: 3px; color: var(--subtle); font-size: 10.5px; }
+  .vl .st { padding: 0 5px; border-radius: 4px; border: 1px solid var(--border); line-height: 15px; }
+  .vl .st.draft { color: rgb(var(--blue)); border-color: rgb(var(--blue) / .35); }
+  .vl .ok { color: rgb(var(--emerald)); display: inline-flex; align-items: center; gap: 3px; }
+  .vl .ok.older { color: rgb(var(--amber)); }
+  .vl .ok svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+  .vl .st.final { color: rgb(var(--emerald)); border-color: rgb(var(--emerald) / .35); }
+  .vl .cm { margin-left: auto; display: inline-flex; gap: 6px; }
+  .vl .cm .open { color: rgb(var(--rose)); }
+  .vl .cm .sent { color: rgb(var(--amber)); }
+  aside .top { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border); }
+  aside .top h2 { font-size: 12px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: center; }
+  .tabs { display: inline-flex; padding: 2px; background: var(--muted); border: 1px solid var(--border); border-radius: 6px; }
+  .tab { font: inherit; font-size: 11px; font-weight: 500; height: 22px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--muted-fg); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+  .tab span { color: var(--subtle); font-family: "Geist Mono", ui-monospace, monospace; font-size: 10px; }
+  .tab.on { background: var(--background); color: var(--fg); box-shadow: 0 0 0 1px var(--border); }
+  .send { padding: 12px 14px; border-bottom: 1px solid var(--border); display: grid; gap: 6px; }
+  .send .btn { width: 100%; }
+  .send .hint { color: var(--subtle); font-size: 11px; text-align: center; min-height: 16px; }
+  .list { flex: 1; overflow-y: auto; padding: 8px; display: grid; gap: 6px; align-content: start; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+  .c { border: 1px solid var(--border); border-radius: 6px; background: var(--background); padding: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .c:hover { border-color: #3f3f46; background: #0c0c0f; }
+  .c.active { border-color: #52525b; }
+  .c .meta { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; }
+  .c .n { font-weight: 600; }
+  .c .t { color: var(--muted-fg); }
+  .c .meta .badge:last-of-type { margin-left: auto; }
+  .c img { display: block; width: 100%; height: 112px; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 6px; }
+  .c .text { white-space: pre-wrap; color: #e4e4e7; font-size: 11.5px; }
+  .c .reply { margin-top: 8px; padding: 6px 0 2px 10px; border-left: 2px solid rgb(var(--emerald) / .6); color: var(--muted-fg); white-space: pre-wrap; }
+  .c .reply b { display: block; color: rgb(52 211 153); font-weight: 500; font-size: 10.5px; margin-bottom: 2px; }
+  .c .del { margin-top: 6px; color: var(--subtle); }
+  .c .del:hover { color: rgb(251 113 133); background: transparent; }
+  .empty { margin: 24px 8px; padding: 20px; border: 1px dashed var(--border); border-radius: var(--radius); text-align: center; color: var(--subtle); }
+  .empty b { display: block; color: var(--muted-fg); font-weight: 500; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="i-fwd" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></symbol>
+</svg>
+
+<nav class="videos">
+  <div class="grip" data-side="left" title="Drag to resize, double-click to reset"></div>
+  <div class="top"><h2>Videos</h2><span id="proj"></span></div>
+  <div class="vl" id="vlist"></div>
+</nav>
+
+<header>
+  <svg class="i" style="color:var(--muted-fg)"><use href="#i-film"/></svg>
+  <span class="title" id="title">Review</span>
+  <span class="badge outline mode" id="mode"></span>
+  <span class="badge outline mono" id="file"></span>
+  <div class="tabs modes" id="modes"><button class="tab" data-mode="render">Render</button><button class="tab" data-mode="live">Live</button></div>
+  <button class="btn approve" id="approve" title="Approve this version"><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span id="approvetext">Approve</span></button>
+  <div class="help">
+    <span><kbd>Space</kbd> play</span>
+    <span><kbd>←</kbd><kbd>→</kbd> frame</span>
+    <span><kbd>⇧</kbd> + arrows: second</span>
+    <span><kbd>C</kbd> comment</span>
+  </div>
+</header>
+
+<main>
+  <div class="stage">
+    <video id="v" preload="auto"></video>
+    <div class="live" id="live"></div>
+    <div class="livemsg" id="livemsg"></div>
+    <div class="planview" id="planview">
+      <div class="pv-line" id="pvline"></div>
+      <div class="pv-beats" id="pvbeats"></div>
+    </div>
+    <div class="compose" id="compose">
+      <div class="head"><svg class="i"><use href="#i-msg"/></svg><span>Comment at <span class="mono" id="at"></span></span></div>
+      <textarea id="text" placeholder="What should change at this moment?"></textarea>
+      <div class="foot"><span><kbd>Enter</kbd> save · <kbd>⇧ Enter</kbd> new line · <kbd>Esc</kbd> cancel</span></div>
+    </div>
+  </div>
+  <div class="transport">
+    <button class="btn icon" id="prev" title="One second back"><svg class="i"><use href="#i-back"/></svg></button>
+    <button class="btn icon primary" id="play" title="Play (Space)"><svg class="i" id="playicon"><use href="#i-play"/></svg></button>
+    <button class="btn icon" id="next" title="One second on"><svg class="i"><use href="#i-fwd"/></svg></button>
+    <span class="time mono"><span id="time">0:00.00</span> <span class="len" id="len"></span></span>
+    <span class="now" id="now"></span>
+    <button class="btn" id="add"><svg class="i"><use href="#i-msg"/></svg>Comment <kbd>C</kbd></button>
+  </div>
+</main>
+
+<footer>
+  <div class="tlbox">
+    <div class="tlwrap"><div class="labels" id="labels"></div><div class="tl" id="tl"><div class="tl-inner" id="inner"></div></div></div>
+    <div class="tlbar">
+      <svg class="i"><use href="#i-zoom"/></svg>
+      <input type="range" id="scale" min="4" max="80" value="14">
+      <span>Scroll sideways to move along · click to jump</span>
+    </div>
+  </div>
+</footer>
+
+<aside>
+  <div class="grip" data-side="right" title="Drag to resize, double-click to reset"></div>
+  <div class="top"><h2>Comments</h2>
+    <div class="tabs"><button class="tab on" data-tab="open">Open <span id="nopen">0</span></button><button class="tab" data-tab="done">Done <span id="ndone">0</span></button></div>
+  </div>
+  <div class="send">
+    <button class="btn primary" id="send"><svg class="i"><use href="#i-send"/></svg><span id="sendlabel">Send to Claude</span></button>
+    <div class="hint" id="sent"></div>
+  </div>
+  <div class="list" id="list"></div>
+</aside>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const v = $('v');
+// The player on screen: the <video> of a render, or the live preview. Both
+// answer the same few calls, so the timeline, the comments and the keys work
+// the same on either.
+const VP = {
+  get currentTime() { return v.currentTime; }, set currentTime(t) { v.currentTime = t; },
+  get paused() { return v.paused; }, get duration() { return v.duration; },
+  play() { return v.play(); }, pause() { v.pause(); },
+  async still() {
+    const c = document.createElement('canvas'), w = 960;
+    c.width = w; c.height = Math.round(w * v.videoHeight / v.videoWidth);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.82);
+  },
+};
+let P = VP, mode = 'render', liveApi = null, liveKey = '';
+let data = null, pxs = 14, mtime = 0, last = '';
+const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
+const short = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+const LABELS = { dragBy: 'drag', key: 'key', circle: 'loop', marquee: 'selection box', loop: 'loop', underline: 'underline', shake: 'shake', box: 'selection box', select: 'select text', drag: 'drag', type: 'typing' };
+const ROWS = { Pointer: 'violet', Scenes: 'zinc', Script: 'blue', Pauses: 'amber', Zoom: 'violet', Specials: 'blue', Clicks: 'zinc', Warnings: 'amber', Comments: 'rose' };
+const STATUS = { open: 'New', sent: 'Sent', done: 'Done', answered: 'Answered' };
+
+// The video in the address (?v=03); the list on the left switches it.
+let V = new URLSearchParams(location.search).get('v');
+const q = (path) => path + (path.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(V);
+let listKey = '';
+async function loadList() {
+  const { project, videos } = await (await fetch('/list')).json();
+  if (!V) {
+    V = (videos.find((x) => x.has.draft || x.has.final) ?? videos.find((x) => x.has.voice) ?? videos[0])?.id ?? null;
+    if (V) history.replaceState(null, '', '?v=' + encodeURIComponent(V));
+  }
+  const key = JSON.stringify([V, videos]);
+  if (key === listKey) return;
+  listKey = key;
+  $('proj').textContent = project;
+  const len = (t) => (t == null ? '' : `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')}`);
+  const item = (x) => {
+    const st = x.has.final ? '<span class="st final">final</span>' : x.has.draft ? '<span class="st draft">draft</span>' : x.has.plan ? '<span class="st">plan</span>' : x.has.voice ? '<span class="st">voice</span>' : '<span class="st">beats</span>';
+    const cm = [x.comments.open && `<span class="open" title="new comments">${x.comments.open} new</span>`, x.comments.sent && `<span class="sent" title="sent, not answered yet">${x.comments.sent} sent</span>`, x.comments.done && `<span title="answered">${x.comments.done} done</span>`].filter(Boolean).join('');
+    return `<a href="?v=${encodeURIComponent(x.id)}" data-v="${x.id}" class="${x.id === V ? 'on' : ''}${x.test ? ' test' : ''}">
+      <div class="row1"><span class="vid mono">${x.id}</span><span class="vt">${x.title ?? ''}</span></div>
+      <div class="row2">${st}<span class="mono">${len(x.length)}</span>${x.approved ? `<span class="ok ${x.approved === 'older' ? 'older' : ''}" title="${x.approved === 'older' ? 'approved on an older render' : 'approved'}"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>${x.approved === 'older' ? 'older' : 'approved'}</span>` : ''}<span class="cm">${cm}</span></div></a>`;
+  };
+  const main = videos.filter((x) => !x.test), tests = videos.filter((x) => x.test);
+  $('vlist').innerHTML = main.map(item).join('') + (tests.length ? '<div class="group">Tests</div>' + tests.map(item).join('') : '');
+  for (const a of $('vlist').querySelectorAll('a')) a.onclick = (e) => { e.preventDefault(); show(a.dataset.v, true); };
+}
+function show(id, push) {
+  if (!id || id === V && !push) return;
+  V = id; mtime = null; listKey = ''; last = '';
+  if (push) history.pushState(null, '', '?v=' + encodeURIComponent(V));
+  loadList(); load(true);
+}
+addEventListener('popstate', () => show(new URLSearchParams(location.search).get('v')));
+
+async function load(first) {
+  if (!V) return;
+  const d = await (await fetch(q('/data'))).json();
+  // Render or live: a render when there is one, unless the user picked Live;
+  // live when the video is recorded and not rendered.
+  const want = localStorage.getItem('review.mode.' + V);
+  const nextMode = d.video && (want !== 'live' || !d.live) ? 'render' : d.live ? 'live' : 'render';
+  if (nextMode !== mode) { P.pause(); mode = nextMode; }
+  $('modes').classList.toggle('on', !!(d.video && d.live));
+  document.querySelectorAll('#modes .tab').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  document.body.classList.toggle('liveplay', mode === 'live');
+  if (mode === 'live') {
+    P = await live(d) ?? VP;
+  } else {
+    P = VP;
+    if (first || d.mtime !== mtime) {
+      const t = v.currentTime; mtime = d.mtime;
+      v.src = q('/video?' + d.mtime);
+      if (!first) v.currentTime = t;
+    }
+  }
+  // Voice only (nothing recorded yet): the plan's lines and beats, on the
+  // plain voice, so without the pauses the beats file adds.
+  // Each planned beat goes on the track it will have in the take: clicks,
+  // specials, zoom, pauses, scenes; hovers and moves on the pointer track.
+  if (mode === 'live' && liveData) d.timeline = liveData.timeline;
+  if (!d.timeline && d.plan) {
+    const off = (x) => +(x.t - (x.shift ?? 0)).toFixed(2);
+    const bs = d.plan.beats.map((b) => ({ ...b, t: off(b) }));
+    const tl = { length: null, planned: true, clicks: [], events: [], zooms: [], notes: [], pointer: [],
+      segments: bs.filter((b) => b.kinds.includes('scene')).map((b) => ({ name: b.scene, start: b.t })),
+      lines: d.plan.lines.map((l) => ({ ...l, start: l.start - l.shift, end: l.end - l.shift })),
+      gaps: (d.plan.gaps ?? []).map((g) => ({ ...g, t: off(g) })) };
+    const SPECIAL = new Set(['drag', 'dragBy', 'type', 'key', 'select', 'circle', 'underline', 'shake', 'marquee', 'rest', 'scroll', 'step']);
+    for (const b of bs) {
+      if (b.kinds.includes('click')) tl.clicks.push(b.t);
+      if (b.kinds.includes('zoom')) tl.zooms.push({ t: b.t, scale: 2 });
+      if (b.kinds.includes('unzoom')) tl.zooms.push({ t: b.t, scale: 1 });
+      const sp = b.kinds.find((k) => SPECIAL.has(k));
+      if (sp) tl.events.push([b.t, sp === 'step' ? b.what : sp, b.what]);
+      if (b.kinds.some((k) => k === 'hover' || k === 'moveTo' || k === 'click')) tl.pointer.push({ t: b.t, what: b.what });
+    }
+    d.timeline = tl;
+    d.planBeats = bs.map((b) => ({ t: b.t, what: b.what }));
+  }
+  const key = JSON.stringify([d.mtime, d.timeline, d.review, d.planBeats]);
+  if (!first && key === last) return;
+  last = key;
+  data = d;
+  $('title').textContent = d.title ? `${d.id} · ${d.title}` : d.id;
+  approval = d.approved; showApproval(d.voiceOnly || mode === 'live');
+  document.title = `${d.id} · Review`;
+  document.body.classList.toggle('voice', !!d.voiceOnly);
+  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : mode === 'live' ? `recordings${liveData?.unsupported?.length ? ' · ' + liveData.unsupported.join('; ') : ''}` : (d.video ?? 'no video yet');
+  $('mode').textContent = d.voiceOnly ? 'Voice and plan' : mode === 'live' ? 'Live preview' : d.kind === 'draft' ? 'Draft render' : 'Full render';
+  $('mode').classList.toggle('is-live', mode === 'live');
+  draw(); comments();
+}
+
+// The live preview: the bundle once, then the props of this video; mounted
+// again only when the recordings or the beats change.
+let liveData = null, bundle = null;
+async function live(d) {
+  const msg = (t) => { $('livemsg').textContent = t; $('livemsg').classList.toggle('on', !!t); };
+  bundle ??= new Promise((ok, no) => { msg('Preparing the live preview (the first time installs it)…'); const sc = document.createElement('script'); sc.src = '/live/bundle.js'; sc.onload = ok; sc.onerror = no; document.head.append(sc); });
+  try { await bundle; } catch { msg('The live preview could not load. See the review server log.'); bundle = null; return null; }
+  const ld = await (await fetch(q('/live/data'))).json();
+  if (ld.error) { msg('Live preview: ' + ld.error); return null; }
+  const key = JSON.stringify([V, ld.props]);
+  liveData = ld;
+  if (key !== liveKey || !liveApi) {
+    const t = liveApi ? liveApi.currentTime : 0;
+    liveApi?.destroy();
+    const el = $('live');
+    el.style.aspectRatio = `${ld.props.width} / ${ld.props.height}`;
+    liveApi = window.DemoLive.mount(el, ld.props);
+    liveApi.on('timeupdate', playhead);
+    liveApi.on('play', () => { $('playicon').innerHTML = '<use href="#i-pause"/>'; });
+    liveApi.on('pause', () => { $('playicon').innerHTML = '<use href="#i-play"/>'; });
+    liveKey = key;
+    if (t) setTimeout(() => { liveApi.currentTime = t; }, 50);
+  }
+  msg('');
+  return liveApi;
+}
+document.querySelectorAll('#modes .tab').forEach((b) => { b.onclick = () => { localStorage.setItem('review.mode.' + V, b.dataset.mode); load(true); }; });
+
+function draw() {
+  const tl = data.timeline, inner = $('inner');
+  const len = tl?.length || P.duration || (tl?.lines.at(-1)?.end ?? 0) + 1;
+  $('len').textContent = len ? `/ ${fmt(len)}` : '';
+  const X = (t) => 6 + t * pxs;
+  inner.style.width = X(len) + 24 + 'px';
+  inner.innerHTML = ''; $('labels').innerHTML = '';
+  const row = (name, cls = '') => {
+    const l = document.createElement('div'); l.className = 'label ' + cls;
+    l.innerHTML = ROWS[name] ? `<span class="sw" style="background:rgb(var(--${ROWS[name]}))"></span>${name.toLowerCase()}` : '';
+    $('labels').append(l);
+    const r = document.createElement('div'); r.className = 'row ' + cls; inner.append(r); return r;
+  };
+  const span = (r, a, b, cls, text, title) => { const e = document.createElement('div'); e.className = 'item ' + cls; e.style.left = X(a) + 'px'; e.style.width = Math.max(3, (b - a) * pxs - 2) + 'px'; e.textContent = text ?? ''; e.title = title ?? text ?? ''; r.append(e); return e; };
+  const tick = (r, t, cls, text, title) => { const e = document.createElement('div'); e.className = 'tick ' + cls; e.style.left = X(t) + 'px'; if (text) e.innerHTML = `<span>${text}</span>`; e.title = title ?? text ?? ''; r.append(e); return e; };
+  // The ruler: a mark every 1, 5 or 10 s, by zoom.
+  const ru = row('', 'ruler');
+  const step = pxs >= 40 ? 1 : pxs >= 10 ? 5 : 10;
+  for (let t = 0; t <= len; t += step) { const m = document.createElement('div'); m.className = 'mark mono'; m.style.left = X(t) + 'px'; m.innerHTML = `<span>${short(t)}</span>`; ru.append(m); }
+  if (tl) {
+    const sc = row('Scenes');
+    tl.segments.forEach((s, i) => span(sc, s.start, tl.segments[i + 1]?.start ?? len, 'scene', s.name));
+    const sr = row('Script', 'script');
+    tl.lines.forEach((l) => { const e = span(sr, l.start, l.end, 'line', l.text); e.dataset.i = l.i; });
+    const gr = row('Pauses');
+    tl.gaps.forEach((g) => span(gr, g.t - g.seconds / 2, g.t + g.seconds / 2, 'gap', `${g.seconds}s`, `${g.seconds}s pause before line ${g.line}`));
+    const zr = row('Zoom');
+    tl.zooms.forEach((z, i) => { if (z.scale > 1) { const end = tl.zooms.slice(i + 1).find((n) => n.scale <= 1)?.t ?? len; span(zr, z.t, end, 'zoom', `${z.scale}×`); } });
+    if (tl.pointer) {
+      const po = row('Pointer', 'plan');
+      tl.pointer.forEach((b, k) => span(po, b.t, Math.min(tl.pointer[k + 1]?.t ?? len, b.t + 4), 'planitem', b.what, `${fmt(b.t)} ${b.what}`));
+    }
+    const er = row('Specials');
+    tl.events.forEach(([t, k, full]) => tick(er, t, 'event', LABELS[k] ?? k, full ? `${fmt(t)} ${full}` : undefined));
+    const cr = row('Clicks');
+    tl.clicks.forEach((t) => tick(cr, t, 'click', '', fmt(t)));
+    const nr = row('Warnings');
+    tl.notes.forEach(([t, m]) => tick(nr, t, 'note', '', `${fmt(t)} ${m}`));
+  }
+  const pr = row('Comments');
+  data.review.comments.filter(isOpen).forEach((c) => { const e = tick(pr, c.t, 'pin ' + ({ open: '', sent: 'sent' }[c.status] ?? 'done'), `#${c.n}`, c.text); e.onclick = (ev) => { ev.stopPropagation(); seek(c.t); }; e.onmousedown = (ev) => ev.stopPropagation(); });
+  const head = document.createElement('div'); head.className = 'playhead'; head.id = 'head'; inner.append(head);
+  playhead();
+}
+
+// Open: new and with Claude. Done: answered; kept, never deleted, and
+// reopened with a click if the answer is not right.
+let tab = 'open';
+const isOpen = (c) => c.status === 'open' || c.status === 'sent';
+function comments() {
+  const list = $('list'), all = data.review.comments;
+  const open = all.filter((c) => c.status === 'open').length;
+  $('nopen').textContent = all.filter(isOpen).length;
+  $('ndone').textContent = all.filter((c) => !isOpen(c)).length;
+  const cs = all.filter((c) => (tab === 'open' ? isOpen(c) : !isOpen(c)));
+  $('send').disabled = !open;
+  $('sendlabel').textContent = open ? `Send ${open} comment${open > 1 ? 's' : ''} to Claude` : 'Send to Claude';
+  const sends = data.review.sends ?? [];
+  $('sent').textContent = open ? 'New comments stay here until you send them.' : sends.length ? `Last sent at ${new Date(sends.at(-1).at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '';
+  list.innerHTML = cs.length ? '' : tab === 'open'
+    ? `<div class="empty"><b>No open comments</b>Pause where something should change and press C.</div>`
+    : `<div class="empty"><b>Nothing done yet</b>Answered comments move here.</div>`;
+  for (const c of [...cs].sort((a, b) => a.t - b.t)) {
+    const e = document.createElement('div'); e.className = 'c'; e.dataset.t = c.t;
+    e.innerHTML = `<div class="meta"><span class="n">#${c.n}</span><span class="t mono">${fmt(c.t)}</span><span class="badge b-${c.status}"><span class="dot"></span>${STATUS[c.status] ?? c.status}</span></div>`
+      + (c.still ? `<img src="/still/${c.still.split('/').pop()}" loading="lazy">` : '')
+      + `<div class="text"></div>` + (c.reply ? `<div class="reply"><b>Claude</b><span></span></div>` : '')
+      + (c.status === 'open' ? `<button class="btn ghost sm del"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Delete</button>` : '')
+      + (!isOpen(c) ? `<button class="btn ghost sm reopen">Reopen</button>` : '');
+    e.querySelector('.text').textContent = c.text;
+    if (c.reply) e.querySelector('.reply span').textContent = c.reply;
+    e.onclick = () => seek(c.t);
+    const del = e.querySelector('.del');
+    if (del) del.onclick = async (ev) => { ev.stopPropagation(); await fetch(q('/comment'), { method: 'DELETE', body: JSON.stringify({ n: c.n }) }); load(); };
+    const re = e.querySelector('.reopen');
+    if (re) re.onclick = async (ev) => { ev.stopPropagation(); await fetch(q('/reopen'), { method: 'POST', body: JSON.stringify({ n: c.n }) }); tab = 'open'; setTab(); load(); };
+    list.append(e);
+  }
+}
+
+function playhead() {
+  const t = P.currentTime || 0, head = $('head');
+  if (head) head.style.left = 6 + t * pxs + 'px';
+  $('time').textContent = fmt(t);
+  const line = data?.timeline?.lines.find((l) => t >= l.start && t <= l.end);
+  $('now').textContent = line ? line.text : '';
+  if (data?.voiceOnly) {
+    const key = line ? line.i : -1;
+    if ($('pvline').dataset.k !== String(key)) {
+      $('pvline').dataset.k = key;
+      $('pvline').innerHTML = line ? `<small>line ${line.i}</small>` : '<small>before the first line</small>';
+      $('pvline').append(line ? line.text : '');
+    }
+    const bs = data.planBeats ?? [], i = bs.findLastIndex((b) => b.t <= t), box = $('pvbeats');
+    if (box.children.length !== bs.length) {
+      box.innerHTML = bs.map((b) => `<div class="pv-beat"><span class="mono">${fmt(b.t)}</span><span></span></div>`).join('');
+      [...box.children].forEach((el, k) => { el.lastChild.textContent = bs[k].what; el.onclick = () => seek(bs[k].t); });
+    }
+    if (box.dataset.i !== String(i)) {
+      box.dataset.i = i;
+      [...box.children].forEach((el, k) => el.classList.toggle('now', k === i));
+      const el = box.children[i];
+      if (el) box.scrollTop = el.offsetTop - box.clientHeight / 3;
+    }
+  }
+  document.querySelectorAll('.line').forEach((e) => e.classList.toggle('on', !!line && +e.dataset.i === line.i));
+  if (!P.paused) { const tl = $('tl'), x = 6 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 60 || x < tl.scrollLeft) tl.scrollLeft = x - 120; }
+}
+
+const seek = (t) => { P.currentTime = Math.max(0, Math.min(t, P.duration || t)); playhead(); };
+$('tl').addEventListener('mousedown', (e) => {
+  if (e.offsetY > $('tl').clientHeight) return; // the scrollbar
+  const r = $('inner').getBoundingClientRect();
+  const at = (ev) => seek((ev.clientX - r.left - 6) / pxs);
+  at(e);
+  const move = (ev) => at(ev), up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', move); addEventListener('mouseup', up);
+});
+function setTab() { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab)); }
+document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; setTab(); comments(); }; });
+// The approval of the version on screen. A newer render after it shows as
+// approved on an older one, to approve again.
+let approval = null;
+function showApproval(voiceOnly) {
+  const b = $('approve');
+  b.style.display = voiceOnly ? 'none' : '';
+  b.classList.toggle('on', approval === 'yes'); b.classList.toggle('older', approval === 'older');
+  $('approvetext').textContent = approval === 'yes' ? 'Approved' : approval === 'older' ? 'Approved an older version' : 'Approve';
+  b.title = approval === 'yes' ? 'Approved. Click to withdraw.' : 'Approve this version';
+}
+$('approve').onclick = async () => {
+  const r = await (await fetch(q('/approve'), { method: 'POST', body: JSON.stringify({ approved: approval !== 'yes' }) })).json();
+  approval = r.approved; showApproval(false); listKey = ''; loadList();
+};
+$('send').onclick = async () => { await fetch(q('/send'), { method: 'POST' }); load(); };
+$('scale').oninput = (e) => { pxs = +e.target.value; draw(); };
+// A mouse wheel scrolls the timeline sideways, unless the rows need it.
+$('tl').addEventListener('wheel', (e) => {
+  const wrap = document.querySelector('.tlwrap');
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && wrap.scrollHeight <= wrap.clientHeight) { $('tl').scrollLeft += e.deltaY; e.preventDefault(); }
+}, { passive: false });
+const toggle = () => (P.paused ? P.play() : P.pause());
+$('play').onclick = toggle;
+$('prev').onclick = () => seek(P.currentTime - 1);
+$('next').onclick = () => seek(P.currentTime + 1);
+$('live').onclick = toggle;
+v.onclick = toggle;
+v.onplay = () => { $('playicon').innerHTML = '<use href="#i-pause"/>'; };
+v.onpause = () => { $('playicon').innerHTML = '<use href="#i-play"/>'; };
+v.ontimeupdate = playhead;
+v.onloadedmetadata = () => { if (data) draw(); };
+(function loop() { if (!P.paused) playhead(); requestAnimationFrame(loop); })();
+
+let pinned = 0;
+function compose() {
+  P.pause(); pinned = P.currentTime;
+  $('at').textContent = fmt(pinned);
+  $('compose').classList.add('on'); $('text').value = '';
+  // Focus at once, and again on the next frame in case the click or key that
+  // opened the box takes focus back.
+  $('text').focus(); requestAnimationFrame(() => $('text').focus());
+}
+async function save() {
+  const text = $('text').value.trim();
+  $('compose').classList.remove('on');
+  if (!text) return;
+  let shot = null;
+  try { shot = await P.still(); } catch (e) { console.warn('no still:', e); }
+  await fetch(q('/comment'), { method: 'POST', body: JSON.stringify({ t: pinned, text, still: shot, mode }) });
+  load();
+}
+$('add').onclick = compose;
+$('text').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+  if (e.key === 'Escape') { $('compose').classList.remove('on'); }
+  e.stopPropagation();
+});
+// While the box is open, whatever is typed or pasted belongs to it, wherever
+// the focus happens to be: no keystroke goes to the shortcuts below.
+const composing = () => $('compose').classList.contains('on');
+addEventListener('paste', (e) => {
+  if (!composing() || e.target === $('text')) return;
+  e.preventDefault();
+  const t = $('text'), add = e.clipboardData.getData('text');
+  t.focus(); t.setRangeText(add, t.selectionStart, t.selectionEnd, 'end');
+}, true);
+addEventListener('keydown', (e) => {
+  if (composing() && e.target !== $('text')) { if (e.key === 'Escape') $('compose').classList.remove('on'); else $('text').focus(); return; }
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === ' ') { e.preventDefault(); toggle(); }
+  if (e.key === 'c' || e.key === 'C') { e.preventDefault(); compose(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); P.pause(); seek(P.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 60)); }
+});
+// Panel widths: dragged, kept in the browser, double-click resets.
+const WIDTH = { left: [232, 160, 420], right: [320, 240, 640] };
+const setWidth = (side, px) => {
+  const [, min, max] = WIDTH[side];
+  const w = Math.round(Math.min(max, Math.max(min, px)));
+  document.body.style.setProperty('--' + side, w + 'px');
+  localStorage.setItem('review.' + side, w);
+};
+for (const side of ['left', 'right']) { const kept = +localStorage.getItem('review.' + side); if (kept) setWidth(side, kept); }
+for (const g of document.querySelectorAll('.grip')) {
+  const side = g.dataset.side;
+  g.addEventListener('dblclick', () => { setWidth(side, WIDTH[side][0]); });
+  g.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); g.setPointerCapture(e.pointerId); g.classList.add('on'); document.body.classList.add('resizing');
+    const move = (ev) => setWidth(side, side === 'left' ? ev.clientX : innerWidth - ev.clientX);
+    const up = () => { g.classList.remove('on'); document.body.classList.remove('resizing'); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); dispatchEvent(new Event('resize')); };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+  });
+}
+
+loadList().then(() => load(true));
+setInterval(load, 3000);
+setInterval(loadList, 5000);
+</script>
+</body>
+</html>
