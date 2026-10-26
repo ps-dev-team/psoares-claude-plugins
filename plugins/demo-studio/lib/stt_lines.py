@@ -2,6 +2,7 @@
 """Timings for a voice you brought: any audio or video, from any mic or any TTS.
 
     python3 stt_lines.py <project> <id> [--source FILE] [--lang en] [--backend auto|whisper|scribe]
+                         [--speakers timeline/<id>.speakers.json]
 
 Writes what `tts.py` writes, so the screen skill can time beats to it:
   audio/<id>.mp3                  the voice (extracted from --source when it is a video)
@@ -17,6 +18,10 @@ Backends:
   scribe   ElevenLabs Scribe (paid), with ELEVENLABS_API_KEY in the environment or in
            ~/.config/elevenlabs/.env. The key is never printed.
 The raw transcript is kept beside the lines as <id>.stt.json, so a second run costs nothing.
+
+A conversation: write the script as `Who: what they say`, one line each, and pass --speakers.
+The names are taken off the lines, and the file gets [{who, start, end}] per line: the speaker
+timeline that broll's feed.py follows to make a fake camera talk when its person speaks.
 """
 import argparse, difflib, json, os, re, subprocess, sys, tempfile, unicodedata, urllib.request
 
@@ -118,6 +123,7 @@ def main():
     ap.add_argument('--source', help='an audio or video file (default audio/<id>.mp3)')
     ap.add_argument('--lang', help='ISO 639-1 code, e.g. en, pt')
     ap.add_argument('--backend', default='auto', choices=['auto', 'whisper', 'scribe'])
+    ap.add_argument('--speakers', help='write a speaker timeline here (script lines as "Who: text")')
     a = ap.parse_args()
     root = os.path.abspath(a.project)
     voice = os.path.join(root, 'audio', f'{a.id}.mp3')
@@ -146,6 +152,12 @@ def main():
         open(sfile, 'w').write(script_from(words))
         print(f'no script: wrote scripts/{a.id}.md from the transcript')
     lines = spoken_lines(open(sfile).read())
+    who = [None] * len(lines)
+    if a.speakers:  # "Who: text": the name is the speaker, not a spoken word
+        for k, l in enumerate(lines):
+            m = re.match(r'^([^:]{1,40}):\s+(.*)$', l)
+            if m:
+                who[k], lines[k] = m.group(1).strip(), m.group(2)
     sw = [(li, m.group(0)) for li, l in enumerate(lines) for m in WORD.finditer(l)]
     t = [None] * len(sw)
     sm = difflib.SequenceMatcher(None, [norm(w) for _, w in sw], [norm(w[0]) for w in words], autojunk=False)
@@ -165,7 +177,15 @@ def main():
             continue
         out.append({'i': len(out), 'text': text, 'start': round(t[idx[0]][0], 3), 'end': round(t[idx[-1]][1], 3),
                     'words': [[sw[k][1], round(t[k][0], 3)] for k in idx]})
+        if who[li]:
+            out[-1]['who'] = who[li]
     json.dump(out, open(os.path.join(tdir, f'{a.id}.lines.json'), 'w'), ensure_ascii=False, indent=1)
+    if a.speakers:
+        spk = [{'who': l['who'], 'start': l['start'], 'end': l['end']} for l in out if l.get('who')]
+        sp = a.speakers if os.path.isabs(a.speakers) else os.path.join(root, a.speakers)
+        os.makedirs(os.path.dirname(sp), exist_ok=True)
+        json.dump(spk, open(sp, 'w'), indent=1)
+        print(f'{len(spk)} speaker segments -> {os.path.relpath(sp, root)}')
     pct = 100 * matched // max(1, len(sw))
     print(f'{len(out)} lines, {matched}/{len(sw)} words matched ({pct}%)')
     if pct < 90:

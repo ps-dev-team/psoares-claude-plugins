@@ -97,13 +97,21 @@ the `media.video` of an account in `video.config.json`):
 
 ```sh
 python3 "${CLAUDE_PLUGIN_ROOT}/lib/feed.py" --listen clips/ana-listen.mp4 --talk clips/ana-talk.mp4 \
-  --speakers timeline/call.speakers.json --who guest --hold 6 \
+  --speakers timeline/call.speakers.json --who Guest --hold 6 \
   --size 960x540 --fps 20 --dur 81 --out assets/call-ana.y4m
 ```
 
 - **The speaker timeline** says who speaks when in the call audio the fake microphone plays: a
-  list of `{who, start, end}`. Get it by forced alignment of that audio against the call script
-  (ElevenLabs `/v1/forced-alignment`, the characters mapped back to the lines).
+  list of `{who, start, end}`. Write the call script as `Who: what they say`, one line each
+  (`Host: So, how did the week go?`), and let `stt_lines.py` time it (local Whisper, free, or
+  Scribe):
+
+  ```sh
+  python3 "${CLAUDE_PLUGIN_ROOT}/lib/stt_lines.py" <project> call --source call-audio.wav \
+    --speakers timeline/call.speakers.json
+  ```
+
+  `--who` in `feed.py` is the name as written in the script (`Guest` above).
 - The person **talks inside their segments and listens otherwise**, with a short crossfade at
   each change, and the clips are made seamless loops first, so nothing jumps.
 - **`--hold`** keeps the first seconds listening: Chrome starts the file when the page opens the
