@@ -1,6 +1,6 @@
 {
   "app": {
-    "base": "https://app.example.com",
+    "base": "https://todo.example.com",
     "locale": "en-GB",
     "dismiss": ["Got it", "Decline"],
     "login": "/login",
@@ -8,18 +8,19 @@
     "windowX": 2600
   },
   "accounts": {
-    "coach": { "email": "coach@example.com", "password": "test-password" },
-    "client": { "email": "client@example.com", "password": "test-password" }
+    "admin": { "label": "Alex (admin)", "email": "admin@example.com", "password": "test-password" },
+    "user": { "label": "Sam (user)", "email": "user@example.com", "password": "test-password" }
   },
-  "profiles": "~/.config/psoares-video/my-project/profiles",
+  "profiles": "~/.config/psoares-video/todo-demo/profiles",
   "view": { "width": 2048, "height": 1152 },
   "output": { "width": 3840, "height": 2160, "fps": 60, "crf": 17 },
   "voice": {
     "id": "your-elevenlabs-voice-id",
     "model": "eleven_v4",
-    "settings": { "stability": 1, "similarity": 1, "clone_strength": 1 }
+    "settings": { "stability": 1, "similarity": 1, "clone_strength": 1 },
+    "language": "en"
   },
-  "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
+  "frame": { "address": "todo.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
   "pointer": { "mode": "drawn", "size": 34, "human": true, "blur": true, "marquee": "#0a84ff", "cursors": "~/.config/psoares-video/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 },

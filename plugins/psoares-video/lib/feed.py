@@ -2,7 +2,7 @@
 """A fake-camera feed from two clips of one person: listening and talking.
 
     feed.py --listen L.mp4 --talk T.mp4 --out face.y4m --size 640x360 --fps 20 --dur 81
-            [--speakers speakers.json --who coach] [--hold 6] [--fade 0.25] [--face cx,cy]
+            [--speakers speakers.json --who host] [--hold 6] [--fade 0.25] [--face cx,cy]
 
 The person listens, and talks inside the segments where `--who` speaks in `speakers.json`
 (a list of {who, start, end}). Lines of the same speaker less than a second apart join into one

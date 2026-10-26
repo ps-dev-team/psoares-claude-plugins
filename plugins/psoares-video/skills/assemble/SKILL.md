@@ -145,7 +145,7 @@ and anything the user may not like. For example:
 - a gesture used (a loop around an area, a selection box, a text selection) and on what;
 - a zoom added or left out;
 - a step shown differently from the script, or left out, and why;
-- data on screen that looks odd (a stray test client, a wrong date, a banner);
+- data on screen that looks odd (a stray test record, a wrong date, a banner);
 - anything you were unsure of.
 
 Lead with what most needs the user's eye. If nothing does, say so in one line. When handing over,

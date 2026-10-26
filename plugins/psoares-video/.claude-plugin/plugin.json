@@ -1,10 +1,21 @@
 {
   "name": "psoares-video",
-  "version": "0.1.0",
-  "description": "Voiced screen demos and B-roll from a script: voice (ElevenLabs eleven_v4 with line and word timings), screen (real headed Chrome, one or two windows, beats timed to the voice, pointer and zooms recorded as data), assemble (large drawn pointer, 2x spring zoom with motion blur, plain browser frame for two windows, fades, the voice with its gaps, 4K 60 fps).",
+  "version": "0.2.0",
+  "description": "Screen demos and B-roll for creators, from a script or plain instructions: screen (real headed Chrome, one or two windows, beats timed to a voice or to seconds, the pointer moving like a hand), assemble (large Screen Studio-style pointer, spring zooms, plain browser frame, fades, 4K 60 fps), voice (optional: generate with ElevenLabs, or bring your own audio or video and get line and word timings; shorter pauses), broll (optional, paid: people B-roll with Higgsfield). macOS, Linux and Windows.",
   "author": {
     "name": "Paulo Soares"
   },
   "license": "MIT",
-  "keywords": ["video", "screen recording", "demo", "b-roll", "elevenlabs", "voice", "playwright", "remotion", "lesson"]
+  "keywords": [
+    "video",
+    "screen recording",
+    "demo",
+    "walkthrough",
+    "b-roll",
+    "creator",
+    "voice-over",
+    "playwright",
+    "remotion",
+    "tutorial"
+  ]
 }

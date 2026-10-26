@@ -1,9 +1,13 @@
 ---
 name: broll
-description: Make B-roll with Higgsfield from photos of people: an enlarged photo, the person placed in a real-life setting, short clips of them talking or listening, and from those clips seamless loops, overlay clips, or fake-camera feeds for a recorded video call (talking when they speak, listening otherwise). Use for any "make B-roll of these people", "generate clips of the users", "replace the faces in the call", "fake webcam for the demo", "gera B-roll com o Higgsfield". Never a talking-head presenter or a spokesperson video: the people are background, seen in a call tile or behind the subject.
+description: Optional, and paid (Higgsfield credits). Make B-roll with Higgsfield from photos of people: an enlarged photo, the person placed in a real-life setting, short clips of them talking or listening, and from those clips seamless loops, overlay clips, or fake-camera feeds for a recorded video call (talking when they speak, listening otherwise). Use for any "make B-roll of these people", "generate clips of the users", "replace the faces in the call", "fake webcam for the demo", "gera B-roll com o Higgsfield". Never a talking-head presenter or a spokesperson video: the people are background, seen in a call tile or behind the subject.
 ---
 
 # B-roll
+
+**Optional.** Nothing else in this plugin needs it: a screen demo or B-roll of a website is made
+with `screen` and `assemble` alone. This skill needs a Higgsfield account and spends its
+credits.
 
 Photos in, footage out. Every paid step is priced first and logged, and nothing is spent past
 the balance. The `screen` skill plays the feeds as a fake camera; `assemble` takes the clips as
@@ -11,7 +15,7 @@ overlays.
 
 ## Before anything
 
-- **The CLI.** `higgsfield account status` shows the plan and credits. Not signed in: the user
+- **The CLI** (`npm i -g @higgsfield/cli`). `higgsfield account status` shows the plan and credits. Not signed in: the user
   runs `! higgsfield auth login` themselves.
 - **Spending.** Credits are the user's money. Ask before the first generation of a job and give
   the total ("4 upscales, 4 scenes, 8 clips: about 96 credits of 122"). Approval covers that
@@ -80,8 +84,10 @@ python3 $H clips/ana-listen.mp4 kling4_0 --mode image-to-video --start-image <me
 ## 3. Outputs
 
 **Centre every crop on the face.** A crop at a fixed half or ratio puts the person off centre.
-`lib/face.swift` finds the face with macOS Vision (`swift face.swift <image>` prints its centre
-and size as fractions), and every crop below is placed around it. Check a frame of each output
+On macOS, `lib/face.swift` finds the face with Vision (`swift face.swift <image>` prints its
+centre and size as fractions), and every crop below is placed around it. On Linux and Windows
+there is no Vision: look at a frame and pass the face's centre yourself (`--face cx,cy`,
+fractions from the top left). Check a frame of each output
 the same way: the face's centre within a few percent of the middle.
 
 ### A fake camera that follows a conversation
@@ -91,8 +97,8 @@ the `media.video` of an account in `video.config.json`):
 
 ```sh
 python3 "${CLAUDE_PLUGIN_ROOT}/lib/feed.py" --listen clips/ana-listen.mp4 --talk clips/ana-talk.mp4 \
-  --speakers timeline/call.speakers.json --who client --hold 6 \
-  --size 960x540 --fps 20 --dur 81 --out assets/09-ana.y4m
+  --speakers timeline/call.speakers.json --who guest --hold 6 \
+  --size 960x540 --fps 20 --dur 81 --out assets/call-ana.y4m
 ```
 
 - **The speaker timeline** says who speaks when in the call audio the fake microphone plays: a

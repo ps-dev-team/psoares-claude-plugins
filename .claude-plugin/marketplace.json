@@ -69,16 +69,19 @@
     {
       "name": "psoares-video",
       "source": "./plugins/psoares-video",
-      "description": "Voiced screen demos and B-roll from a script. Skills: voice (ElevenLabs eleven_v4 with line and word timings), screen (real headed Chrome, one or two windows, beats timed to the voice), assemble (large drawn pointer, 2x spring zoom, browser frame for two windows, fades, 4K).",
+      "description": "Screen demos and B-roll for creators, from a script or plain instructions: screen (real headed Chrome, one or two windows, beats timed to a voice or to seconds, the pointer moving like a hand), assemble (large Screen Studio-style pointer, spring zooms, plain browser frame, fades, 4K 60 fps), voice (optional: generate with ElevenLabs, or bring your own audio or video and get line and word timings; shorter pauses), broll (optional, paid: people B-roll with Higgsfield). macOS, Linux and Windows.",
       "category": "content",
       "keywords": [
         "video",
         "screen recording",
         "demo",
+        "walkthrough",
         "b-roll",
-        "elevenlabs",
-        "voice",
-        "lesson"
+        "creator",
+        "voice-over",
+        "playwright",
+        "remotion",
+        "tutorial"
       ]
     }
   ]

@@ -475,7 +475,7 @@ export class Window {
       const v = this.page.viewportSize();
       if (b.width > v.width * 0.4 || b.height > v.height * 0.5) this.note(`zoom on a large area (${Math.round(b.width)}x${Math.round(b.height)}): a zoom is only for something small and dense`);
     }
-    if (this.zooms.filter((z) => z.scale > 1).length >= 1) this.note('a second zoom in this take: most lessons need one zoom or none');
+    if (this.zooms.filter((z) => z.scale > 1).length >= 1) this.note('a second zoom in this take: most videos need one zoom or none');
     this.zooms.push({ t: this.now(), scale, x, y });
   }
   unzoom() { return this.zoom(null); }
