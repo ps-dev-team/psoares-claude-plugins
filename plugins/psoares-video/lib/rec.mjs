@@ -131,7 +131,10 @@ export async function openWindow(project, account, { url = null, x = 0, view } =
   // the project, e.g. in ~/.config, so a restart doesn't sign anyone out.
   const profiles = config.profiles ? config.profiles.replace(/^~/, process.env.HOME) : project.p('raw');
   const context = await chromium.launchPersistentContext(path.join(profiles, `profile-${account ?? 'anon'}`), {
-    channel: 'chrome', headless: false, viewport: v, deviceScaleFactor: scale, locale: config.app.locale,
+    // config.chrome points at a Chrome of your own; otherwise Playwright finds
+    // the installed Google Chrome on any system.
+    ...(config.chrome ? { executablePath: config.chrome.replace(/^~/, process.env.HOME ?? '') } : { channel: 'chrome' }),
+    headless: false, viewport: v, deviceScaleFactor: scale, locale: config.app.locale,
     ...(config.app.timezone ? { timezoneId: config.app.timezone } : {}),
     // Off to the side of the screen, so a stray click can't land in it.
     args: [`--window-position=${config.app.windowX + x},40`, '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...fakeMedia(project, acct)],

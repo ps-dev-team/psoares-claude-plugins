@@ -10,7 +10,8 @@ segment. `--hold` keeps the first seconds listening whatever the timeline says: 
 preview before a call should show someone waiting, not talking.
 
 Every frame is cropped around the face: its centre is found with macOS Vision (face.swift) on
-the listening clip, or given with --face (fractions, top-left origin). The face sits on the
+the listening clip, or given with --face (fractions, top-left origin; required on Linux and
+Windows). The face sits on the
 vertical centre line of the output and a little above the middle. Each clip is first made a
 seamless loop (its tail crossfades into its head), so a feed of any length never jumps.
 The output is the size and frame rate Chrome's --use-file-for-fake-video-capture plays; make
@@ -41,11 +42,16 @@ def face_centre(clip, tmp):
     for k, t in enumerate((dur * 0.2, dur * 0.5, dur * 0.8)):
         png = os.path.join(tmp, f'f{k}.png')
         run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{t:.2f}', '-i', clip, '-frames:v', '1', png])
-        p = subprocess.run(['swift', os.path.join(HERE, 'face.swift'), png], capture_output=True, text=True)
-        if p.returncode == 0:
+        try:
+            p = subprocess.run(['swift', os.path.join(HERE, 'face.swift'), png], capture_output=True, text=True)
+        except FileNotFoundError:
+            p = None
+        if p and p.returncode == 0:
             cx, cy, *_ = map(float, p.stdout.split())
             xs.append(cx); ys.append(cy)
     if not xs:
+        if sys.platform != 'darwin':
+            sys.exit(f'finding the face needs macOS (Vision, face.swift). On {sys.platform}, pass --face cx,cy')
         sys.exit(f'no face found in {clip}: pass --face cx,cy')
     xs.sort(); ys.sort()
     return xs[len(xs) // 2], ys[len(ys) // 2]

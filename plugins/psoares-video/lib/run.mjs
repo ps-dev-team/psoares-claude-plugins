@@ -3,10 +3,12 @@
 // beats, runs its cleanup, and closes the windows (saving their sessions).
 import { loadProject, loadVideo } from './project.mjs';
 import { openWindow, record, closeWindow, closeAll } from './rec.mjs';
+import { keepAwake } from './os.mjs';
 
 const [dir, id, only] = process.argv.slice(2);
 if (!dir || !id) { console.error('usage: node run.mjs <project> <id> [segment]'); process.exit(2); }
 const project = loadProject(dir);
+keepAwake();
 const { segments, length } = await loadVideo(project, id);
 const PAD = project.config.transition.pad; // each segment overlaps its neighbour, for the transition
 for (const [k, s] of segments.entries()) {
