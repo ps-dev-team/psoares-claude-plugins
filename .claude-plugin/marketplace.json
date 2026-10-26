@@ -83,6 +83,22 @@
         "remotion",
         "tutorial"
       ]
+    },
+    {
+      "name": "elevenlabs",
+      "source": "./plugins/elevenlabs",
+      "description": "Voices with ElevenLabs that sound like the speaker: eleven_v4 clones through text-to-dialogue, script tags and punctuation for pacing, pronunciation fixes that never touch the script, per-language pause caps, picking website takes from history, word timings and misread checks with Scribe. Script in, voice and line timings out.",
+      "category": "content",
+      "keywords": [
+        "elevenlabs",
+        "voice",
+        "tts",
+        "voice clone",
+        "voice-over",
+        "scribe",
+        "speech-to-text",
+        "creator"
+      ]
     }
   ]
 }
