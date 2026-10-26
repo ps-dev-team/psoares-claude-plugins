@@ -59,7 +59,8 @@ def main():
         sys.exit('usage: python3 tts.py <project> <id>')
     root, vid = os.path.abspath(sys.argv[1]), sys.argv[2]
     voice, model, fmt, settings, language = config(root)
-    text = open(os.path.join(root, 'scripts', f'{vid}.md')).read().strip()
+    # HTML comments are notes for the editor, never read aloud.
+    text = re.sub(r'<!--.*?-->', '', open(os.path.join(root, 'scripts', f'{vid}.md')).read(), flags=re.S).strip()
     if model.startswith('eleven_v4'):
         url = f'https://api.elevenlabs.io/v1/text-to-dialogue/with-timestamps?output_format={fmt}'
         payload = {'inputs': [{'text': text, 'voice_id': voice}], 'model_id': model, 'settings': settings}
