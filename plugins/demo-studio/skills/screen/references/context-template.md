@@ -47,6 +47,18 @@ How a take puts things back.
 - An added task: delete it (menu > Delete > confirm).
 - …
 
+## State resets
+
+How each segment starts from the same state, so a retake is repeatable.
+
+- **Per segment:** what `setup` does before recording (delete what an earlier take added, open
+  the right page) and what `cleanup` does after (undo what this take added).
+- **Per account:** a reset script for anything the app cannot undo, such as a seed file or an API
+  call that puts the account back before an irreversible step (an invite accepted, a role
+  activated, an item closed). Write down the command, who runs it, and what it touches.
+- Example: `psql -f seeds/reset-demo-user.sql` puts the user back before the invite; run it after
+  each take of the invite scene.
+
 ## Quirks
 
 - At 1024 px wide, the sidebar folds into one button: do setup at full width.

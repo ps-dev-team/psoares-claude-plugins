@@ -178,6 +178,13 @@ export const segments = (L) => [{
 lands on the word. Without a voice (B-roll of a website, a silent demo), use seconds and export
 `length`: `[2.5, () => w.scroll(600, 1200)]`.
 
+### Clicks cost time
+
+Each click the recorder makes takes about 0.5 to 0.8 s: the pointer travels, presses, and the page
+answers. A run of clicks therefore lands late unless it starts early. Start a run a word or two
+before the word it should land on, and give each click in the run its own half second. The take
+log marks the ones that still ran late.
+
 ### Give the screen time
 
 The voice sets the pace, and the screen must never rush to keep up with it. A viewer needs to see
@@ -189,14 +196,15 @@ pause, so the voice is not cut mid-word.
 Add a gap before the next line only when:
 
 - **A click opens something big**: a page, a dialog, a panel, a generated result. Let it arrive
-  and sit still for a moment (about 0.6 to 1 s) before the voice moves on. A menu that the voice
+  and sit still for a moment (about half a second) before the voice moves on. A menu that the voice
   goes through at once needs none.
 - **Two actions would run back to back**: a click, then at once a rush to the next thing because
   the next line starts. Put the pause between them, so each action is seen.
 - **The result is the point**: something saved, filled in or changed that the voice is about.
   Hold on it briefly.
 
-Never add a gap to make room for a gesture or a zoom: drop the gesture, or start it earlier.
+Keep gaps rare and short: about 0.6 s at most, and only where an action cannot fit otherwise.
+Too many pauses make a voice-over sound mechanical. Never add a gap to make room for a gesture or a zoom: drop the gesture, or start it earlier.
 A beat that runs late is fixed first by making it simpler, and only then by a gap.
 
 How to find them:
@@ -255,10 +263,13 @@ node "${CLAUDE_PLUGIN_ROOT}/lib/run.mjs" <project> <id> [segment]
 Run it in the background and wait for it to finish. Watch the log:
 
 - `missing <locator>`: the element was not found. Probe and fix the beat.
-- `late 1.2s`: the beat before took too long. Add a gap, or move work into `setup`.
+- `late 1.2s`: the beat before took too long. Start it earlier, simplify it, or move work into
+  `setup`; add a short gap only when none of that is enough.
 - `dialog: …`: a native dialog came up and was dismissed.
 
-Re-record a single segment by naming it.
+Re-record a single segment by naming it. A take never overwrites the one before: the previous
+`raw/<id>-<segment>-<window>` moves to `raw/old-<timestamp>/`, so you can compare takes or bring one
+back. Delete old ones when the video is done.
 
 ## 6. Check
 
