@@ -1,6 +1,6 @@
 ---
 name: screen
-description: Record a web app or website in real headed Chrome from written instructions or a script, timed to a voice or free-running for B-roll: one or two real windows (for example a coach and a client side by side), the pointer and zooms recorded as data. Use for product demos, course lessons, walkthroughs and B-roll: "record the screen for lesson 9", "show this flow in the app", "make B-roll of the dashboard", "grava o ecrã desta lição". Pair it with the voice skill before and the assemble skill after.
+description: Record a web app or website in real headed Chrome from written instructions or a script, timed to a voice or free-running for B-roll: one or two real windows (for example an admin and a user side by side), the pointer and zooms recorded as data. Use for product demos, course lessons, walkthroughs and B-roll: "record the screen for lesson 9", "show this flow in the app", "make B-roll of the landing page", "capture a demo of my app", "grava o ecrã desta lição". The voice is optional: time the beats to a voice (generated, recorded, or taken from your own video) or to seconds. Pair it with the voice skill before and the assemble skill after.
 ---
 
 # Screen
@@ -14,12 +14,15 @@ from the page**, found by probing, never guessed.
 
 ## Before anything
 
-- **Headed Chrome only, never headless.** Playwright drives it. Some users allow Playwright
-  only for recording: check their memory, and use it for this and nothing else.
+- **Headed Chrome only, never headless.** Playwright drives it. If the user allows Playwright
+  only for recording, use it for this and nothing else.
 - **One heavy job at a time.** One recording or one render, not both. Never kill processes by
   name; stop only what you started.
-- **Keep the screen awake and unlocked** for the whole take: run under `caffeinate -i` on a
-  Mac. A locked screen stops Chrome painting and the take stalls.
+- **Keep the screen awake and unlocked** for the whole take: a locked screen stops Chrome
+  painting and the take stalls. `run.mjs` keeps the machine awake on its own (`caffeinate` on
+  macOS, `systemd-inhibit` on Linux); on Windows, set the screen to stay on.
+- **Google Chrome** is found at its usual path on macOS, Linux and Windows; set `chrome` in the
+  config to use another one.
 - **The project folder** has `video.config.json` and, for an app, `context.md`. Read both. If
   there is no `context.md`, write one from `references/context-template.md` as you learn the app,
   and keep it current: it is how the next video starts faster.
@@ -42,7 +45,7 @@ by their button's name; decline rather than accept, so recordings add nothing to
 Read the script line by line and decide what is on screen during each one.
 
 - **Every line that names something with a screen shows it.** "You can print it" opens the
-  print preview. "It sends an invite" shows the email. "Compare the snapshots" opens the
+  print preview. "It sends an invite" shows the email. "Compare the two reports" opens the
   comparison. Do not wait for the script to say "I'm opening". The `context.md` "Show" section
   lists these for the app; add to it when you find one.
 - **A line with nothing to show still has a place to look:** hover the thing it talks about.
@@ -115,7 +118,7 @@ made for one moment, and a video full of them looks restless and buggy. When uns
   emphasis. If the thing is readable in the full frame, no zoom. Zoom in on that one place, do
   the moves there, and **zoom out before the pointer leaves for somewhere else**. Never move a zoom
   from one place to another, and never zoom in again within a few seconds of zooming out: the
-  camera swinging across the screen reads as a glitch. Most lessons need one zoom or none.
+  camera swinging across the screen reads as a glitch. Most videos need one zoom or none.
 - **Move only when the voice gives a reason.** The pointer goes to a thing when the voice names it
   or the action needs it, then stays still. No hovers to fill time, no tour of nearby controls, no
   extra trips between beats. A still pointer while the voice talks about what is on screen is
@@ -125,7 +128,7 @@ made for one moment, and a video full of them looks restless and buggy. When uns
   exact words the voice is about (text being edited, deleted, replaced). The selection box only
   when the user asks for it, or once to frame a group the voice names together. Never put two
   gestures on the same thing, never a gesture on every item of a list, and never a gesture where a
-  hover is enough. A whole lesson usually has a handful at most.
+  hover is enough. A whole video usually has a handful at most.
 - **The I-beam never shows on its own.** Hover headings and text with the arrow. Only clicking
   into a field, typing, or `w.select` shows it.
 - **Pauses: only where the screen needs time.** A gap after a click that opens something big (a
@@ -150,7 +153,7 @@ It writes `raw/probe-<name>.aria.txt` (every button, field and label) and a scre
 can click through to a later state and `snap('name')` on the way. `VIEW=1024x1152` probes at
 another window size; layouts change with width, so probe at the size you record at.
 
-Take every name from the probe: `role('button', { name: 'Complete session' })`.
+Take every name from the probe: `role('button', { name: 'Mark as done' })`.
 
 ## 4. Write the beats
 
@@ -161,10 +164,10 @@ Take every name from the probe: `role('button', { name: 'Complete session' })`.
 export const gaps = { 9: 1.2 };            // seconds of silence before line 9
 export const segments = (L) => [{
   name: 'main', start: 0,
-  windows: [{ account: 'coach', url: '/today' }],
+  windows: [{ account: 'admin', url: '/dashboard' }],
   setup: async (w) => { /* off camera */ },
   beats: (w) => [
-    [L(1, 'clients'), () => w.click(w.role('link', { name: 'Clients' }))],
+    [L(1, 'projects'), () => w.click(w.role('link', { name: 'Projects' }))],
     [L(3), () => w.zoom(w.role('button', { name: 'Print' }))],
   ],
   cleanup: async (w) => { /* undo what the take added */ },
@@ -172,7 +175,8 @@ export const segments = (L) => [{
 ```
 
 `L(i, 'word')` is when line `i` says that word; the beat starts a little before it, so the pointer
-lands on the word. Without a voice (B-roll), use seconds and export `length`.
+lands on the word. Without a voice (B-roll of a website, a silent demo), use seconds and export
+`length`: `[2.5, () => w.scroll(600, 1200)]`.
 
 ### Give the screen time
 
@@ -212,8 +216,10 @@ If there is no real pause before a line, the assembler stops and says so; move t
 another line, or let the beat start earlier. Listen to every pause in the result: it must sound
 like the speaker taking a breath, never like a cut.
 
-Keep gaps rare: a lesson that stops after every click drags and feels broken. A pause of 0.5 to
-1 s is usual; more than 1.5 s needs something on screen worth looking at.
+Keep gaps rare and short: a video that stops after every click drags and sounds mechanical.
+Start a run of clicks a word or two early instead (each click costs the recorder about 0.5 to
+0.8 s). A gap of 0.6 s is usually enough; more than 1.5 s needs something on screen worth
+looking at.
 
 ### The plan
 
@@ -226,7 +232,7 @@ node "${CLAUDE_PLUGIN_ROOT}/lib/plan.mjs" <project> <id>
 It writes `build/<id>.plan.md`: each voice line with its time, each scene's starting point (the
 account, the screen, what runs off camera before it), and every beat in plain words. Read it
 yourself: a line with no reason to move should say "(still)". Give each window a `screen` label
-(`{ account, url, screen: 'Today' }`) and each account a `label` in the config, so the plan names
+(`{ account, url, screen: 'Dashboard' }`) and each account a `label` in the config, so the plan names
 them in words.
 
 It also checks that every `gap` falls in a real silence of the voice and prints `no silence in
@@ -243,7 +249,7 @@ review is done, as the assemble skill says.
 ## 5. Record
 
 ```sh
-caffeinate -i node "${CLAUDE_PLUGIN_ROOT}/lib/run.mjs" <project> <id> [segment]
+node "${CLAUDE_PLUGIN_ROOT}/lib/run.mjs" <project> <id> [segment]
 ```
 
 Run it in the background and wait for it to finish. Watch the log:

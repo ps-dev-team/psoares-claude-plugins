@@ -15,12 +15,15 @@ It opens that account's profile in **plain Chrome**, with no automation, on `con
 user to type. The user signs in (and ticks the captcha, if there is one), waits for the app's first page,
 and tells you, **leaving the window open**. Then stop the Chrome login.mjs started (the main
 process of that profile, by its PID, never by name), wait until it has exited, so the session
-is written to the profile, and probe the account to confirm it opens signed in. A window closed
+is written to the profile, and probe the account on the app's home page to confirm it opens signed in (the sign-in page
+itself can look signed out even when the session is there). A window closed
 by hand, or a Chrome stopped before it exits, can lose the session: then sign in again.
 
 Why plain Chrome: captchas such as Turnstile refuse a window Playwright drives ("the security
 check did not pass"). The profile uses the same keychain flags Playwright does
 (`--use-mock-keychain --password-store=basic`), so the recorder can read the cookies it saved.
+
+A public website, or a page with no account, needs none of this: use `-` as the account.
 
 ## Rules
 
@@ -31,7 +34,7 @@ check did not pass"). The profile uses the same keychain flags Playwright does
 - Accounts in `video.config.json`:
 
   ```json
-  "accounts": { "coach": { "email": "coach@example.com", "password": "…" } }
+  "accounts": { "admin": { "email": "admin@example.com", "password": "…" } }
   ```
 
   Use test accounts only. A real person's password does not belong in a config file.

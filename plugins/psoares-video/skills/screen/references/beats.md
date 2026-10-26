@@ -15,16 +15,16 @@ export const segments = (L) => [
     name: 'together',                      // raw/<id>-together-<account>
     start: 0,                              // voice time; later segments start at a line, L(25)
     windows: [
-      { account: 'coach', url: '/sessions/5', view: { width: 1024, height: 1152 } },
-      { account: 'client', url: '/sessions/5', view: { width: 1024, height: 1152 } },
+      { account: 'admin', url: '/boards/5', view: { width: 1024, height: 1152 } },
+      { account: 'user', url: '/boards/5', view: { width: 1024, height: 1152 } },
     ],
-    setup: async (coach, client) => {},    // off camera, before recording
-    beats: (coach, client) => [
-      [L(1, 'left'), () => coach.moveTo(560, 620, 700)],
-      [L(6, 'open'), () => Promise.all([coach.click(...), client.click(...)])],
-      [L(9, "Sam's"), () => client.click(...), { lead: 1.0 }],
+    setup: async (admin, user) => {},      // off camera, before recording
+    beats: (admin, user) => [
+      [L(1, 'left'), () => admin.moveTo(560, 620, 700)],
+      [L(6, 'open'), () => Promise.all([admin.click(...), user.click(...)])],
+      [L(9, "Sam's"), () => user.click(...), { lead: 1.0 }],
     ],
-    cleanup: async (coach, client) => {},  // off camera, after recording
+    cleanup: async (admin, user) => {},    // off camera, after recording
   },
 ];
 ```
@@ -86,9 +86,9 @@ Each of these cost a take once.
 - **Native dialogs are dismissed automatically** and logged. If the flow needs one accepted,
   handle it in the beat.
 - **Uploads and long saves stall.** Prefer hovering "Attach a file" to a real upload in a demo.
-- **A take changes the data.** Undo what it adds in `cleanup` or `setup` (delete the client it
-  created; remove the tool it added) instead of resetting the database. Anything that cannot be
-  undone (closing, completing, sending, saving a permanent record) changes the next take too:
+- **A take changes the data.** Undo what it adds in `cleanup` or `setup` (delete the task it
+  created; remove the file it added) instead of resetting the database. Anything that cannot be
+  undone (archiving, completing, sending, saving a permanent record) changes the next take too:
   plan around it, and write it in `context.md`.
 - **The previous take's leftovers** can change what the next take shows (a comparison picks the
   last saved record). Set values on purpose and say so in a comment.

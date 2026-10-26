@@ -1,24 +1,26 @@
 # <App>: context for screen recordings
 
-What a recorder needs to know about this app. Keep it short and current: add to it whenever a
-take teaches you something.
+What a recorder needs to know about this app or site. Keep it short and current: add to it
+whenever a take teaches you something.
 
 ## What it is
 
-One paragraph: who uses it and the main things in it (for example: coaches, clients,
-processes, sessions, tools).
+One paragraph: who uses it and the main things in it (for example: a todo app with boards,
+tasks, comments and an admin area).
 
 ## Accounts
 
 | Key | Who | What it has | Notes |
 |---|---|---|---|
-| `coach` | Alex Morgan, coach | full demo data | |
-| `client` | Sam Adebayo, client of `coach` | | |
-| `empty` | a new coach | nothing yet | must stay empty: undo every take |
+| `admin` | Alex Morgan, admin | full demo data | |
+| `user` | Sam Lee, a member of Alex's team | two boards | |
+| `empty` | a new account | nothing yet | must stay empty: undo every take |
+
+A public website needs no accounts: use `-` as the account.
 
 ## Where things are
 
-- Clients: sidebar > Clients. Ten per page; search before clicking a name.
+- Boards: sidebar > Boards. Ten per page; search before clicking a name.
 - …
 
 ## Show
@@ -35,17 +37,17 @@ What proves a feature on screen. When a script line names one, the take shows it
 
 What a take cannot undo, and what it does to the next take.
 
-- Completing a session: it stays completed. Book a new one first.
+- Archiving a board: it cannot be restored. Create a fresh one in setup.
 - …
 
 ## Undo
 
 How a take puts things back.
 
-- An added client: delete it (three confirmations: Continue, type the name, type the word).
+- An added task: delete it (menu > Delete > confirm).
 - …
 
 ## Quirks
 
-- At 1024 px wide, the session's sections fold into one button: do setup at full width.
+- At 1024 px wide, the sidebar folds into one button: do setup at full width.
 - …
