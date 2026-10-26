@@ -385,7 +385,7 @@ async function load(first) {
   approval = d.approved; showApproval(d.voiceOnly || mode === 'live');
   document.title = `${d.id} · Review`;
   document.body.classList.toggle('voice', !!d.voiceOnly);
-  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : mode === 'live' ? `recordings${liveData?.unsupported?.length ? ' · ' + liveData.unsupported.join('; ') : ''}` : (d.video ?? 'no video yet');
+  $('file').textContent = d.voiceOnly ? `${d.voice ?? d.video ?? 'no voice'} · the plan, on the voice alone` : mode === 'live' ? `recordings${liveData?.unsupported?.length ? ' · ' + liveData.unsupported.join('; ') : ''}` : (d.video ?? 'no video yet');
   $('mode').textContent = d.voiceOnly ? 'Voice and plan' : mode === 'live' ? 'Live preview' : d.kind === 'draft' ? 'Draft render' : 'Full render';
   $('mode').classList.toggle('is-live', mode === 'live');
   draw(); comments();

@@ -183,7 +183,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/data') {
       const f = timeline(id), v = video(id) ?? voice(id), pl = plan(id);
       const live = await hasRecordings(project, id);
-      json(res, { id, title: titleOf(id), approved: approvalOf(id), video: v && path.basename(v), kind: render(id)?.kind ?? null, live, voiceOnly: !video(id) && !live, mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
+      // `video` names a render only: the bare voice is not one, so a recorded video
+      // with no render opens live instead of on a black player.
+      json(res, { id, title: titleOf(id), approved: approvalOf(id), video: video(id) ? path.basename(video(id)) : null, voice: v && !video(id) ? path.basename(v) : null, kind: render(id)?.kind ?? null, live, voiceOnly: !video(id) && !live, mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
       return;
     }
     if (url.pathname === '/comment' && req.method === 'POST') {
