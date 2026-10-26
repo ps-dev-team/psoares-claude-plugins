@@ -24,5 +24,6 @@
   "pointer": { "mode": "drawn", "size": 34, "human": true, "blur": true, "marquee": "#0a84ff", "cursors": "~/.config/demo-studio/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 },
+  "audio": { "loudness": -16 },
   "playwright": "/optional/folder/that/has/node_modules/playwright"
 }

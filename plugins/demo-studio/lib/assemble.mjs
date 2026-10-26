@@ -10,10 +10,12 @@
 // in where the beats asked for gaps. Without a voice the video is silent.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { loadProject, loadVideo } from './project.mjs';
 import { cursorImages, cameraDir, frameBoxes, partsOf, cameraProps, voiceCuts, timelineOf } from './parts.mjs';
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 const [dir, id, flag] = process.argv.slice(2);
 if (!dir || !id) { console.error('usage: node assemble.mjs <project> <id> [--draft]'); process.exit(2); }
 const DRAFT = flag === '--draft';
@@ -120,13 +122,26 @@ if (!L.lines || !fs.existsSync(mp3)) {
   }
   ff([...video, '-i', voice, ...vmap, '-map', `${parts.length}:a`, ...enc, '-c:a', 'aac', '-b:a', '256k', final]);
 }
+// Loudness: the finished video goes to a standard level (audio.loudness LUFS,
+// -16 by default; false leaves it as mixed). Players in apps do not normalize
+// and platforms only turn loud files down, so a quiet voice would stay quiet.
+// Drafts skip it: they are for looking, and the full render does it.
+const loud = config.audio?.loudness ?? -16;
+if (!DRAFT && loud !== false && fs.existsSync(mp3) && L.lines) {
+  const tmp = p('build', `${id}.loud.mp4`);
+  const out = execFileSync('python3', [path.join(HERE, 'normalize.py'), final, tmp, '--target', String(loud)], { encoding: 'utf8' });
+  fs.renameSync(tmp, final);
+  console.log('loudness', out.trim());
+  report.loudness = out.trim().replace(/^[^:]+: /, '');
+}
 // The report beside the video. The facts are written here; whoever made the
 // video adds what they decided (see the screen skill, "The report").
 {
   const file = p('build', `${id}.report.md`);
   const lines = [`# ${id}: report`, '', `Length ${tc(length)}.`, '', '## The voice', ''];
   if (!fs.existsSync(p('audio', `${id}.mp3`))) lines.push('No voice.');
-  else lines.push(report.gaps.length ? 'Pauses added (nothing else in the voice was changed):' : 'The voice is untouched: no pauses added.', '', ...report.gaps.map((g) => `- ${g}`));
+  else lines.push(report.gaps.length ? 'Pauses added:' : 'No pauses added.', '', ...report.gaps.map((g) => `- ${g}`));
+  if (report.loudness) lines.push('', `Loudness: ${report.loudness}.`);
   lines.push('', '## Needs a look', '');
   const notes = report.notes.sort((x, y) => x[0] - y[0]);
   lines.push(...(notes.length ? notes.map(([t, m]) => `- ${tc(t)}: ${m}`) : ['Nothing went wrong on the take.']));
