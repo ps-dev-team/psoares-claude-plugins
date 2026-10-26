@@ -36,8 +36,11 @@ const drawn = config.pointer.mode !== 'page';
 // app). config.pointer.cursors names the folder; without one the pointer is
 // drawn. Read once, passed to the renderer as data URIs.
 function cursorImages() {
-  const dir = (config.pointer.cursors ?? '~/.config/psoares-video/cursors/macos-tahoe').replace(/^~/, process.env.HOME);
-  if (!fs.existsSync(dir)) return null;
+  // The default set lives in ~/.config/demo-studio; the plugin's old name,
+  // ~/.config/psoares-video, is still read so older setups keep their cursors.
+  const dir = [config.pointer.cursors, '~/.config/demo-studio/cursors/macos-tahoe', '~/.config/psoares-video/cursors/macos-tahoe']
+    .filter(Boolean).map((d) => d.replace(/^~/, process.env.HOME)).find((d) => fs.existsSync(d));
+  if (!dir) return null;
   const want = { arrow: 'pointer', hand: 'pointinghand', ibeam: 'ibeam', openhand: 'openhand', closedhand: 'closedhand', notallowed: 'notallowed', resizeleftright: 'resizeleftright', resizeupdown: 'resizeupdown', move: 'move' };
   const out = {};
   for (const [shape, name] of Object.entries(want)) {
@@ -55,7 +58,9 @@ const ff = (args) => execFileSync('ffmpeg', ['-v', 'error', '-y', ...args], { st
 // The camera project, installed once outside the plugin (plugin folders are
 // replaced on update).
 function cameraDir() {
-  const dest = path.join(os.homedir(), '.cache', 'psoares-video', 'camera');
+  // (Under the plugin's old name it was ~/.cache/psoares-video/camera; that copy
+  // is no longer used, and the first render here installs a new one.)
+  const dest = path.join(os.homedir(), '.cache', 'demo-studio', 'camera');
   const src = path.join(HERE, 'camera');
   const stamp = fs.readFileSync(path.join(src, 'package.json'), 'utf8');
   const have = fs.existsSync(path.join(dest, 'package.json')) && fs.readFileSync(path.join(dest, 'package.json'), 'utf8') === stamp;

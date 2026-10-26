@@ -1,8 +1,8 @@
 {
-  "name": "psoares-video-camera",
+  "name": "demo-studio-camera",
   "private": true,
   "type": "module",
-  "description": "Draws the pointer and the zoom over a recorded window. Installed once into ~/.cache/psoares-video/camera by the assembler.",
+  "description": "Draws the pointer and the zoom over a recorded window. Installed once into ~/.cache/demo-studio/camera by the assembler.",
   "dependencies": {
     "@remotion/cli": "4.0.531",
     "@remotion/motion-blur": "4.0.531",

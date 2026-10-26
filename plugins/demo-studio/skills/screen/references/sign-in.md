@@ -1,7 +1,7 @@
 # Sign-in
 
 Recordings run in real Chrome, one **profile per account**, kept outside the project
-(`config.profiles`, e.g. `~/.config/psoares-video/<project>/profiles`), so a restart or a
+(`config.profiles`, e.g. `~/.config/demo-studio/<project>/profiles`), so a restart or a
 cleaned project signs nobody out.
 
 ## Signing an account in, once

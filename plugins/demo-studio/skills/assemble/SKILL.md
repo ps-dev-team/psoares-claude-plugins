@@ -19,7 +19,7 @@ heavy job: nothing else heavy at the same time.
 ## What it does
 
 1. **Each window's clip** is redrawn by the camera (Remotion, installed once into
-   `~/.cache/psoares-video/camera`):
+   `~/.cache/demo-studio/camera`):
    - the picture from the recorded frames;
    - **the pointer**, large (`pointer.size`, CSS pixels) and always visible. It follows the
      recorded path on the same spring as the camera, so it glides instead of stepping, and leans
@@ -30,7 +30,7 @@ heavy job: nothing else heavy at the same time.
      `<shape>-1__<x>-<y>.svg` with the hot spot in percent: Screen Studio's own format, so a set
      can be copied out of its app (`app.asar`, `assets/cursors/sets/<set>/`) with
      `npx @electron/asar extract-file`. The default looks in
-     `~/.config/psoares-video/cursors/macos-tahoe`. Keep a set in the user's own folders, not in
+     `~/.config/demo-studio/cursors/macos-tahoe` (and the old `~/.config/psoares-video/…`). Keep a set in the user's own folders, not in
      this plugin: the images belong to Screen Studio and Apple. Without a set, a plain arrow and
      hand are drawn;
    - **the zooms** the beats asked for, never past the window's edges. Both springs are Screen
@@ -57,7 +57,7 @@ heavy job: nothing else heavy at the same time.
 {
   "output": { "width": 3840, "height": 2160, "fps": 60, "crf": 17 },
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
-  "pointer": { "mode": "drawn", "size": 34, "cursors": "~/.config/psoares-video/cursors/macos-tahoe" },
+  "pointer": { "mode": "drawn", "size": 34, "cursors": "~/.config/demo-studio/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
   "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 }
 }

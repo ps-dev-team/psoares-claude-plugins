@@ -6,5 +6,5 @@ node lib/review.mjs <project>                  # optional: watch the draft and l
 node lib/assemble.mjs <project> <id>           # build/<id>.mp4, the full render
 ```
 
-The first run installs the camera (Remotion) into `~/.cache/psoares-video/camera`. A render is
+The first run installs the camera (Remotion) into `~/.cache/demo-studio/camera`. A render is
 heavy: run nothing else heavy at the same time.

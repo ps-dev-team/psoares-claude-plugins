@@ -1,4 +1,4 @@
-# psoares-video
+# demo-studio
 
 Screen demos and B-roll for creators, made by Claude from a script or plain instructions:
 product walkthroughs, course lessons, app demos, B-roll of a website. Claude drives a real
@@ -17,7 +17,7 @@ Screen Studio-style pointer, smooth zooms and an optional voice-over.
 
 ```
 /plugin marketplace add ps-dev-team/psoares-claude-plugins
-/plugin install psoares-video@psoares-claude-plugins
+/plugin install demo-studio@psoares-claude-plugins
 ```
 
 **Needs:** Node 22+, pnpm, Python 3 with Pillow, ffmpeg, Google Chrome, and Playwright (in the
