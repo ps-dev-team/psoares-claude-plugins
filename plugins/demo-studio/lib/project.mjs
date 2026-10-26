@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 
 const DEFAULTS = {
   app: { base: '', locale: 'en-GB', dismiss: [], windowX: 2600 },
@@ -86,8 +87,11 @@ export function timings(project, id, gaps = {}) {
 }
 
 // Where a video's beats live, loaded with its timings and segments.
-export async function loadVideo(project, id) {
-  const mod = await import(project.p('videos', `${id}.mjs`));
+// `fresh` re-reads a beats file that changed (the review page stays up while
+// the beats are edited).
+export async function loadVideo(project, id, { fresh = false } = {}) {
+  const file = project.p('videos', `${id}.mjs`);
+  const mod = await import(fresh ? `${pathToFileURL(file).href}?t=${fs.statSync(file).mtimeMs}` : file);
   const L = timings(project, id, mod.gaps);
   const length = mod.length ?? (L.lines ? L.lines.at(-1).end + 1.2 : null);
   if (length == null) throw new Error(`videos/${id}.mjs: a video without a voice exports its length in seconds`);

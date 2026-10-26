@@ -30,6 +30,8 @@ export type CameraProps = {
   marks?: { t0: number; t1: number; t2: number; x: number; y: number }[];
   pointer: { size: number; show: boolean; blur?: boolean; marquee?: string; images?: Record<string, CursorImage> | null };
   blur: { shutter: number; samples: number };
+  /** Live preview only: the URL the frames are served from (a render reads them from the public dir). */
+  base?: string;
 };
 
 // Screen Studio's spring as it plays on screen, measured frame by frame from
@@ -255,7 +257,7 @@ const Scene = (props: CameraProps) => {
   return (
     <AbsoluteFill style={{ backgroundColor: '#fff', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${cam.s})` }}>
-        {frames.length ? <Img src={staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
+        {frames.length ? <Img src={props.base ? props.base + frames[fi][0] : staticFile(frames[fi][0])} style={{ width, height, display: 'block' }} /> : null}
         {boxes.map((b, i) => <Marquee key={i} {...b} k={k} color={pointer.marquee ?? '#0a84ff'} />)}
         {pointer.show
           ? smear.map(([sx, sy, o], i) => (

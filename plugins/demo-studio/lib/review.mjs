@@ -1,8 +1,10 @@
 // node review.mjs <project> [id] [--wait]: the review page for a project's
 // videos, local only (127.0.0.1). The list on the left holds every video (a
 // beats file or a voice) with what exists for it; `/?v=<id>` opens one. It
-// plays build/<id>.draft.mp4 (or build/<id>.mp4, or before any recording the
-// plain voice with the plan) over a timeline of the script lines, the scenes
+// plays the newest render (build/<id>.mp4 or build/<id>.draft.mp4), or, once a
+// video is recorded, a live preview with no render at all: the recordings put
+// together in the browser by the same camera the render uses (live.mjs). Before
+// any recording it plays the plain voice with the plan, over a timeline of the script lines, the scenes
 // and the specials (zooms, gestures, drags, typing, clicks, pauses). A comment
 // is pinned to a moment and saved, with a still of that frame, to
 // review/<id>.json and review/<id>-<n>.jpg. "Send to Claude" marks the new
@@ -27,24 +29,33 @@ import path from 'node:path';
 import { execFile, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadProject } from './project.mjs';
+import { liveBundle, liveProps, hasRecordings } from './live.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const waiting = args.includes('--wait');
 const [dir, only] = args.filter((a) => !a.startsWith('--'));
 if (!dir) { console.error('usage: node review.mjs <project> [id] [--wait]'); process.exit(2); }
-const { p } = loadProject(dir);
+const project = loadProject(dir);
+const { p } = project;
 fs.mkdirSync(p('review'), { recursive: true });
 
 // A video id is a file name and nothing else, so no other path can be asked for.
 const safe = (id) => (typeof id === 'string' && /^[\w.-]+$/.test(id) ? id : null);
 const exists = (f) => fs.existsSync(f);
 const pick = (...names) => names.map((n) => p('build', n)).find(exists);
-const video = (id) => pick(`${id}.draft.mp4`, `${id}.mp4`);
+// The render to show: the newest of the full render and the draft, so an old
+// draft never hides a newer full render.
+const renders = (id) => [[`${id}.mp4`, 'full'], [`${id}.draft.mp4`, 'draft']]
+  .map(([n, kind]) => ({ file: p('build', n), kind })).filter((r) => exists(r.file))
+  .sort((a, b) => fs.statSync(b.file).mtimeMs - fs.statSync(a.file).mtimeMs);
+const render = (id) => renders(id)[0] ?? null;
+const video = (id) => render(id)?.file;
 // Before any recording: the plain voice, so the plan can be heard.
 const voice = (id) => [p('audio', `${id}.mp3`)].find(exists);
 const plan = (id) => pick(`${id}.plan.json`);
-const timeline = (id) => pick(`${id}.draft.timeline.json`, `${id}.timeline.json`);
+// The timeline written with the render on screen.
+const timeline = (id) => { const r = render(id); return r ? pick(r.kind === 'draft' ? `${id}.draft.timeline.json` : `${id}.timeline.json`) : null; };
 const store = (id) => p('review', `${id}.json`);
 const read = (id) => (exists(store(id)) ? JSON.parse(fs.readFileSync(store(id), 'utf8')) : { id, comments: [] });
 const write = (id, d) => fs.writeFileSync(store(id), JSON.stringify(d, null, 2) + '\n');
@@ -81,7 +92,7 @@ const approvalOf = (id) => {
 const list = () => ids().map((id) => {
   const draft = pick(`${id}.draft.mp4`), final = pick(`${id}.mp4`), cs = read(id).comments;
   const count = (...st) => cs.filter((c) => st.includes(c.status)).length;
-  const shown = draft ?? final ?? voice(id);
+  const shown = video(id) ?? voice(id);
   return {
     id, title: titleOf(id), test: !voice(id),
     has: { voice: !!voice(id), plan: !!plan(id), draft: !!draft, final: !!final },
@@ -145,18 +156,41 @@ const server = http.createServer(async (req, res) => {
       if (!exists(f)) { none(res); return; }
       res.writeHead(200, { 'content-type': 'image/jpeg' }); fs.createReadStream(f).pipe(res); return;
     }
+    if (url.pathname === '/live/bundle.js') {
+      const f = await liveBundle();
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res); return;
+    }
+    // A recording's frames, and the frame layers, for the live preview.
+    if (url.pathname.startsWith('/raw/')) {
+      const [, , folder, file] = url.pathname.split('/').map(decodeURIComponent);
+      const f = safe(folder) && safe(file) ? p('raw', folder, file) : null;
+      if (!f || !exists(f)) { none(res); return; }
+      res.writeHead(200, { 'content-type': file.endsWith('.png') ? 'image/png' : 'image/jpeg', 'cache-control': 'max-age=3600' }); fs.createReadStream(f).pipe(res); return;
+    }
+    if (url.pathname.startsWith('/framefile/')) {
+      const file = safe(decodeURIComponent(path.basename(url.pathname)));
+      const f = file ? p('frame', file) : null;
+      if (!f || !exists(f)) { none(res); return; }
+      res.writeHead(200, { 'content-type': 'image/png' }); fs.createReadStream(f).pipe(res); return;
+    }
     if (!id) { none(res, 400); return; }
+    if (url.pathname === '/voice') { const f = voice(id); if (!f) { none(res); return; } stream(req, res, f); return; }
+    if (url.pathname === '/live/data') {
+      try { json(res, await liveProps(project, id)); } catch (e) { json(res, { error: String(e.message ?? e) }); }
+      return;
+    }
     if (url.pathname === '/video') { const f = video(id) ?? voice(id); if (!f) { none(res); return; } stream(req, res, f); return; }
     if (url.pathname === '/data') {
       const f = timeline(id), v = video(id) ?? voice(id), pl = plan(id);
-      json(res, { id, title: titleOf(id), approved: approvalOf(id), video: v && path.basename(v), voiceOnly: !video(id), mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
+      const live = await hasRecordings(project, id);
+      json(res, { id, title: titleOf(id), approved: approvalOf(id), video: v && path.basename(v), kind: render(id)?.kind ?? null, live, voiceOnly: !video(id) && !live, mtime: v && fs.statSync(v).mtimeMs, timeline: video(id) && f ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, plan: pl ? JSON.parse(fs.readFileSync(pl, 'utf8')) : null, review: read(id) });
       return;
     }
     if (url.pathname === '/comment' && req.method === 'POST') {
-      const { t, text, still } = await body(req);
+      const { t, text, still, mode } = await body(req);
       const d = read(id);
       const n = (d.comments.at(-1)?.n ?? 0) + 1;
-      const c = { n, t: +(+t).toFixed(2), text, status: 'open', video: path.basename(video(id) ?? ''), at: new Date().toISOString() };
+      const c = { n, t: +(+t).toFixed(2), text, status: 'open', video: mode === 'live' ? 'live preview' : path.basename(video(id) ?? ''), at: new Date().toISOString() };
       if (still) { const f = `${id}-${n}.jpg`; fs.writeFileSync(p('review', f), Buffer.from(still.split(',')[1], 'base64')); c.still = `review/${f}`; }
       d.comments.push(c); write(id, d); json(res, c); return;
     }

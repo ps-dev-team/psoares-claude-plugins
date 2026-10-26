@@ -54,6 +54,15 @@
   main { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; min-height: 0; padding: 16px 16px 10px; }
   .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
   video { max-width: 100%; max-height: 100%; border-radius: var(--radius); background: #000; box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,.6); }
+  /* The live preview: the recordings put together in the browser, no render. */
+  .live { display: none; max-width: 100%; max-height: 100%; width: 100%; border-radius: var(--radius); overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,.6); }
+  body.liveplay .live { display: block; }
+  body.liveplay video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .livemsg { display: none; position: absolute; color: var(--muted-fg); }
+  body.liveplay .livemsg.on { display: block; }
+  .badge.mode { color: var(--fg); border-color: var(--ring); }
+  .badge.mode.is-live { color: rgb(196 181 253); border-color: rgb(var(--violet) / .45); background: rgb(var(--violet) / .1); }
+  .modes { display: none; } .modes.on { display: inline-flex; }
   .transport { display: flex; align-items: center; gap: 10px; padding-top: 12px; }
   .transport .time { font-size: 12px; font-weight: 500; color: var(--fg); min-width: 128px; }
   .transport .time .len { color: var(--subtle); }
@@ -204,7 +213,9 @@
 <header>
   <svg class="i" style="color:var(--muted-fg)"><use href="#i-film"/></svg>
   <span class="title" id="title">Review</span>
+  <span class="badge outline mode" id="mode"></span>
   <span class="badge outline mono" id="file"></span>
+  <div class="tabs modes" id="modes"><button class="tab" data-mode="render">Render</button><button class="tab" data-mode="live">Live</button></div>
   <button class="btn approve" id="approve" title="Approve this version"><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span id="approvetext">Approve</span></button>
   <div class="help">
     <span><kbd>Space</kbd> play</span>
@@ -217,6 +228,8 @@
 <main>
   <div class="stage">
     <video id="v" preload="auto"></video>
+    <div class="live" id="live"></div>
+    <div class="livemsg" id="livemsg"></div>
     <div class="planview" id="planview">
       <div class="pv-line" id="pvline"></div>
       <div class="pv-beats" id="pvbeats"></div>
@@ -263,6 +276,21 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const v = $('v');
+// The player on screen: the <video> of a render, or the live preview. Both
+// answer the same few calls, so the timeline, the comments and the keys work
+// the same on either.
+const VP = {
+  get currentTime() { return v.currentTime; }, set currentTime(t) { v.currentTime = t; },
+  get paused() { return v.paused; }, get duration() { return v.duration; },
+  play() { return v.play(); }, pause() { v.pause(); },
+  async still() {
+    const c = document.createElement('canvas'), w = 960;
+    c.width = w; c.height = Math.round(w * v.videoHeight / v.videoWidth);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.82);
+  },
+};
+let P = VP, mode = 'render', liveApi = null, liveKey = '';
 let data = null, pxs = 14, mtime = 0, last = '';
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
 const short = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -277,7 +305,7 @@ let listKey = '';
 async function loadList() {
   const { project, videos } = await (await fetch('/list')).json();
   if (!V) {
-    V = (videos.find((x) => x.has.draft) ?? videos.find((x) => x.has.final || x.has.voice) ?? videos[0])?.id ?? null;
+    V = (videos.find((x) => x.has.draft || x.has.final) ?? videos.find((x) => x.has.voice) ?? videos[0])?.id ?? null;
     if (V) history.replaceState(null, '', '?v=' + encodeURIComponent(V));
   }
   const key = JSON.stringify([V, videos]);
@@ -307,15 +335,29 @@ addEventListener('popstate', () => show(new URLSearchParams(location.search).get
 async function load(first) {
   if (!V) return;
   const d = await (await fetch(q('/data'))).json();
-  if (first || d.mtime !== mtime) {
-    const t = v.currentTime; mtime = d.mtime;
-    v.src = q('/video?' + d.mtime);
-    if (!first) v.currentTime = t;
+  // Render or live: a render when there is one, unless the user picked Live;
+  // live when the video is recorded and not rendered.
+  const want = localStorage.getItem('review.mode.' + V);
+  const nextMode = d.video && (want !== 'live' || !d.live) ? 'render' : d.live ? 'live' : 'render';
+  if (nextMode !== mode) { P.pause(); mode = nextMode; }
+  $('modes').classList.toggle('on', !!(d.video && d.live));
+  document.querySelectorAll('#modes .tab').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  document.body.classList.toggle('liveplay', mode === 'live');
+  if (mode === 'live') {
+    P = await live(d) ?? VP;
+  } else {
+    P = VP;
+    if (first || d.mtime !== mtime) {
+      const t = v.currentTime; mtime = d.mtime;
+      v.src = q('/video?' + d.mtime);
+      if (!first) v.currentTime = t;
+    }
   }
   // Voice only (nothing recorded yet): the plan's lines and beats, on the
   // plain voice, so without the pauses the beats file adds.
   // Each planned beat goes on the track it will have in the take: clicks,
   // specials, zoom, pauses, scenes; hovers and moves on the pointer track.
+  if (mode === 'live' && liveData) d.timeline = liveData.timeline;
   if (!d.timeline && d.plan) {
     const off = (x) => +(x.t - (x.shift ?? 0)).toFixed(2);
     const bs = d.plan.beats.map((b) => ({ ...b, t: off(b) }));
@@ -340,16 +382,46 @@ async function load(first) {
   last = key;
   data = d;
   $('title').textContent = d.title ? `${d.id} · ${d.title}` : d.id;
-  approval = d.approved; showApproval(d.voiceOnly);
+  approval = d.approved; showApproval(d.voiceOnly || mode === 'live');
   document.title = `${d.id} · Review`;
   document.body.classList.toggle('voice', !!d.voiceOnly);
-  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : (d.video ?? 'no video yet');
+  $('file').textContent = d.voiceOnly ? `${d.video ?? 'no voice'} · the plan, on the voice alone` : mode === 'live' ? `recordings${liveData?.unsupported?.length ? ' · ' + liveData.unsupported.join('; ') : ''}` : (d.video ?? 'no video yet');
+  $('mode').textContent = d.voiceOnly ? 'Voice and plan' : mode === 'live' ? 'Live preview' : d.kind === 'draft' ? 'Draft render' : 'Full render';
+  $('mode').classList.toggle('is-live', mode === 'live');
   draw(); comments();
 }
 
+// The live preview: the bundle once, then the props of this video; mounted
+// again only when the recordings or the beats change.
+let liveData = null, bundle = null;
+async function live(d) {
+  const msg = (t) => { $('livemsg').textContent = t; $('livemsg').classList.toggle('on', !!t); };
+  bundle ??= new Promise((ok, no) => { msg('Preparing the live preview (the first time installs it)…'); const sc = document.createElement('script'); sc.src = '/live/bundle.js'; sc.onload = ok; sc.onerror = no; document.head.append(sc); });
+  try { await bundle; } catch { msg('The live preview could not load. See the review server log.'); bundle = null; return null; }
+  const ld = await (await fetch(q('/live/data'))).json();
+  if (ld.error) { msg('Live preview: ' + ld.error); return null; }
+  const key = JSON.stringify([V, ld.props]);
+  liveData = ld;
+  if (key !== liveKey || !liveApi) {
+    const t = liveApi ? liveApi.currentTime : 0;
+    liveApi?.destroy();
+    const el = $('live');
+    el.style.aspectRatio = `${ld.props.width} / ${ld.props.height}`;
+    liveApi = window.DemoLive.mount(el, ld.props);
+    liveApi.on('timeupdate', playhead);
+    liveApi.on('play', () => { $('playicon').innerHTML = '<use href="#i-pause"/>'; });
+    liveApi.on('pause', () => { $('playicon').innerHTML = '<use href="#i-play"/>'; });
+    liveKey = key;
+    if (t) setTimeout(() => { liveApi.currentTime = t; }, 50);
+  }
+  msg('');
+  return liveApi;
+}
+document.querySelectorAll('#modes .tab').forEach((b) => { b.onclick = () => { localStorage.setItem('review.mode.' + V, b.dataset.mode); load(true); }; });
+
 function draw() {
   const tl = data.timeline, inner = $('inner');
-  const len = tl?.length || v.duration || (tl?.lines.at(-1)?.end ?? 0) + 1;
+  const len = tl?.length || P.duration || (tl?.lines.at(-1)?.end ?? 0) + 1;
   $('len').textContent = len ? `/ ${fmt(len)}` : '';
   const X = (t) => 6 + t * pxs;
   inner.style.width = X(len) + 24 + 'px';
@@ -428,7 +500,7 @@ function comments() {
 }
 
 function playhead() {
-  const t = v.currentTime || 0, head = $('head');
+  const t = P.currentTime || 0, head = $('head');
   if (head) head.style.left = 6 + t * pxs + 'px';
   $('time').textContent = fmt(t);
   const line = data?.timeline?.lines.find((l) => t >= l.start && t <= l.end);
@@ -453,10 +525,10 @@ function playhead() {
     }
   }
   document.querySelectorAll('.line').forEach((e) => e.classList.toggle('on', !!line && +e.dataset.i === line.i));
-  if (!v.paused) { const tl = $('tl'), x = 6 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 60 || x < tl.scrollLeft) tl.scrollLeft = x - 120; }
+  if (!P.paused) { const tl = $('tl'), x = 6 + t * pxs; if (x > tl.scrollLeft + tl.clientWidth - 60 || x < tl.scrollLeft) tl.scrollLeft = x - 120; }
 }
 
-const seek = (t) => { v.currentTime = Math.max(0, Math.min(t, v.duration || t)); playhead(); };
+const seek = (t) => { P.currentTime = Math.max(0, Math.min(t, P.duration || t)); playhead(); };
 $('tl').addEventListener('mousedown', (e) => {
   if (e.offsetY > $('tl').clientHeight) return; // the scrollbar
   const r = $('inner').getBoundingClientRect();
@@ -488,37 +560,34 @@ $('tl').addEventListener('wheel', (e) => {
   const wrap = document.querySelector('.tlwrap');
   if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && wrap.scrollHeight <= wrap.clientHeight) { $('tl').scrollLeft += e.deltaY; e.preventDefault(); }
 }, { passive: false });
-const toggle = () => (v.paused ? v.play() : v.pause());
+const toggle = () => (P.paused ? P.play() : P.pause());
 $('play').onclick = toggle;
-$('prev').onclick = () => seek(v.currentTime - 1);
-$('next').onclick = () => seek(v.currentTime + 1);
+$('prev').onclick = () => seek(P.currentTime - 1);
+$('next').onclick = () => seek(P.currentTime + 1);
+$('live').onclick = toggle;
 v.onclick = toggle;
 v.onplay = () => { $('playicon').innerHTML = '<use href="#i-pause"/>'; };
 v.onpause = () => { $('playicon').innerHTML = '<use href="#i-play"/>'; };
 v.ontimeupdate = playhead;
 v.onloadedmetadata = () => { if (data) draw(); };
-(function loop() { if (!v.paused) playhead(); requestAnimationFrame(loop); })();
+(function loop() { if (!P.paused) playhead(); requestAnimationFrame(loop); })();
 
 let pinned = 0;
 function compose() {
-  v.pause(); pinned = v.currentTime;
+  P.pause(); pinned = P.currentTime;
   $('at').textContent = fmt(pinned);
   $('compose').classList.add('on'); $('text').value = '';
   // Focus at once, and again on the next frame in case the click or key that
   // opened the box takes focus back.
   $('text').focus(); requestAnimationFrame(() => $('text').focus());
 }
-function still() {
-  const c = document.createElement('canvas'), w = 960;
-  c.width = w; c.height = Math.round(w * v.videoHeight / v.videoWidth);
-  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-  return c.toDataURL('image/jpeg', 0.82);
-}
 async function save() {
   const text = $('text').value.trim();
   $('compose').classList.remove('on');
   if (!text) return;
-  await fetch(q('/comment'), { method: 'POST', body: JSON.stringify({ t: pinned, text, still: still() }) });
+  let shot = null;
+  try { shot = await P.still(); } catch (e) { console.warn('no still:', e); }
+  await fetch(q('/comment'), { method: 'POST', body: JSON.stringify({ t: pinned, text, still: shot, mode }) });
   load();
 }
 $('add').onclick = compose;
@@ -541,7 +610,7 @@ addEventListener('keydown', (e) => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if (e.key === ' ') { e.preventDefault(); toggle(); }
   if (e.key === 'c' || e.key === 'C') { e.preventDefault(); compose(); }
-  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); v.pause(); seek(v.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 60)); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); P.pause(); seek(P.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 60)); }
 });
 // Panel widths: dragged, kept in the browser, double-click resets.
 const WIDTH = { left: [232, 160, 420], right: [320, 240, 640] };

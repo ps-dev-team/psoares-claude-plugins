@@ -9,13 +9,11 @@
 // Segments are joined with a fade, and the voice goes under, with silence cut
 // in where the beats asked for gaps. Without a voice the video is silent.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { loadProject, loadVideo } from './project.mjs';
+import { cursorImages, cameraDir, frameBoxes, partsOf, cameraProps, voiceCuts, timelineOf } from './parts.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const [dir, id, flag] = process.argv.slice(2);
 if (!dir || !id) { console.error('usage: node assemble.mjs <project> <id> [--draft]'); process.exit(2); }
 const DRAFT = flag === '--draft';
@@ -30,119 +28,45 @@ const { fps } = config.output;
 const crf = DRAFT ? 26 : config.output.crf;
 const T = config.transition.seconds;
 const drawn = config.pointer.mode !== 'page';
-
-// The cursor set: SVGs named <shape>-1__<x>-<y>.svg, x and y the hot spot in
-// percent (Screen Studio's own format, so its sets can be copied out of the
-// app). config.pointer.cursors names the folder; without one the pointer is
-// drawn. Read once, passed to the renderer as data URIs.
-function cursorImages() {
-  // The default set lives in ~/.config/demo-studio; the plugin's old name,
-  // ~/.config/psoares-video, is still read so older setups keep their cursors.
-  const dir = [config.pointer.cursors, '~/.config/demo-studio/cursors/macos-tahoe', '~/.config/psoares-video/cursors/macos-tahoe']
-    .filter(Boolean).map((d) => d.replace(/^~/, process.env.HOME)).find((d) => fs.existsSync(d));
-  if (!dir) return null;
-  const want = { arrow: 'pointer', hand: 'pointinghand', ibeam: 'ibeam', openhand: 'openhand', closedhand: 'closedhand', notallowed: 'notallowed', resizeleftright: 'resizeleftright', resizeupdown: 'resizeupdown', move: 'move' };
-  const out = {};
-  for (const [shape, name] of Object.entries(want)) {
-    const f = fs.readdirSync(dir).find((n) => n.startsWith(name + '-') && n.endsWith('.svg'));
-    if (!f) continue;
-    const m = f.match(/__(\d+)-(\d+)\.svg$/);
-    const svg = fs.readFileSync(path.join(dir, f), 'utf8');
-    const [, w, h] = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/) ?? [0, 1, 1];
-    out[shape] = { src: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64'), hot: [+(m?.[1] ?? 0) / 100, +(m?.[2] ?? 0) / 100], aspect: +h / +w };
-  }
-  return Object.keys(out).length ? out : null;
-}
+const images = cursorImages(config);
 const ff = (args) => execFileSync('ffmpeg', ['-v', 'error', '-y', ...args], { stdio: 'inherit' });
 
-// The camera project, installed once outside the plugin (plugin folders are
-// replaced on update).
-function cameraDir() {
-  // (Under the plugin's old name it was ~/.cache/psoares-video/camera; that copy
-  // is no longer used, and the first render here installs a new one.)
-  const dest = path.join(os.homedir(), '.cache', 'demo-studio', 'camera');
-  const src = path.join(HERE, 'camera');
-  const stamp = fs.readFileSync(path.join(src, 'package.json'), 'utf8');
-  const have = fs.existsSync(path.join(dest, 'package.json')) && fs.readFileSync(path.join(dest, 'package.json'), 'utf8') === stamp;
-  fs.mkdirSync(dest, { recursive: true });
-  fs.cpSync(path.join(src, 'src'), path.join(dest, 'src'), { recursive: true });
-  if (!have || !fs.existsSync(path.join(dest, 'node_modules'))) {
-    fs.writeFileSync(path.join(dest, 'package.json'), stamp);
-    console.log('installing the camera (once)…');
-    execFileSync('pnpm', ['install', '--silent'], { cwd: dest, stdio: 'inherit' });
-  }
-  return dest;
-}
-
-// Renders one window's clip [from, from + len] (recording seconds) at w x h.
-function camera(raw, from, len, w, h, out) {
-  const meta = JSON.parse(fs.readFileSync(path.join(raw, 'meta.json'), 'utf8'));
-  const ptr = JSON.parse(fs.readFileSync(path.join(raw, 'pointer.json'), 'utf8'));
-  const props = {
-    fps, width: w, height: h, from, duration: len, view: meta.view,
-    frames: meta.frames, moves: ptr.moves, presses: ptr.presses, zooms: ptr.zooms, marks: ptr.marks ?? [],
-    pointer: { size: config.pointer.size, show: true, blur: !DRAFT && config.pointer.blur !== false, marquee: config.pointer.marquee ?? '#0a84ff', images: cursorImages() },
-    blur: DRAFT ? { ...config.camera.blur, samples: 0 } : config.camera.blur,
-  };
-  const propsFile = path.join(raw, `camera-${from.toFixed(2)}.json`);
+// Renders one window's clip at w x h with the camera (the same props the live
+// preview plays).
+function camera(win, part, w, h, out) {
+  const props = cameraProps(config, win, part, { w, h, fps, draft: DRAFT, images });
+  const propsFile = path.join(win.dir, `camera-${part.from.toFixed(2)}.json`);
   fs.writeFileSync(propsFile, JSON.stringify(props));
-  const cam = cameraDir();
-  execFileSync('npx', ['remotion', 'render', 'src/index.ts', 'Camera', out, `--props=${propsFile}`, `--public-dir=${raw}`,
+  execFileSync('npx', ['remotion', 'render', 'src/index.ts', 'Camera', out, `--props=${propsFile}`, `--public-dir=${win.dir}`,
     '--codec=h264', `--crf=${Math.max(1, crf - 1)}`, `--concurrency=${config.camera.concurrency}`, '--log=error'],
-  { cwd: cam, stdio: 'inherit' });
+  { cwd: cameraDir(), stdio: 'inherit' });
 }
 
-const parts = [];
 // The report: what was done to the voice and what went wrong on the take,
 // with the time in the finished video, so the user knows where to look.
 const report = { notes: [], gaps: [] };
-// The timeline for the review page: everything in finished-video seconds.
-const timeline = { id, length, segments: [], lines: [], gaps: [], zooms: [], clicks: [], events: [], notes: [] };
 const tc = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
-for (const [k, s] of segments.entries()) {
-  const raws = s.windows.map((spec) => p('raw', `${id}-${s.name}-${spec.account ?? 'anon'}`));
-  const meta = JSON.parse(fs.readFileSync(path.join(raws[0], 'meta.json'), 'utf8'));
-  for (const raw of raws) {
-    const m = JSON.parse(fs.readFileSync(path.join(raw, 'meta.json'), 'utf8'));
-    for (const [t, msg] of m.notes ?? []) report.notes.push([t, `${s.name}: ${msg}`]);
-  }
-  // This part's span in voice time, overlapping its neighbours by half a fade.
-  const a = k === 0 ? 0 : s.start - T / 2;
-  const b = k === segments.length - 1 ? length : segments[k + 1].start + T / 2;
-  const from = a - meta.start, len = b - a;
-  timeline.segments.push({ name: s.name, start: k === 0 ? 0 : s.start });
-  for (const raw of raws) {
-    const ptr = JSON.parse(fs.readFileSync(path.join(raw, 'pointer.json'), 'utf8'));
-    const m = JSON.parse(fs.readFileSync(path.join(raw, 'meta.json'), 'utf8'));
-    const at = (t) => t + m.start, inside = (t) => t >= a && t < b;
-    for (const z of ptr.zooms ?? []) if (inside(at(z.t))) timeline.zooms.push({ t: +at(z.t).toFixed(2), scale: z.scale });
-    for (const [t, down] of ptr.presses ?? []) if (down && inside(at(t))) timeline.clicks.push(+at(t).toFixed(2));
-    for (const [t, kind] of ptr.events ?? []) if (inside(at(t))) timeline.events.push([+at(t).toFixed(2), kind]);
-    for (const mk of ptr.marks ?? []) if (inside(at(mk.t0))) timeline.events.push([+at(mk.t0).toFixed(2), 'box']);
-  }
+const parts = [];
+const all = partsOf(project, id, { segments, length });
+for (const part of all) {
+  const { k, windows, len } = part;
+  for (const win of windows) for (const [t, msg] of win.meta.notes ?? []) report.notes.push([t, `${part.name}: ${msg}`]);
   const out = p('build', `${id}-${k}${tag}.mp4`);
-  const framed = raws.length === 2 || config.frame.single;
-  let boxes = null;
-  if (framed) {
-    const n = raws.length;
-    const bf = p('frame', `boxes-${n}.json`);
-    if (!fs.existsSync(bf)) execFileSync('python3', [path.join(HERE, 'frame_layers.py'), project.root, String(n)], { stdio: 'inherit' });
-    boxes = JSON.parse(fs.readFileSync(bf, 'utf8')).map((bx) => ({ x: Math.round(bx.x * D), y: Math.round(bx.y * D), w: even(bx.w), h: even(bx.h) }));
-  }
+  const boxes = part.framed ? frameBoxes(project, windows.length, D) : null;
   const size = (i) => (boxes ? [boxes[i].w, boxes[i].h] : [W, H]);
   // Each window's clip, already at the size it is shown at.
-  const clips = raws.map((raw, i) => {
+  const clips = windows.map((win, i) => {
     const clip = p('build', `${id}-${k}-w${i}${tag}.mp4`);
     const [w, h] = size(i);
-    if (drawn) camera(raw, from, len, w, h, clip);
-    else ff(['-f', 'concat', '-safe', '0', '-i', path.join(raw, 'list.txt'), '-vf',
-      `fps=${fps},trim=${from}:${from + len},setpts=PTS-STARTPTS,scale=${w}:${h}:flags=lanczos,setsar=1`, '-c:v', 'libx264', '-crf', String(crf - 1), clip]);
+    if (drawn) camera(win, part, w, h, clip);
+    else ff(['-f', 'concat', '-safe', '0', '-i', path.join(win.dir, 'list.txt'), '-vf',
+      `fps=${fps},trim=${part.from}:${part.from + len},setpts=PTS-STARTPTS,scale=${w}:${h}:flags=lanczos,setsar=1`, '-c:v', 'libx264', '-crf', String(crf - 1), clip]);
     return clip;
   });
   if (!boxes) {
     ff(['-i', clips[0], '-vf', `scale=${W}:${H}:flags=lanczos,format=yuv420p`, '-c:v', 'libx264', '-crf', String(crf), '-t', String(len), out]);
   } else {
-    const n = raws.length;
+    const n = windows.length;
     const inputs = [...clips.flatMap((c) => ['-i', c]), '-loop', '1', '-i', p('frame', `back-${n}.png`), '-loop', '1', '-i', p('frame', `front-${n}.png`)];
     let f = `[${n}:v]fps=${fps},scale=${W}:${H}[s0];[${n + 1}:v]scale=${W}:${H}[fr]`;
     clips.forEach((_, i) => { f += `;[s${i}][${i}:v]overlay=${boxes[i].x}:${boxes[i].y}[s${i + 1}]`; });
@@ -173,19 +97,8 @@ if (!L.lines || !fs.existsSync(mp3)) {
   // not taken from the alignment, which runs late), with a short fade either
   // side, so no sliver of the next word gets through.
   let voice = mp3;
-  const gapLines = L.lines.filter((l, i) => i > 0 && l.shift !== L.lines[i - 1].shift);
+  const { gapLines, cuts } = voiceCuts(mp3, L);
   if (gapLines.length) {
-    const det = execFileSync('sh', ['-c', `ffmpeg -hide_banner -i "${mp3}" -af silencedetect=noise=-42dB:d=0.08 -f null - 2>&1`]).toString();
-    const quiet = [...det.matchAll(/silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
-    const cuts = gapLines.map((l) => {
-      const prev = L.lines[l.i - 1];
-      const from = prev.end - prev.shift, to = l.start - l.shift;
-      const best = quiet.filter(([qs, qe]) => qe > from - 0.15 && qs < to + 0.15).sort((x, y) => (y[1] - y[0]) - (x[1] - x[0]))[0];
-      // The voice comes first: a pause goes only into a real silence, never
-      // across a word. No silence there, no pause: stop and say which line.
-      if (!best || best[1] - best[0] < 0.12) throw new Error(`no pause in the voice before line ${l.i} ("${l.text?.slice(0, 40) ?? ''}"): move the gap to another line`);
-      return { at: (best[0] + best[1]) / 2, gap: l.shift - prev.shift };
-    });
     const F = 0.012;
     let f = '', prev = 0, n = 0;
     for (const c of cuts) {
@@ -201,7 +114,6 @@ if (!L.lines || !fs.existsSync(mp3)) {
     let added = 0;
     cuts.forEach((c, i) => {
       const line = gapLines[i];
-      timeline.gaps.push({ t: +(c.at + added).toFixed(2), seconds: c.gap, line: line.i });
       report.gaps.push(`${tc(c.at + added)}: ${c.gap.toFixed(1)} s of pause before line ${line.i} ("${(line.text ?? '').slice(0, 60)}"), in the voice's own silence there`);
       added += c.gap;
     });
@@ -227,9 +139,10 @@ if (!L.lines || !fs.existsSync(mp3)) {
 }
 // The timeline beside the video, read by the review page.
 {
+  const mp3f = p('audio', `${id}.mp3`);
+  const vc = L.lines && fs.existsSync(mp3f) ? voiceCuts(mp3f, L) : { gapLines: [], cuts: [] };
+  const timeline = timelineOf(id, length, all, L, vc.cuts, vc.gapLines);
   timeline.video = path.basename(final);
-  timeline.lines = (L.lines ?? []).map((l) => ({ i: l.i, text: l.text, start: l.start, end: l.end }));
-  timeline.notes = report.notes;
   fs.writeFileSync(p('build', `${id}${tag}.timeline.json`), JSON.stringify(timeline));
 }
 console.log(final, execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', final]).toString().trim());
