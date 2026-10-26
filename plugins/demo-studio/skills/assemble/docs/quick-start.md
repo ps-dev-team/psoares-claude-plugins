@@ -2,7 +2,7 @@
 
 ```sh
 node lib/assemble.mjs <project> <id> --draft   # build/<id>.draft.mp4, fast, a third of the size
-node lib/review.mjs <project>                  # optional: watch the draft and leave comments
+node lib/review.mjs <project>                  # optional: watch it, live from the recordings or the draft, and comment
 node lib/assemble.mjs <project> <id>           # build/<id>.mp4, the full render
 ```
 

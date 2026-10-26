@@ -66,6 +66,17 @@ heavy job: nothing else heavy at the same time.
 `frame.single: true` puts a single window in the frame too. `camera.concurrency` is how many
 frames Remotion renders at once; keep it modest on a laptop.
 
+## Live preview
+
+Once a video is recorded, the review page (`node lib/review.mjs <project> <id>`) can play it with
+**no render at all**: the recordings are put together in the browser by Remotion's Player, on the
+same camera, pointer, cursor set, zooms, frame, fades and voice (with its gaps) the render uses,
+from the same inputs (`lib/parts.mjs`), so what plays is what the render will be. A recorded
+video with no render opens in the live preview; with a render, the Render / Live switch in the
+header picks one, and the label says which plays ("Live preview", "Draft render", "Full
+render"). Comments, stills and the timeline work the same in both. Camera motion blur is not
+drawn live. The first live preview builds a small bundle in the camera's cache folder.
+
 ## Draft and review
 
 A draft lets the user comment before the full render, so a change costs a minute, not a 4K
