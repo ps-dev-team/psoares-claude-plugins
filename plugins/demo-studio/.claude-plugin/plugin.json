@@ -1,6 +1,6 @@
 {
   "name": "demo-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Screen demos and B-roll for creators, from a script or plain instructions: screen (real headed Chrome, one or two windows, beats timed to a voice or to seconds, the pointer moving like a hand), assemble (large Screen Studio-style pointer, spring zooms, plain browser frame, fades, 4K 60 fps), voice (optional: generate with ElevenLabs, or bring your own audio or video and get line and word timings; shorter pauses), broll (optional, paid: people B-roll with Higgsfield). macOS, Linux and Windows.",
   "author": {
     "name": "Paulo Soares"

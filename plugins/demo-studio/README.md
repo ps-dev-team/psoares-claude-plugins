@@ -11,6 +11,7 @@ Screen Studio-style pointer, smooth zooms and an optional voice-over.
 | A demo timed to your own recording, or to the sound of your own video | `voice` (bring your own) → `screen` → `assemble` |
 | A silent demo, or B-roll of a website | `screen` → `assemble` |
 | A voice-over only | `voice` |
+| Check or fix how loud, fast or paused a voice or video is | `audio` |
 | B-roll of people from photos (optional, paid: Higgsfield) | `broll` |
 
 ## Install
@@ -43,7 +44,10 @@ finding faces in `broll` is macOS only (elsewhere you give the face's position).
   about. The pointer moves like a hand. The pointer's path and the zooms are saved as data.
 - **`assemble`**: builds the video: the large drawn pointer with Screen Studio's spring, zooms,
   two windows in a plain browser frame, fades between scenes, the voice, 4K at 60 fps. A quick
-  draft and a review page come first if you want them.
+  draft and a review page come first if you want them. The full render ends at a standard
+  loudness (-16 LUFS by default).
+- **`audio`**: the numbers for a voice or a video (loudness, peaks, pauses, words per minute),
+  loudness normalization with the picture untouched, and the pause cap with crossfades.
 - **`broll`** (optional, paid): B-roll of people with Higgsfield: enlarged photos, the person in
   a real-life setting, talking and listening clips, loops and fake-camera feeds for a call.
 

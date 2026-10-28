@@ -96,8 +96,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/lib/stt_lines.py" <project> <id> --source my-vide
 ## 3. Shorter pauses (optional)
 
 Long silences between lines make a voice-over sound mechanical. `tight.py` shortens every pause
-longer than 0.3 s to 0.3 s, cutting in the middle of the silence with a short crossfade, so no
-cut is heard:
+longer than `--max` (0.3 s by default) to that length, cutting in the middle of the silence with a
+short crossfade, so no cut is heard. How to choose the cap (0.3 s for a calm voice, 0.5 s for a
+fast one) and how to measure the result are in the audio skill:
 
 ```sh
 python3 -m venv .venv && .venv/bin/pip install numpy        # once

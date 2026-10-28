@@ -492,7 +492,13 @@ export async function record(project, { id, seg, windows, start, end, beats, lea
   const shoots = [];
   for (const w of windows) {
     const dir = project.p('raw', `${id}-${seg}-${w.name}`);
-    fs.rmSync(dir, { recursive: true, force: true });
+    // The previous take is kept, never overwritten: it moves to
+    // raw/old-<timestamp>/, so a retake can be compared or brought back.
+    if (fs.existsSync(dir)) {
+      const keep = project.p('raw', `old-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}`);
+      fs.mkdirSync(keep, { recursive: true });
+      fs.renameSync(dir, path.join(keep, path.basename(dir)));
+    }
     fs.mkdirSync(dir, { recursive: true });
     const cdp = await w.context.newCDPSession(w.page);
     shoots.push({ w, dir, cdp, frames: [] });

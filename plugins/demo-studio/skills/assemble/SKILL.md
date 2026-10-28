@@ -59,9 +59,14 @@ heavy job: nothing else heavy at the same time.
   "frame": { "address": "app.example.com", "stage": "#f5f6fc", "gap": 40, "single": false },
   "pointer": { "mode": "drawn", "size": 34, "cursors": "~/.config/demo-studio/cursors/macos-tahoe" },
   "camera": { "zoom": 2, "concurrency": 4, "blur": { "shutter": 180, "samples": 0 } },
-  "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 }
+  "transition": { "kind": "fadewhite", "seconds": 0.7, "pad": 0.5 },
+  "audio": { "loudness": -16 }
 }
 ```
+
+`audio.loudness` is the level the full render ends at, in LUFS: -16 for speech on the web and in
+apps, -14 for YouTube, `false` to keep the mix as it is. The picture is not touched; the report
+lists the loudness before and after. See the audio skill.
 
 `frame.single: true` puts a single window in the frame too. `camera.concurrency` is how many
 frames Remotion renders at once; keep it modest on a laptop.
