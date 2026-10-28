@@ -46,3 +46,20 @@ video, match takes to lines.
 It loads `human-prose` for the voice, and `teleprompter-script` when the script is read from
 the app. Each format has its own reference: `references/lesson.md` for lessons and demos.
 Social media is next.
+
+### `storytelling`
+
+Shapes the story inside a video, a reel, an email or a sales call so people keep watching. It
+picks the angle, writes the last line first, sets the stakes (a character, a risk, a deadline)
+and runs the loop through the middle: a big question the viewer can guess at, a head fake that
+breaks the guess, and a re-hook that opens the next question as the last one closes. Beats join
+with "but" or "therefore", never "and then".
+
+Three modes: write a story from notes, rewrite a flat story into a looped one, and review a
+script against seven common mistakes. It handles structure only, and leaves the line format to
+`video-script` and the voice to `human-prose`. References: `frameworks.md` (the loop, the
+viewer's ladder, the modern arc, the hook order), `review.md` (the mistakes and a checklist)
+and `examples.md` (a flat and looped story, hooks, lenses).
+
+Built from Kane Kallaway's
+[How to Master Storytelling](https://www.youtube.com/watch?v=WluuZB_ck9Q).
