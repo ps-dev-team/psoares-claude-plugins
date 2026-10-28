@@ -1,10 +1,10 @@
 {
   "name": "psoares-teleprompter",
-  "version": "0.3.2",
-  "description": "Script writing for videos and the Markdown Teleprompter app. Includes video-script for lesson and demo scripts written one take per line, and teleprompter-script for writing and editing video and presentation scripts in the app's Markdown syntax: directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
+  "version": "0.4.0",
+  "description": "Script writing for videos and the Markdown Teleprompter app. Includes storytelling for the structure that keeps people watching (stakes, a big question, head fakes, re-hooks), video-script for lesson and demo scripts written one take per line, and teleprompter-script for writing and editing video and presentation scripts in the app's Markdown syntax: directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
   "author": {
     "name": "Paulo Soares"
   },
   "license": "MIT",
-  "keywords": ["teleprompter", "script", "video", "presenter", "markdown", "mdc", "voice", "recording"]
+  "keywords": ["teleprompter", "script", "video", "presenter", "markdown", "mdc", "voice", "recording", "storytelling", "hook"]
 }

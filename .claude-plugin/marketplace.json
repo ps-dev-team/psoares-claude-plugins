@@ -53,7 +53,7 @@
     {
       "name": "psoares-teleprompter",
       "source": "./plugins/psoares-teleprompter",
-      "description": "Script writing for the Markdown Teleprompter app. Skills: teleprompter-script for writing and editing video and presentation scripts with the app's directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
+      "description": "Script writing for videos and the Markdown Teleprompter app. Skills: storytelling for the structure that keeps people watching (stakes, a big question, head fakes, re-hooks), video-script for scripts recorded one take per line, and teleprompter-script for writing and editing video and presentation scripts with the app's directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
       "category": "content",
       "keywords": [
         "teleprompter",
@@ -63,7 +63,9 @@
         "markdown",
         "mdc",
         "voice",
-        "recording"
+        "recording",
+        "storytelling",
+        "hook"
       ]
     },
     {
