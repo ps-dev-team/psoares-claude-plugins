@@ -18,6 +18,8 @@ A marketplace of Claude Code plugins by Paulo Soares.
 | [`psoares-content-extract`](plugins/psoares-content-extract) | Capture + analyze social-media video content. Ships `view-youtube-video`, `view-instagram-reel`, and `extract-content` skills. |
 | [`psoares-dev`](plugins/psoares-dev) | Development workflow tooling. Ships `create-github-issue` for grounded GitHub issues and `journal-session` for narrative project journals. |
 | [`psoares-teleprompter`](plugins/psoares-teleprompter) | Script writing for videos and the Markdown Teleprompter app. Ships `storytelling` for the structure that keeps people watching, `video-script` for scripts recorded one take per line, and `teleprompter-script` for scripts with the app's directives, presenter tabs and voice cues. |
+| [`demo-studio`](plugins/demo-studio) | Screen demos and B-roll from a script. Ships `screen`, `assemble`, `voice` and `broll`. |
+| [`elevenlabs`](plugins/elevenlabs) | Voice-overs with ElevenLabs that sound like the speaker, with line and word timings and misread checks. |
 
 `psoares-writing` and `psoares-annotate` moved to [s2-ai-labs/s2-ai-skills](https://github.com/s2-ai-labs/s2-ai-skills) as `s2-writing` and `s2-annotate`.
 
