@@ -1,18 +1,18 @@
 ---
 name: teleprompter-script
 description: >-
-  Use when writing, drafting, formatting, rewriting or fixing a script for the
-  Markdown Teleprompter app: YouTube or course videos, talks, demos, screen
-  recordings, presentations read from a prompter. Covers the app's Markdown
-  directives (::chapter, ::cue, ::alert, ::speaker, ::pause, ::speed, ::tab,
-  ::note), presenter notes for screen sharing,
+  Use when formatting, fixing or laying out a script for the Markdown
+  Teleprompter app: how the app reads a Markdown file, its directives
+  (::chapter, ::cue, ::alert, ::speaker, ::pause, ::speed, ::tab, ::note),
   presenter tabs with say="..." voice cues, heading cues like
-  ## Wrap-up {say="..."}, scroll="on"/"off", and how to write text that sounds
-  natural when read aloud and works with voice follow. Trigger phrases:
-  "teleprompter script", "write a video script", "script for the prompter",
-  "add tabs to this script", "presenter tabs", "voice cues", "guião para o
-  teleprompter", "escreve o guião do vídeo", "formata para o teleprompter".
-  Also use when editing any .md script that already contains :: directives.
+  ## Wrap-up {say="..."}, scroll="on"/"off", presenter notes for screen
+  sharing, and turning a video into bullet points to talk from instead of
+  reading word for word. Trigger phrases: "teleprompter script", "script for
+  the prompter", "format for the teleprompter", "add tabs to this script",
+  "presenter tabs", "voice cues", "bullet points for the prompter", "guião
+  para o teleprompter", "formata para o teleprompter", "põe em tópicos para o
+  teleprompter". Also use when editing any .md script that already contains
+  :: directives. The words themselves come from psoares-writing.
 ---
 
 # Teleprompter scripts
@@ -25,12 +25,17 @@ switches when a cue written in the script is said.
 Write only the syntax below. It is taken from the app's parser. Anything else shows up on the
 prompter as literal text or is ignored.
 
+This skill covers the format: how the app reads the file, and how to lay a script out in it.
+The words come from the writing skills in `psoares-writing` when it is installed: `video-script`
+for the lines, `storytelling` for the structure, `hooks` for the opening.
+
 ## Workflow
 
-1. Find out what the script is for: video, talk, demo, course lesson. Ask about length,
-   audience, language and which parts are read word for word versus presented freely.
-2. Outline the sections. Mark which parts are read and which are improvised demos (tabs).
-3. Write the read text for the ear (see "Writing for spoken delivery").
+1. Find out what the script is for: video, talk, demo, course lesson. Ask which parts are read
+   word for word and which are talked over from bullet points.
+2. Outline the sections. Mark which parts are read and which are presented freely (tabs).
+3. Get the read text from the user, or write it with `video-script`. Keep it as it is: this
+   skill formats it, it does not rewrite it.
 4. Add directives only where they help the person at the camera.
 5. Run the checklist at the end before handing the script over.
 6. Save to the path the user names. Scripts usually live in a folder of `.md` files. Without a
@@ -258,9 +263,11 @@ What this means for writing:
   common in normal speech.
 - Use `|` for the two or three natural ways to say the same transition.
 
-### When to use tabs and when to use read text
+### When to read and when to talk from bullet points
 
-Use tabs for:
+A script does not have to be read word for word. A presenter who knows the material can talk
+from short bullet points in tabs, with the whole video still on the prompter in order. Use
+tabs for:
 
 - Live demos where the order may change, with a few bullet reminders per feature.
 - Topics the presenter knows and talks over from bullet points.
@@ -368,28 +375,22 @@ What it shows comes from the script, so the way tabs are written decides how use
   reminder like "use the demo account" that should be in front of the presenter during the
   demo.
 
-## Writing for spoken delivery
+## Read text and voice follow
 
-The text is read aloud from a moving screen, and voice follow matches the spoken words against
-the written ones. Text that reads well on paper often fails both tests.
+Voice follow matches the spoken words against the written ones, in order. That puts a few
+limits on the read text, whoever wrote it:
 
-- **Short sentences.** One idea per sentence. One or two sentences per paragraph, blank line
-  between paragraphs.
-- **A natural voice.** Write how the presenter talks: contractions, "I" and "you", plain words.
-  Read each line aloud in your head; if you would not say it that way, rewrite it.
-- **Write numbers and symbols as spoken** when the exact reading matters: "twenty percent", not
-  "20%"; "and", not "&". Spell out abbreviations the presenter would expand.
-- **Words on the page should be the words said.** Voice follow tracks spoken words in order.
-  Keep asides, parentheses and stage directions out of read paragraphs; put directions in
-  `::cue`.
-- **Emphasis sparingly.** `**bold**` one word per paragraph at most, where the stress falls.
-- **Lists in read text** read as a sentence: "It rests on three things:" then `- clients,`
-  `- processes,` `- and sessions.` with the punctuation of the spoken sentence.
-- **Signal transitions out loud.** "Let me show you", "So here is the thing", "Before we
-  finish". These are also good places for cues before and after tab groups.
-- **Cue phrases must sound natural said aloud** and must be distinct from the surrounding text.
-  A cue is spoken as part of the talk, so it should read like a real segue, and the same words
-  should not appear in the tabs' bullets or in what the presenter will improvise there.
+- **Words on the page are the words said.** Keep asides, parentheses and stage directions out
+  of read paragraphs; put directions in `::cue`.
+- **Numbers and symbols as spoken** when the exact reading matters: "twenty percent", not
+  "20%"; "and", not "&".
+- **A blank line between paragraphs**, so each one sits on its own on the prompter.
+- **`**bold**` shows on the prompter** as a stressed word. One per paragraph at most.
+- **Cue phrases sound natural said aloud** and are distinct from the surrounding text. A cue
+  is spoken as part of the talk, so it reads like a real segue, and the same words do not
+  appear in the tabs' bullets or in what the presenter will improvise there.
+
+Anything beyond that (sentence length, voice, lists, hard words) belongs to `video-script`.
 
 ## Complete example
 
@@ -494,4 +495,4 @@ presenter can go back by voice.
 - The flow after every tab group starts with a heading; headings that are not natural to say
   have a `{say="..."}` cue.
 - Two tab groups never touch without a heading or text between them.
-- Read text: short sentences, one idea each, written the way it will be said.
+- Read text: no asides or directions inside it, numbers written as said.

@@ -11,8 +11,9 @@ description: >-
   Trigger phrases: "write the script for this lesson", "script for this
   video", "rewrite this script", "make the script line by line", "lesson
   script", "demo script", "guião da lição", "escreve o guião", "guião linha a
-  linha", "reescreve o guião". Use it with teleprompter-script when the script
-  is read from the Markdown Teleprompter app.
+  linha", "reescreve o guião". Use it with storytelling for the structure,
+  hooks for the opening lines, and teleprompter-script when the script is read
+  from the Markdown Teleprompter app.
 ---
 
 # Video scripts
@@ -24,11 +25,13 @@ AI given the script and the video) uses to match takes to lines.
 
 ## Load first
 
-1. **`human-prose`** (from `s2-writing` or `psoares-writing`, whichever is installed). It sets
-   the voice and removes what sounds written by AI. If it is not installed, follow the short
-   version under "Voice" below.
-2. **`teleprompter-script`**, only when the script will be read from the Markdown Teleprompter
-   app and needs its directives (`::chapter`, `::cue`, `::note`, tabs).
+1. **`human-prose`** (from `s2-writing`). It sets the voice and removes what sounds written by
+   AI. If it is not installed, follow the short version under "Voice" below.
+2. **`storytelling`** and **`hooks`**, from this plugin, when the script needs a structure
+   that holds attention or a stronger opening.
+3. **`teleprompter-script`** (from `psoares-teleprompter`), only when the script will be read
+   from the Markdown Teleprompter app and needs its directives (`::chapter`, `::cue`,
+   `::note`, tabs).
 
 Then open the reference for the format:
 
@@ -67,6 +70,27 @@ These hold for every format.
 - **One direction.** The video moves forward through the product or the idea and never
   jumps back. If something needs to come back, it comes back as a new line that names it, not
   as "like we saw before".
+
+## Bridges between sections
+
+Where one part ends and the next begins, write a bridge in the first draft. It closes what was
+just explained and pulls the viewer into the next part, so the script never stops dead. Without
+it, a script reads like a list of sections.
+
+- **One or two lines**, at the start of the new section.
+- **Close and open in the same breath.** Say where we are, then why the next part matters.
+- **A turn works best:** "but", "so", "which is why", "and that's where".
+- **Coming back** after a long explanation or an example: say what we come back to.
+
+| English | Português |
+| --- | --- |
+| So that's how the editor works. But knowing how it works isn't the hard part. | Então, é assim que o editor funciona. Mas saber como funciona não é a parte difícil. |
+| Okay, let's go back to the question from the start. | Ok, vamos voltar à pergunta do início. |
+| Which is exactly why the next part matters more than this one. | E é por isso que a próxima parte importa mais do que esta. |
+| And that's where most people get stuck. | E é aqui que a maior parte das pessoas fica presa. |
+
+The user may rewrite every bridge in their own words. That is fine: the point is that the
+draft has one in each place it is needed.
 
 ## Lists
 
@@ -143,6 +167,12 @@ without asking.
 
 The speaker's voice wins over any rule here.
 
+**The speaker's style notes come first.** Look for `style.md` in the scripts folder, the same
+way as `hard-words.md`. It is a free list of notes the speaker keeps and edits as they like
+("start sections with a bridge", "no rhetorical questions", "I say 'usar', never
+'utilizar'"). Follow every note in it, over anything in this skill. If it doesn't exist, carry
+on without it.
+
 - **Warm, not clipped.** The speaker is a person guiding someone, not a manual. Short is about
   cutting filler, never about cutting the warmth. Say who is doing what: "I'll show you",
   "you'll see", "let's add", "vou-te mostrar", "vamos ver".
@@ -157,6 +187,9 @@ The speaker's voice wins over any rule here.
   "amazing", "without further ado".
 
 - Keep the speaker's "I" lines: "I know that's a lot to take in, so I made this short course."
+- **Say transitions out loud.** "Let me show you", "So here is the thing", "Before we
+  finish". They tell the viewer a new part starts, and on the teleprompter they make good
+  voice cues.
 - Keep spoken beats the speaker wrote on purpose, like an ellipsis before a reveal: "Behind
   all of it... there is AI."
 - **Bold** a term on the line that defines it, once. It tells the speaker where the stress
@@ -207,6 +240,8 @@ in both, so the two files stay aligned. Lists keep the same items in the same or
 
 - [ ] Every line is one sentence, within one breath.
 - [ ] Every line that names two or more things is a list.
+- [ ] Every new section opens with a bridge.
+- [ ] Every note in `style.md` is followed.
 - [ ] No noun is repeated just to avoid "it".
 - [ ] No word from `hard-words.md`, no clusters where words meet, no runs of s sounds.
 - [ ] No cues, brackets or directions in the read text.
