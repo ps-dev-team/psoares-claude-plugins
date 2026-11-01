@@ -9,10 +9,10 @@ description: >-
   "therefore". Rewrites a flat story into one that holds attention, and
   reviews a script against seven common storytelling mistakes. Trigger
   phrases: "make this a story", "storytelling", "this script is boring",
-  "people drop off", "improve the hook", "add tension", "re-hook", "story
-  arc", "conta isto como uma história", "storytelling deste guião", "o guião
-  está chato", "melhora o hook". Handles structure only: use video-script for
-  the line format and human-prose for the voice.
+  "people drop off", "add tension", "re-hook", "story arc", "conta isto como
+  uma história", "storytelling deste guião", "o guião está chato". Handles
+  structure only: use hooks for the opening lines, video-script for the line
+  format and human-prose for the voice.
 ---
 
 # Storytelling
@@ -23,9 +23,11 @@ expects, and how each answer opens the next question.
 
 It does the structure. The words on each line come from the skills that own them:
 
+- **`hooks`** for the opening: the hook and the lines right after it.
 - **`video-script`** for scripts recorded one sentence per line.
-- **`human-prose`** (from `s2-writing` or `psoares-writing`) for the voice.
-- **`teleprompter-script`** when the script is read from the Markdown Teleprompter app.
+- **`human-prose`** (from `s2-writing`) for the voice.
+- **`teleprompter-script`** (from `psoares-teleprompter`) when the script is read from the
+  Markdown Teleprompter app.
 
 ## Modes
 

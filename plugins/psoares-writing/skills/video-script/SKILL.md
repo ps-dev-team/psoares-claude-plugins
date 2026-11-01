@@ -11,8 +11,9 @@ description: >-
   Trigger phrases: "write the script for this lesson", "script for this
   video", "rewrite this script", "make the script line by line", "lesson
   script", "demo script", "guião da lição", "escreve o guião", "guião linha a
-  linha", "reescreve o guião". Use it with teleprompter-script when the script
-  is read from the Markdown Teleprompter app.
+  linha", "reescreve o guião". Use it with storytelling for the structure,
+  hooks for the opening lines, and teleprompter-script when the script is read
+  from the Markdown Teleprompter app.
 ---
 
 # Video scripts
@@ -24,11 +25,13 @@ AI given the script and the video) uses to match takes to lines.
 
 ## Load first
 
-1. **`human-prose`** (from `s2-writing` or `psoares-writing`, whichever is installed). It sets
-   the voice and removes what sounds written by AI. If it is not installed, follow the short
-   version under "Voice" below.
-2. **`teleprompter-script`**, only when the script will be read from the Markdown Teleprompter
-   app and needs its directives (`::chapter`, `::cue`, `::note`, tabs).
+1. **`human-prose`** (from `s2-writing`). It sets the voice and removes what sounds written by
+   AI. If it is not installed, follow the short version under "Voice" below.
+2. **`storytelling`** and **`hooks`**, from this plugin, when the script needs a structure
+   that holds attention or a stronger opening.
+3. **`teleprompter-script`** (from `psoares-teleprompter`), only when the script will be read
+   from the Markdown Teleprompter app and needs its directives (`::chapter`, `::cue`,
+   `::note`, tabs).
 
 Then open the reference for the format:
 
@@ -157,6 +160,9 @@ The speaker's voice wins over any rule here.
   "amazing", "without further ado".
 
 - Keep the speaker's "I" lines: "I know that's a lot to take in, so I made this short course."
+- **Say transitions out loud.** "Let me show you", "So here is the thing", "Before we
+  finish". They tell the viewer a new part starts, and on the teleprompter they make good
+  voice cues.
 - Keep spoken beats the speaker wrote on purpose, like an ellipsis before a reveal: "Behind
   all of it... there is AI."
 - **Bold** a term on the line that defines it, once. It tells the speaker where the stress

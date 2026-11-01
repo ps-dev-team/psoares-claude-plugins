@@ -51,21 +51,36 @@
       ]
     },
     {
+      "name": "psoares-writing",
+      "source": "./plugins/psoares-writing",
+      "description": "Writing for videos and content. Skills: hooks for the opening (six formats, the spoken, text and visual hook lined up, the lock-in zone, four mistakes), storytelling for the structure that keeps people watching (stakes, a big question, head fakes, re-hooks), and video-script for scripts recorded one take per line.",
+      "category": "content",
+      "keywords": [
+        "writing",
+        "script",
+        "video",
+        "hook",
+        "hooks",
+        "storytelling",
+        "youtube",
+        "reels",
+        "short-form",
+        "creator"
+      ]
+    },
+    {
       "name": "psoares-teleprompter",
       "source": "./plugins/psoares-teleprompter",
-      "description": "Script writing for videos and the Markdown Teleprompter app. Skills: storytelling for the structure that keeps people watching (stakes, a big question, head fakes, re-hooks), video-script for scripts recorded one take per line, and teleprompter-script for writing and editing video and presentation scripts with the app's directives, presenter tabs, presenter notes, voice cues and spoken-delivery style.",
+      "description": "The Markdown Teleprompter app's script format. Skill: teleprompter-script, which lays out a script the way the app reads it: directives, chapters, presenter tabs, presenter notes, voice cues, and bullet points to talk from instead of reading word for word.",
       "category": "content",
       "keywords": [
         "teleprompter",
         "script",
-        "video",
         "presenter",
         "markdown",
         "mdc",
         "voice",
-        "recording",
-        "storytelling",
-        "hook"
+        "recording"
       ]
     },
     {

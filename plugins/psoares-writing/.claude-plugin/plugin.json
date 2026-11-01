@@ -1,0 +1,10 @@
+{
+  "name": "psoares-writing",
+  "version": "0.4.0",
+  "description": "Writing for videos and content. Skills: hooks for the opening (six formats, the spoken, text and visual hook lined up, the lock-in zone, four mistakes), storytelling for the structure that keeps people watching (stakes, a big question, head fakes, re-hooks), and video-script for scripts recorded one take per line.",
+  "author": {
+    "name": "Paulo Soares"
+  },
+  "license": "MIT",
+  "keywords": ["writing", "script", "video", "hook", "hooks", "storytelling", "youtube", "reels", "short-form", "creator"]
+}
